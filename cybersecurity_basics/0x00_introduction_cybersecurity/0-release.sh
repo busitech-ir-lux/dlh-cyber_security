@@ -1,2 +1,2 @@
 #!/bin/bash
-grep '^ID=' /etc/os-release | cut -d= -f2 
+grep '^ID=' /etc/os-release | cut -d= -f2 | sed 's/.*/\u&/'
