@@ -1,2 +1,2 @@
 #!/bin/bash
-echo -e "Kali\n"
+grep '^ID=' /etc/os-release | cut -d= -f2 
