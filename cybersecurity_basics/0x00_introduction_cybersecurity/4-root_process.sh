@@ -1,2 +1,2 @@
 #!/bin/bash
-ps -u "$1" u | grep -vE '^[^ ]+[ ]+[0-9]+[ ]+[0-9.]+[ ]+[0-9.]+[ ]+0[ ]+0[ ]+'
+ps aux | grep "^$1[[:space:]]" | grep -v "[[:space:]]0[[:space:]]\+0[[:space:]]"
