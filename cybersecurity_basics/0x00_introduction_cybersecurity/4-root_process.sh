@@ -1,2 +1,2 @@
 #!/bin/bash
-ps -u root u | grep root | grep -v " 0 0 "
+ps -u "$1" u | grep "$1" | grep -v " 0 0 "
