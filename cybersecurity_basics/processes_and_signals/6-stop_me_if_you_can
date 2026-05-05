@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# This script terminates 'To infinity and beyond' bash process without using kill or kill all.
+pkill bash
