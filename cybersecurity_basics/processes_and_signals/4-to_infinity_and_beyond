@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# This script iterates 'To infinity and beyond' with a sleep of 2 between eath iteration
+while true
+do
+	echo "To infinity and beyond"
+	sleep 2
+done
