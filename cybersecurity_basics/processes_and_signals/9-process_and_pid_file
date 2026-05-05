@@ -7,6 +7,6 @@ trap 'echo "Y U no love me?!"' SIGINT
 trap 'rm /tmp/myscript.pid && kill -9 $(pgrep bash)' SIGQUIT
 while true
 do
-    echo "Ti infinity and beyond"
+    echo "To infinity and beyond"
     sleep 2
 done
