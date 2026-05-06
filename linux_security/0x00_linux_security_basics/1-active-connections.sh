@@ -1,2 +1,2 @@
 #!/bin/bash
-sudo ss -nabp
+sudo ss -napt
