@@ -1,2 +1,2 @@
 #!/bin/bash
-sudo netstat -tna --program
+sudo ss -nabp
