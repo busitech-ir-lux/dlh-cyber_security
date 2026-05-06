@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# This script starts another script (creates a background process) and stops or restarts it. 
 if [ "$1" = "start" ]; then
 	./manage_my_process &  
 	echo $! > /tmp/my_process.pid; 
