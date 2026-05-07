@@ -1,4 +1,3 @@
 #!/bin/bash
-user=$1
-pass=$2
-sudo useradd "$user" -p "$2"
+# This file will add a user and sets a password based on input data
+sudo useradd "$1" -p "$2"
