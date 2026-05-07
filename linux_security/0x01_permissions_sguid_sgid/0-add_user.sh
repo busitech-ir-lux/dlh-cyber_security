@@ -1,3 +1,3 @@
 #!/bin/bash
 sudo useradd "$1"
-echo $2 | passwd
+sudo echo $2 | passwd --stdin $1
