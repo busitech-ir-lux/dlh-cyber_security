@@ -1,2 +1,2 @@
 #!/bin/bash
-sudo ls -l "$1"
+find "$1" -user root -perm -6000 -exec ls -ldb {} \; > /tmp/ckprim1
