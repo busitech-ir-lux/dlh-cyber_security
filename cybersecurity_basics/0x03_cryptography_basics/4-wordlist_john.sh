@@ -1,2 +1,2 @@
 #!/bin/bash
-john --wordlist=/usr/share/wordlists/rockyou.txt --type=raw-sha1 hashes.txt
+john --wordlist=/usr/share/wordlists/rockyou.txt --type=raw-md5 $1 && john --show $1 > 4-password.txt   
