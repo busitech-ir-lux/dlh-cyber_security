@@ -21,4 +21,4 @@ def query_dns_records(domain_name):
             return f"Error: {e}"
     return results
 
-print(query_dns_records("google.com"))
+print(query_dns_records(sys.argv[1]))
