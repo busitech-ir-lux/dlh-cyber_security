@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import requests
 from urllib.parse import urljoin, urlparse
 
-def crawl(start_url, visited=None, depth=0, max_depth=2):
+def crawl_website(start_url, visited=None, depth=0, max_depth=2):
     """
     Recursively crawl a website.
 
