@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
 import requests
+
 def get_http_headers(url):
+    result = {}
     try:
         response = requests.get(url)
-        return response.status_code, response.headers
+        result = {response.status_code, response.headers}
+        return result
     except requests.exceptions.RequestException as e:
         return f"Error: {e}"
