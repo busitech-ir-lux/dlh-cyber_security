@@ -1,24 +1,32 @@
 #!/usr/bin/env python3
+
 import dns.resolver
 
+
 def query_dns_records(domain_name):
-    record_types = ['A','AAAA', 'MX', 'NS', 'TXT', 'SOA']
-    results = {}
+    """
+    Query common DNS record types for a domain.
+
+    Returns:
+        dict: {'A': answers, 'MX': answers, ...}
+        Empty dict if the domain cannot be resolved.
+    """
+
+    record_types = ["A", "AAAA", "MX", "NS", "TXT", "SOA"]
+    records = {}
 
     for record_type in record_types:
         try:
-            answers =  dns.resolver.resolve(domain_name, record_type)
-           # print(list(answers))
-            results[record_type] = [str(r) for r in answers]
+            answers = dns.resolver.resolve(domain_name, record_type)
+            records[record_type] = answers
 
         except dns.resolver.NoAnswer:
-            results[record_type] =  None
-        except dns.resolver.NXDOMAIN:
-            return "NX Domain"
-        except dns.resolver.NoNameservers:
-            return "No name servers returned"
-        except Exception as e:
-            return f"Error: {e}"
-    return results
+            continue
 
-print(query_dns_records(sys.argv[1]))
+        except dns.resolver.NoNameservers:
+            continue
+
+        except dns.resolver.NXDOMAIN:
+            return {}
+
+    return records
