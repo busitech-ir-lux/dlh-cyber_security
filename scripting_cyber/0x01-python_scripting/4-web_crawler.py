@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import requests
 from urllib.parse import urljoin, urlparse
 
-def crawl_website(start_url, max_depth=2):
+def crawl_website(start_url, max_depth=2, depth=0, visited=None):
     """
     Recursively crawl a website.
 
@@ -15,17 +15,17 @@ def crawl_website(start_url, max_depth=2):
         max_depth: Maximum depth to crawl
     """
     # Initialize visited set
-    #if visited is None:
-    #   visited = set()
+    if visited is None:
+       visited = set()
 
     # Base cases (stop recursion)
-    #if depth > max_depth:
-    #    return
-    #if url in visited:
-    #    return
+    if depth > max_depth:
+        return
+    if url in visited:
+        return
 
     # Mark as visited
-    #visited.add(start_url)
+    visited.add(start_url)
     print(f"Crawling: {start_url} (depth: {depth})")
 
     # Get page content
@@ -36,4 +36,4 @@ def crawl_website(start_url, max_depth=2):
     for link in soup.find_all('a', href=True):
         next_url = urljoin(start_url, link['href'])
         # Recursive call
-        crawl(next_url, visited, depth + 1, max_depth)
+        crawl_website(next_url, visited, depth + 1, max_depth)
