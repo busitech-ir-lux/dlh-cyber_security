@@ -4,17 +4,21 @@ import requests
 from bs4 import BeautifulSoup
 import socket
 import dns.resolver
+import dns
+
+try:
+    import dns.resolver
+except ImportError:
+    pass
 
 def dns_recon(domain):
-    ip = socket.gethostbyname(domain)
+
     try:
-        import dns.resolver
-    except ImportError:
-        pass
-    try:
+        ip = socket.gethostbyname(domain)
         mx_records = dns.resolver.resolve(domain, 'MX')
         mx_records = [str(record.exchange) for record in mx_records]
-
+    except socket.gaierror:
+        return f"Error resolving {domain}: Host not found"
     except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers):
         mx_records = ['No MX records found']
     mx_list = '\n    '.join(mx_records)
@@ -26,11 +30,14 @@ MX Records:
     {mx_list}"""
 
 def web_recon(domain):
-    url = f"http://{domain}"
+    
     try:
-        response = requests.get(url)
+        response = requests.get(f"https://{domain}", timeout=5)
     except requests.RequestException as e:
-        return f"Error fetching {url}: {e}"
+        return f"Error fetching {domain}: {e}"
+    except:
+        response = requests.get(f"http://{domain}", timeout=5)
+
     status_code = response.status_code
     total_links = len(BeautifulSoup(response.text, "html.parser").find_all('a'))
     return f"""Status Code: {status_code}
