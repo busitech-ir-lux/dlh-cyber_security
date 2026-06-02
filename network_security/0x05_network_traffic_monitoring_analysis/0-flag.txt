@@ -1,5 +1,1 @@
-{
-    "protocols": ["TCP", "DNS", "ICMP],
-    "source_ip": "192.168.1.100",
-    "http_port": 443
-}
+de6a1db5ed84ff90635e83ece5c58e4b
