@@ -8,7 +8,7 @@ import dns.resolver
 def dns_recon(domain):
     ip = socket.gethostbyname(domain)
     try:
-                import dns.resolver
+        import dns.resolver
     except ImportError:
         pass
     try:
