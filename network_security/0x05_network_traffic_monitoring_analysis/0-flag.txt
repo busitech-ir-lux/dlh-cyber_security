@@ -1,4 +1,5 @@
-"protocols": ["TCP", "DNS", "ICMP],
-"source_port": "192.168.1.100",
-"http_port": 443
-
+{
+    "protocols": ["TCP", "DNS", "ICMP],
+    "source_ip": "192.168.1.100",
+    "http_port": 443
+}
