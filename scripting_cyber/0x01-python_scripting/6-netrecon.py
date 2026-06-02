@@ -3,8 +3,6 @@
 import requests
 from bs4 import BeautifulSoup
 import socket
-import dns.resolver
-import dns
 
 try:
     import dns.resolver
