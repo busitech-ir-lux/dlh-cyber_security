@@ -8,8 +8,11 @@ import dns.resolver
 def dns_recon(domain):
     ip = socket.gethostbyname(domain)
     try:
+        import dns.resolver
         mx_records = dns.resolver.resolve(domain, 'MX')
         mx_records = [str(record.exchange) for record in mx_records]
+    except ImportError:
+        pass
     except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers):
         mx_records = ['No MX records found']
     mx_list = '\n    '.join(mx_records)
