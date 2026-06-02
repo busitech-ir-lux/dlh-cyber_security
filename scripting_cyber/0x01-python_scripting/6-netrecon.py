@@ -6,31 +6,35 @@ import socket
 import dns.resolver
 
 def dns_recon(domain):
-    dom_ip = socket.gethostbyname(domain)
+    ip = socket.gethostbyname(domain)
     try:
-        dom_mx = dns.resolver.resolve(domain, 'MX')
-        mx_records = '\n'.join(str(rdata) for rdata in dom_mx)
+        mx_records = dns.resolver.resolve(domain, 'MX')
+        mx_records = [str(record.exchange) for record in mx_records]
     except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers):
-        mx_records = 'No MX records found'
+        mx_records = ['No MX records found']
+    mx_list = '\n    '.join(mx_records)
     return f"""
-IP Address: {dom_ip}
-MX Records: {mx_records}"""
+IP Address: {ip}
+
+
+MX Records: 
+    {mx_list}"""
 
 def web_recon(domain):
     url = f"http://{domain}"
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    url_count = len(soup.find_all('a'))
+    try:
+        response = requests.get(url)
+    except requests.RequestException as e:
+        return f"Error fetching {url}: {e}"
     status_code = response.status_code
-    important_headers = response.headers.get('Server', 'N/A'), response.headers.get('Content-Type', 'N/A')
+    total_links = len(BeautifulSoup(response.text, "html.parser").find_all('a'))
     return f"""Status Code: {status_code}
-    
-    Important Headers: 
-    Server: {important_headers[0]}
-    Content-Type: {important_headers[1]}
-    
-    Total Links Found: {url_count}"""
+Important Headers:
+    Content-Type: {response.headers.get('Content-Type', 'N/A')}
+    Server: {response.headers.get('Server', 'N/A')}
 
+    
+Total Links Found: {total_links}"""
 
 
 def port_scan(domain):
@@ -45,10 +49,32 @@ def port_scan(domain):
             open_ports.append(port)
         sock.close()
     for port in open_ports:
-        print(f"Port {port}: OPEN")
+        print(f"Port {port}: OPEN\n")
 
-if __name__ == "__main__":
-    target_domain = input("Enter the target domain: ")
-    print(dns_recon(target_domain))
-    print(web_recon(target_domain))
-    port_scan(target_domain)
+
+netrecon = __import__("6-netrecon")
+
+print("=" * 50)
+print("NETWORK RECONNAISSANCE TOOL")
+print("=" * 50)
+
+target = input("Enter target domain: ")
+
+print("\n" + "=" * 50)
+print("DNS RECONNAISSANCE")
+print("=" * 50)
+netrecon.dns_recon(target)
+
+print("\n" + "=" * 50)
+print("WEB RECONNAISSANCE")
+print("=" * 50)
+netrecon.web_recon(target)
+
+print("\n" + "=" * 50)
+print("PORT SCANNING")
+print("=" * 50)
+netrecon.port_scan(target)
+
+print("\n" + "=" * 50)
+print("RECONNAISSANCE COMPLETE")
+print("=" * 50)
