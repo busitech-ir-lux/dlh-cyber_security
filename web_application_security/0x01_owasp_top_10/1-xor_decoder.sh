@@ -1,9 +1,7 @@
 #!/bin/bash
-echo "KzosKw==" | base64 -d | python3 -c '
+echo "$1" | base64 -d | python3 -c '
 import sys
 data = sys.stdin.buffer.read()
-
 key = 0x5F
-
 print(bytes([b ^ key for b in data]).decode())
 '
