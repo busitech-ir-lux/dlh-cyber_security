@@ -2,7 +2,7 @@
 
 > **System/Asset:** Financial Trading Platform  
 > **Date:** June 22, 2026  
-> **Modeler:** [Mahdi ]  
+> **Modeler:** [Mahdi Hamidi]  
 > **Version:** 1.0
 
 ---
