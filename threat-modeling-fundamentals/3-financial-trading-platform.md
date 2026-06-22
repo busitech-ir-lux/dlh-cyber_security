@@ -1,314 +1,527 @@
-# 1. System Overview
+# Threat Model
 
-The trading platform allows users to:
+> **System/Asset:** Financial Trading Platform  
+> **Date:** June 22, 2026  
+> **Modeler:** [Mahdi ]  
+> **Version:** 1.0
+
+---
+
+## System Overview
+
+### System Description
+
+The platform allows users to:
 
 - View real-time stock prices
 - Execute buy and sell orders
 - Transfer funds
 - Create automated trading rules
 
+
 The system requires:
 
-- **99.99% availability**
-- **Trade latency below 100 ms**
-- Compliance with financial regulations
+- 99.99% availability
+- Trade execution latency below 100 ms
+- Compliance with SEC and FINRA requirements
+
+### System Architecture
 
 ```mermaid
 flowchart LR
     U[User]
-    W[Web / Mobile Trading App]
+    C[Web or Mobile Client]
     A[Trading API]
     R[Automated Rules Engine]
     M[Market Data Service]
     O[Order Execution System]
     D[(Account and Trade Database)]
-    B[Banking / Funds System]
+    B[Funds Transfer System]
     X[Stock Exchange]
 
-    U -->|Login, trades, rules| W
-    W -->|HTTPS requests| A
+    U --> C
+    C -->|HTTPS| A
     A --> R
     A --> M
     A --> D
     A --> B
-    R -->|Automated orders| O
-    O -->|Buy / Sell orders| X
-    X -->|Execution result| O
+    R --> O
+    O --> X
+    X --> O
     O --> D
 ```
----
 
-# 2. Most Critical CIA Component
+### System Boundaries
 
-## Integrity
+**Included:**
 
-**Integrity is the most critical CIA component** because trading data, account balances, orders, and automated rules must remain accurate and unmodified.
-
-An integrity failure could allow an attacker to:
-
-- Change a buy order into a sell order
-- Modify the quantity or price of a trade
-- Change an account balance
-- Redirect a fund transfer
-- Alter an automated trading rule
-
-These actions could cause immediate financial loss and affect market activity.
-
-## CIA Priority
-
-|CIA Component|Importance|
-|---|---|
-|**Integrity**|Orders, prices, balances, and trading rules must remain accurate|
-|**Availability**|The platform must remain accessible during market hours|
-|**Confidentiality**|Account, identity, and trading data must remain private|
-
-Availability is also extremely important because outages can prevent users from trading or managing risk. However, executing an incorrect or unauthorized trade may be more damaging than temporarily rejecting a trade.
-
-## Security and Performance Conflict
-
-Security requirements can conflict with performance requirements.
-
-For example:
-
-- Strong validation adds processing time.
-- Encryption adds small communication and computation costs.
-- Fraud detection may delay an order.
-- Detailed logging adds storage and processing overhead.
-- Additional authorization checks can increase latency.
+- User authentication
+- Automated trading rules
+- Trade execution
+- Fund transfers
+- Account and trade records
+- Market-data processing
 
 
-Security controls should not simply be removed to achieve the `<100 ms` requirement. Instead, they should be designed efficiently through:
+**Excluded:**
 
-- Fast cryptographic algorithms
-- In-memory authorization checks
-- Asynchronous logging
-- Pre-trade risk checks
-- High-performance monitoring
-- Load testing under realistic traffic
+- Internal systems operated by stock exchanges
+- Banking systems outside the platform
+- User-owned devices beyond the client application
 
 ---
 
-# 3. Threat Model: Automated Trading Rules
+## Asset Identification
 
-## Risk 1: Unauthorized Rule Modification
+### Critical Assets
 
-|Attribute|Details|
-|---|---|
-|**Threat**|An attacker changes a user's automated trading rule|
-|**Attack Scenario**|An attacker steals the user's session and changes a rule from “sell if price falls below €90” to “sell all shares immediately.”|
-|**Impact**|Unauthorized trades, financial loss, and loss of customer trust|
-|**Likelihood**|High after account or session compromise|
-|**Mitigation**|Require MFA or reauthentication before creating or modifying rules. Apply server-side authorization, notify users of rule changes, and allow immediate rule suspension.|
+| Asset ID | Asset Name              | Description                                                     | Criticality | Value       |
+| -------- | ----------------------- | --------------------------------------------------------------- | ----------- | ----------- |
+| A001     | Trade Orders            | Buy and sell instructions submitted by users or automated rules | Critical    | Financial   |
+| A002     | Account Balances        | Cash and securities owned by users                              | Critical    | Financial   |
+| A003     | Automated Trading Rules | User-defined conditions that automatically create trades        | Critical    | Financial   |
+| A004     | Authentication Data     | Passwords, MFA data, sessions, and tokens                       | Critical    | Security    |
+| A005     | Audit Logs              | Records of logins, rule changes, trades, and transfers          | High        | Regulatory  |
+| A006     | Market Data             | Real-time prices used for trading decisions                     | High        | Operational |
 
----
+### Most Critical CIA Component
 
-## Risk 2: Logic or Validation Flaws
+**Integrity** is the most critical component.
 
-|Attribute|Details|
-|---|---|
-|**Threat**|An incorrect rule condition creates unintended trades|
-|**Attack Scenario**|A rule intended to buy 10 shares is interpreted as buying 10,000 because of a unit-conversion or decimal error.|
-|**Impact**|Large financial losses, market exposure, and regulatory issues|
-|**Likelihood**|Medium|
-|**Mitigation**|Validate rule syntax and values, apply maximum order and position limits, show a clear rule preview, test rules in simulation, and reject impossible or dangerous conditions.|
+Incorrect or modified orders, balances, prices, or automated rules could cause immediate financial loss. Availability is also essential because the system must remain accessible during trading hours.
+
+Security controls may increase latency. For example, authorization checks, fraud detection, encryption, and logging require processing time. These controls should be optimized rather than removed.
 
 ---
 
-## Risk 3: Race Conditions and Duplicate Execution
+## Threat Analysis Using STRIDE
 
-|Attribute|Details|
-|---|---|
-|**Threat**|The same rule executes more than once during rapid price changes|
-|**Attack Scenario**|A stock crosses the configured price threshold. Two backend workers process the event at the same time and both submit the same buy order.|
-|**Impact**|Duplicate orders, unintended positions, financial loss, and reconciliation problems|
-|**Likelihood**|Medium, especially during high market activity|
-|**Mitigation**|Use atomic transactions, distributed locks, unique execution IDs, idempotency controls, and database constraints. A rule execution should be recorded before the trade is submitted.|
+### STRIDE Overview
+
+STRIDE identifies six threat categories:
+
+- Spoofing
+- Tampering
+- Repudiation
+- Information Disclosure    
+- Denial of Service
+- Elevation of Privilege
+
+### Threat Identification
+
+|STRIDE Category|Threat Description|Threat Scenario|Affected Assets|Likelihood|Impact|Risk Level|
+|---|---|---|---|---|---|---|
+|**Spoofing**|Attacker impersonates a user|Stolen credentials are used to access a trading account|A002, A003, A004|High|Critical|Critical|
+|**Tampering**|Automated rule is modified|Attacker changes a rule to sell all shares|A001, A002, A003|High|Critical|Critical|
+|**Repudiation**|User denies changing a rule|Logs cannot prove who modified an automated rule|A003, A005|Medium|High|High|
+|**Information Disclosure**|Account or strategy data is exposed|Attacker accesses balances or private trading rules|A002, A003|Medium|High|High|
+|**Denial of Service**|Rules engine becomes unavailable|Attack traffic prevents automated orders from executing|A001, A003|Medium|Critical|High|
+|**Elevation of Privilege**|User gains administrative permissions|Broken authorization allows access to other accounts|A002, A003, A004|Low–Medium|Critical|High|
 
 ---
 
-## Risk Summary
+## Detailed Threat Scenarios
 
-|Risk|Likelihood|Impact|Priority|
-|---|--:|---|---|
-|Unauthorized rule modification|High|Severe financial loss|Critical|
-|Logic and validation flaws|Medium|Incorrect or excessive trades|High|
-|Duplicate rule execution|Medium|Duplicate orders and losses|High|
+### Threat 1: Unauthorized Trading Rule Modification
+
+**STRIDE Category:** Tampering
+
+**Threat Description:**
+
+An attacker modifies a user's automated trading rule after compromising the account or session.
+
+**Threat Scenario:**
+
+1. The attacker steals the user's session token.
+2. The attacker accesses the automated-rules page.
+3. A rule is changed from “sell 10 shares” to “sell all shares.”    
+4. The modified rule executes during market movement.    
+5. The user suffers financial loss.    
+
+**Affected Assets:**
+
+- Asset A001: Trade orders    
+- Asset A002: Account balances    
+- Asset A003: Automated trading rules
+
+
+**Attack Vector:**
+
+- Stolen session    
+- Weak authorization  
+- Missing reauthentication   
+- Compromised user account
+
+**Likelihood:**
+
+- **Qualitative:** High
+- **Reasoning:** Rule changes are possible after account compromise unless extra authorization is required.
+
+**Impact:**
+
+- **Confidentiality:** Low
+- **Integrity:** Critical
+- **Availability:** Low
+- **Overall:** Critical
+- **Reasoning:** The attacker can create unauthorized financial transactions.
+
+**Risk Level:** Critical
+
+**Existing Controls:**
+
+- User login
+- HTTPS communication
+
+**Mitigation Recommendations:**
+
+- Require MFA or reauthentication before rule changes.
+- Send immediate notifications when rules are created or modified.
+- Allow users to freeze automated trading.
+- Apply transaction and position limits.
+- Record immutable rule-change logs.
 
 ---
 
-# 4. Defense in Depth After Account Compromise
+### Threat 2: Trading Rule Logic Failure
 
-If an attacker compromises a user account, security controls should still limit what they can do.
+**STRIDE Category:** Tampering
+
+**Threat Description:**
+
+A logic or validation error causes an automated rule to create incorrect trades.
+
+**Threat Scenario:**
+
+1. The user creates a rule to buy 10 shares.
+2. A decimal or quantity-handling error interprets the value as 10,000.
+3. The platform submits an excessive order.
+4. The user suffers a large unexpected loss.
+
+**Affected Assets:**
+
+- Asset A001: Trade orders
+- Asset A002: Account balances
+- Asset A003: Automated trading rules
+
+**Attack Vector:**
+
+- Invalid rule input
+- Software defect
+- Missing quantity limits
+- Incorrect unit conversion
+
+**Likelihood:**
+
+- **Qualitative:** Medium
+- **Reasoning:** Logic flaws are possible in complex rule engines, especially without testing and limits.
+
+**Impact:**
+
+- **Confidentiality:** Negligible
+- **Integrity:** Critical
+- **Availability:** Low
+- **Overall:** Critical
+- **Reasoning:** Incorrect trades may create immediate financial loss.
+
+**Risk Level:** High
+
+**Existing Controls:**
+
+- Basic input validation
+- Order-processing logic
+
+**Mitigation Recommendations:**
+
+- Validate all rule conditions and values.
+- Apply maximum trade and position limits.
+- Show a clear rule preview before activation.
+- Test rules using simulation or paper trading.
+- Require confirmation for unusually large orders.
+
+---
+
+### Threat 3: Duplicate Automated Trade Execution
+
+**STRIDE Category:** Tampering
+
+**Threat Description:**
+
+A race condition causes the same automated rule to execute more than once.
+
+**Threat Scenario:**
+
+1. A stock reaches the user's target price.    
+2. Two workers process the same event simultaneously.
+3. Both workers submit the same order.
+4. The user receives twice the expected position.
+
+**Affected Assets:**
+
+- Asset A001: Trade orders
+- Asset A002: Account balances
+- Asset A003: Automated trading rules
+
+**Attack Vector:**
+
+- Concurrent requests
+- Distributed worker race condition
+- Missing idempotency controls
+
+**Likelihood:**
+
+- **Qualitative:** Medium
+- **Reasoning:** High market volume and distributed processing increase concurrency risk.
+
+**Impact:**
+
+- **Confidentiality:** Negligible
+- **Integrity:** High
+- **Availability:** Low
+- **Overall:** High
+- **Reasoning:** Duplicate orders may cause financial loss and reconciliation problems.
+
+**Risk Level:** High
+
+**Existing Controls:**
+
+- Database transaction processing
+- Order IDs
+
+**Mitigation Recommendations:**
+
+- Use unique execution identifiers.
+- Make trade submission idempotent.
+- Use atomic database transactions.
+- Apply distributed locks where necessary.
+- Record rule execution before order submission.
+
+
+---
+
+## Vulnerability Analysis
+
+### Identified Vulnerabilities
+
+| Vuln ID | Vulnerability                             | Type               | Exploitability | Severity | Related Threats                |
+| ------- | ----------------------------------------- | ------------------ | -------------- | -------- | ------------------------------ |
+| V001    | Missing reauthentication for rule changes | Authentication     | High           | Critical | Unauthorized rule modification |
+| V002    | Weak server-side validation               | Application logic  | Medium         | High     | Rule logic failure             |
+| V003    | Missing idempotency controls              | Concurrency        | Medium         | High     | Duplicate execution            |
+| V004    | Weak session handling                     | Session management | High           | Critical | Account takeover               |
+| V005    | Excessive account permissions             | Authorization      | Medium         | Critical | Elevation of privilege         |
+
+---
+
+## Attack Surface Analysis
+
+### Entry Points
+
+| Entry Point | Description              | Authentication Required | Access Level | Threats                |
+| ----------- | ------------------------ | ----------------------- | ------------ | ---------------------- |
+| EP001       | Login endpoint           | No                      | Public       | Credential stuffing    |
+| EP002       | Automated-rules API      | Yes                     | User         | Rule modification      |
+| EP003       | Trade-order API          | Yes                     | User         | Unauthorized trades    |
+| EP004       | Fund-transfer API        | Yes                     | User         | Fraudulent transfers   |
+| EP005       | Market-data feed         | Service authentication  | Internal     | Data manipulation      |
+| EP006       | Administrative interface | Yes                     | Privileged   | Elevation of privilege |
+
+### Data Flows
+
+1. The user sends login and trading requests to the API.    
+2. The API validates the user and account permissions.
+3. Automated rules receive market-data events.
+4. The rules engine sends trade instructions to the order system.
+5. The order system sends orders to the exchange.
+6. Trade results are stored in the database.
+7. Transfers are sent to the funds system.
+
+---
+
+## Risk Assessment
+
+### Risk Summary
+
+| Risk ID | Threat                         | Vulnerability | Likelihood | Impact   | Risk Level | Priority |
+| ------- | ------------------------------ | ------------- | ---------- | -------- | ---------- | -------- |
+| R001    | Unauthorized rule modification | V001, V004    | High       | Critical | Critical   | 1        |
+| R002    | Rule logic failure             | V002          | Medium     | Critical | High       | 2        |
+| R003    | Duplicate execution            | V003          | Medium     | High     | High       | 3        |
+| R004    | Account takeover               | V004          | High       | Critical | Critical   | 1        |
+| R005    | Privilege escalation           | V005          | Low–Medium | Critical | High       | 2        |
+
+### Risk Matrix
+
+| Impact \ Likelihood | Low    | Medium | High     |
+| ------------------- | ------ | ------ | -------- |
+| **Critical**        | High   | High   | Critical |
+| **High**            | Medium | High   | High     |
+| **Medium**          | Low    | Medium | High     |
+
+---
+
+## Mitigation Strategies
+
+### Recommended Controls
+
+| Control ID | Control Name                    | Control Type | Mitigates                      | Implementation Priority | Cost       | Effectiveness |
+| ---------- | ------------------------------- | ------------ | ------------------------------ | ----------------------- | ---------- | ------------- |
+| C001       | MFA and reauthentication        | Preventive   | Account and rule compromise    | Immediate               | Medium     | High          |
+| C002       | Transaction and position limits | Preventive   | Excessive financial loss       | Immediate               | Low        | High          |
+| C003       | Anomaly detection               | Detective    | Suspicious trading behaviour   | Short-term              | Medium     | High          |
+| C004       | Idempotent trade execution      | Preventive   | Duplicate trades               | Immediate               | Medium     | High          |
+| C005       | Secure session management       | Preventive   | Session hijacking              | Immediate               | Low–Medium | High          |
+| C006       | Immutable audit logs            | Detective    | Repudiation and investigations | Short-term              | Medium     | High          |
+| C007       | User notifications              | Detective    | Delayed compromise detection   | Immediate               | Low        | Medium        |
+| C008       | Rule simulation and validation  | Preventive   | Logic failures                 | Short-term              | Medium     | High          |
+
+### Defense-in-Depth Layers
+
+| Layer               | Controls                                             | Effectiveness |
+| ------------------- | ---------------------------------------------------- | ------------- |
+| Physical            | Secure data-centre access                            | Medium        |
+| Network             | TLS, segmentation, DDoS protection                   | High          |
+| Host                | Hardening, patching, endpoint monitoring             | High          |
+| Application         | MFA, authorization, limits, idempotency              | Critical      |
+| Data                | Encryption, database permissions, backups            | High          |
+| Policies/Procedures | Incident response, change control, compliance review | High          |
+
+---
+
+## DREAD Analysis
+
+### DREAD Scoring
+
+| Threat                         | Damage | Reproducibility | Exploitability | Affected Users | Discoverability | Total Score | Risk Level |
+| ------------------------------ | -----: | --------------: | -------------: | -------------: | --------------: | ----------: | ---------- |
+| Unauthorized rule modification |     10 |               8 |              8 |              7 |               8 |          41 | Critical   |
+| Rule logic failure             |      9 |               7 |              5 |              6 |               6 |          33 | High       |
+| Duplicate execution            |      8 |               8 |              5 |              6 |               5 |          32 | High       |
+
+**Average scores:**
+
+```text
+Unauthorized rule modification: 41 / 5 = 8.2
+Rule logic failure: 33 / 5 = 6.6
+Duplicate execution: 32 / 5 = 6.4
+```
+
+---
+
+## Diagrams
+
+### System Architecture Diagram
+
+```mermaid
+flowchart LR
+    U[User]
+    C[Trading Client]
+    A[Trading API]
+    R[Rules Engine]
+    O[Order System]
+    D[(Trade Database)]
+    X[Exchange]
+
+    U --> C
+    C --> A
+    A --> R
+    R --> O
+    O --> X
+    O --> D
+```
+
+### Data Flow Diagram
 
 ```mermaid
 flowchart TD
-    A[Compromised User Account]
-    B[MFA and Session Controls]
-    C[Reauthentication]
-    D[Transaction Limits]
-    E[Anomaly Detection]
-    F[User Notifications]
-    G[Audit Logs]
+    U[User]
+    A[Authenticate]
+    R[Create or Modify Rule]
+    M[Receive Market Data]
+    E[Evaluate Rule]
+    O[Submit Trade]
+    D[Record Result]
+
+    U --> A
+    A --> R
+    M --> E
+    R --> E
+    E --> O
+    O --> D
+```
+
+### Attack Tree
+
+```mermaid
+flowchart TD
+    A[Cause Unauthorized Trade]
+    B[Compromise Account]
+    C[Modify Trading Rule]
+    D[Exploit Logic Error]
+    E[Trigger Duplicate Execution]
 
     A --> B
-    B --> C
-    C --> D
-    D --> E
-    E --> F
-    F --> G
+    A --> C
+    A --> D
+    A --> E
+
+    B --> F[Steal Password or Session]
+    C --> G[Bypass Reauthentication]
+    D --> H[Submit Invalid Rule]
+    E --> I[Exploit Race Condition]
 ```
-## Layer 1: Strong Authentication and Session Controls
-
-- Require MFA.
-- Use short-lived sessions.
-- Rotate tokens after login.
-- Detect unusual devices and locations.
-- Allow users to terminate all sessions.
-
-**Purpose:** Reduce account takeover and shorten the attacker's access period.
 
 ---
 
-## Layer 2: Reauthentication for High-Risk Actions
+## Recommendations
 
-Require the user to authenticate again before:
+### Immediate Actions
 
-- Transferring funds
-- Adding a bank account
-- Changing automated rules
-- Increasing transaction limits
-- Changing security settings
+- Require MFA and reauthentication for sensitive actions.    
+- Apply transaction and position limits.
+- Implement idempotency for rule execution.
+- Strengthen session security.
+- Notify users of rule changes and large trades.
 
+### Short-Term Actions
 
-**Purpose:** A stolen session alone should not authorize the most dangerous actions.
+- Add anomaly detection.    
+- Introduce rule simulation and validation.
+- Create immutable audit trails.
+- Perform concurrency and authorization testing.
 
----
+### Long-Term Actions
 
-## Layer 3: Transaction and Position Limits
-
-Apply:
-
-- Daily transfer limits
-- Maximum order values
-- Position limits
-- Trading-frequency limits
-- Limits for newly added bank accounts
-
-
-**Purpose:** Restrict the maximum financial damage possible from one account.
+- Improve fraud-detection models.
+- Conduct regular penetration testing
+- Review regulatory and compliance requirements.
+- Continuously monitor system latency and availability.
 
 ---
 
-## Layer 4: Anomaly and Fraud Detection
+## Review and Update
 
-Detect activity such as:
+**Next Review Date:** December 22, 2026
 
-- Login from a new country
-- Sudden sale of the entire portfolio
-- Unusual automated trading rules
-- Rapid transfers after login
-- Trading patterns inconsistent with account history
+**Review Triggers:**
 
-
-The platform may delay, block, or request additional verification for suspicious activity.
-
-**Purpose:** Identify account misuse even when valid credentials are used.
+- Changes to automated trading logic    
+- New market integrations
+- Security incidents
+- Regulatory changes
+- Major infrastructure changes
+- New threats or vulnerabilities
 
 ---
 
-## Layer 5: Notifications and Confirmation
-
-Send immediate notifications for:
-
-- New device logins
-- Rule creation or modification
-- Large trades
-- Fund transfers
-- Security-setting changes
-
-
-Large or unusual actions may require out-of-band confirmation.
-
-**Purpose:** Allow the legitimate user to detect and report abuse quickly.
-
----
-
-## Layer 6: Secure Authorization
-
-The backend must verify that:
-
-- The account owns the portfolio.
-- The user is authorized for the requested action.
-- The transaction is within configured limits.
-- The destination account is approved.
-
-
-**Purpose:** Prevent manipulation of account IDs, order IDs, or transfer destinations.
-
----
-
-## Layer 7: Immutable Audit Trails
-
-Record:
-
-- Login events
-- Session changes
-- Rule creation and modification
-- Trade requests and executions
-- Transfers
-- Administrative actions
-
-
-Logs should include timestamps, account IDs, device information, and transaction references.
-
-**Purpose:** Support detection, investigation, dispute resolution, and regulatory review.
-
----
-
-# 5. Defense-in-Depth Summary
-
-|Layer|Security Control|Damage Limited|
-|--:|---|---|
-|1|MFA and session protection|Initial account takeover|
-|2|Reauthentication|High-risk account actions|
-|3|Transaction and position limits|Maximum financial loss|
-|4|Anomaly detection|Suspicious valid-user activity|
-|5|User notifications|Time before compromise is discovered|
-|6|Server-side authorization|Unauthorized account access|
-|7|Audit trails|Repudiation and investigation failure|
-
----
-
-# Conclusion
-
-**Integrity is the most critical CIA component** because unauthorized changes to orders, account balances, or automated rules can cause immediate financial loss.
-
-The main automated-trading risks are:
-
-1. Unauthorized rule modification
-2. Logic and validation errors
-3. Duplicate execution caused by race conditions
-
-
-If an account is compromised, defense-in-depth should include:
-
-- MFA and secure sessions
-- Reauthentication
-- Transaction limits
-- Anomaly detection
-- User notifications
-- Server-side authorization
-- Immutable audit trails
-
-
-These controls reduce the chance that one stolen account can create unlimited financial damage.
-
----
 ## References
 
-- SEC, **Regulation Systems Compliance and Integrity**
+- SEC, **Regulation Systems Compliance and Integrity**    
 - FINRA, **Customer Account Takeover Guidance**
 - NIST, **Digital Identity Guidelines**
 - OWASP, **Transaction Authorization Cheat Sheet**
 - OWASP, **Session Management Cheat Sheet**
 - OWASP, **Logging Cheat Sheet**
+
+---
+
+_This threat model should be reviewed and updated when the system changes or new threats are identified._
