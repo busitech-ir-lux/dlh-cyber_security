@@ -13,6 +13,27 @@ The system requires:
 - **Trade latency below 100 ms**
 - Compliance with financial regulations
 
+flowchart LR
+    U[User]
+    W[Web / Mobile Trading App]
+    A[Trading API]
+    R[Automated Rules Engine]
+    M[Market Data Service]
+    O[Order Execution System]
+    D[(Account and Trade Database)]
+    B[Banking / Funds System]
+    X[Stock Exchange]
+
+    U -->|Login, trades, rules| W
+    W -->|HTTPS requests| A
+    A --> R
+    A --> M
+    A --> D
+    A --> B
+    R -->|Automated orders| O
+    O -->|Buy / Sell orders| X
+    X -->|Execution result| O
+    O --> D
 ---
 
 # 2. Most Critical CIA Component
@@ -116,6 +137,22 @@ Security controls should not simply be removed to achieve the `<100 ms` requirem
 # 4. Defense in Depth After Account Compromise
 
 If an attacker compromises a user account, security controls should still limit what they can do.
+
+flowchart TD
+    A[Compromised User Account]
+    B[MFA and Session Controls]
+    C[Reauthentication]
+    D[Transaction Limits]
+    E[Anomaly Detection]
+    F[User Notifications]
+    G[Audit Logs]
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
 
 ## Layer 1: Strong Authentication and Session Controls
 
