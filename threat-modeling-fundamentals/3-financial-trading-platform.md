@@ -13,6 +13,7 @@ The system requires:
 - **Trade latency below 100 ms**
 - Compliance with financial regulations
 
+```mermaid
 flowchart LR
     U[User]
     W[Web / Mobile Trading App]
@@ -34,6 +35,7 @@ flowchart LR
     O -->|Buy / Sell orders| X
     X -->|Execution result| O
     O --> D
+```
 ---
 
 # 2. Most Critical CIA Component
@@ -138,6 +140,7 @@ Security controls should not simply be removed to achieve the `<100 ms` requirem
 
 If an attacker compromises a user account, security controls should still limit what they can do.
 
+```mermaid
 flowchart TD
     A[Compromised User Account]
     B[MFA and Session Controls]
@@ -153,7 +156,7 @@ flowchart TD
     D --> E
     E --> F
     F --> G
-
+```
 ## Layer 1: Strong Authentication and Session Controls
 
 - Require MFA.
