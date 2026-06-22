@@ -1,21 +1,34 @@
-# 1. System Overview
+# Threat Model
 
-The healthcare mobile application allows patients to:
+> **System/Asset:** Healthcare Mobile App  
+> **Date:** June 22, 2026  
+> **Modeler:** [Mahdi Hamidi]  
+> **Version:** 1.0
+
+---
+
+## System Overview
+
+### System Description
+
+The healthcare mobile app allows patients to:
 
 - View medical records
 - Schedule appointments
 - Message healthcare providers
 - Request prescription refills
 
-The system includes:
+The system uses:
 
 - iOS and Android mobile clients
 - REST API backend
 - Cloud-hosted database
-- Integration with hospital systems
+- Hospital-system integration
+
+### System Architecture
 
 ```mermaid
-flowchart TD
+flowchart LR
     P[Patient]
     M[Mobile App]
     A[REST API]
@@ -26,299 +39,548 @@ flowchart TD
     P --> M
     M -->|HTTPS| A
     A --> D
-    A --> H
+    A <--> H
     C --> H
+```
+
+### System Boundaries
+
+**Included:**
+
+- Mobile application
+- REST API
+- Authentication and authorization
+- Cloud database
+- Patient-provider messaging
+- Hospital-system integration
+
+**Excluded:**
+
+- Internal hospital infrastructure
+- Mobile operating-system security
+- Cloud-provider physical infrastructure
+- Healthcare provider-owned devices
+
+---
+
+## Asset Identification
+
+### Critical Assets
+
+|Asset ID|Asset Name|Description|Criticality|Value|
+|---|---|---|---|---|
+|A001|Patient ePHI|Medical records, diagnoses, prescriptions, and messages|Critical|Privacy and safety|
+|A002|Provider Messages|Medical instructions exchanged with patients|Critical|Clinical|
+|A003|Prescription Data|Medication and refill information|Critical|Patient safety|
+|A004|Authentication Data|Passwords, MFA data, sessions, and tokens|Critical|Security|
+|A005|Audit Logs|Records of access and important actions|High|Compliance|
+|A006|Appointment Data|Patient and provider scheduling information|Medium|Operational|
+
+### Most Critical Asset
+
+**Patient electronic protected health information, or ePHI, is the most critical asset.**
+
+|   |   |
+|---|---|
+|CIA Component|Importance|
+|**Confidentiality**|Prevents unauthorized disclosure of medical information|
+|**Integrity**|Ensures records, prescriptions, and messages remain accurate|
+|**Availability**|Ensures patients and providers can access information when needed|
+
+Loss of confidentiality creates a privacy breach. Loss of integrity or availability may affect treatment and patient safety.
+
+---
+
+## Threat Analysis Using STRIDE
+
+### STRIDE Overview
+
+STRIDE identifies six threat categories:
+
+- Spoofing
+- Tampering
+- Repudiation
+- Information Disclosure
+- Denial of Service
+- Elevation of Privilege
+
+### Threat Identification
+
+|   |   |   |   |   |   |   |
+|---|---|---|---|---|---|---|
+|STRIDE Category|Threat Description|Threat Scenario|Affected Assets|Likelihood|Impact|Risk Level|
+|**Spoofing**|Attacker impersonates a provider|Stolen provider credentials are used to message patients|A001, A002, A004|Medium–High|Critical|Critical|
+|**Tampering**|Medical message is modified|Medication instructions are changed|A002, A003|Medium|Critical|Critical|
+|**Repudiation**|Sender denies sending a message|Incomplete logs cannot prove who sent instructions|A002, A005|Medium|High|High|
+|**Information Disclosure**|Patient accesses another patient's messages|Message ID is changed in an API request|A001, A002|High|Critical|Critical|
+|**Denial of Service**|Messaging or records become unavailable|API flooding prevents access to healthcare information|A001, A002|Medium|High|High|
+|**Elevation of Privilege**|Patient gains provider permissions|Weak role checks allow access to provider functions|A001, A003, A004|Low–Medium|Critical|High|
+
+---
+
+## Detailed Threat Scenarios
+
+### Threat 1: Provider Impersonation
+
+**STRIDE Category:** Spoofing
+
+**Threat Description:**
+
+An attacker uses a compromised provider account to send false medical instructions.
+
+**Threat Scenario:**
+
+1. The attacker steals a doctor's password through phishing.
+2. The attacker logs into the provider account.
+3. A false prescription or treatment message is sent.
+4. The patient believes the message is legitimate.
+
+**Affected Assets:**
+
+- Asset A001: Patient ePHI
+- Asset A002: Provider messages
+- Asset A003: Prescription data
+- Asset A004: Authentication data
+
+**Attack Vector:**
+
+- Phishing
+- Credential stuffing
+- Stolen session token
+- Weak authentication
+
+**Likelihood:**
+
+- **Qualitative:** Medium–High
+- **Reasoning:** Provider accounts are valuable targets and may contain access to many patients.
+
+**Impact:**
+
+- **Confidentiality:** High
+- **Integrity:** Critical
+- **Availability:** Low
+- **Overall:** Critical
+- **Reasoning:** False medical instructions may directly harm a patient.
+
+**Risk Level:** Critical
+
+**Existing Controls:**
+
+- Password authentication
+- HTTPS
+
+**Mitigation Recommendations:**
+
+- Require MFA for provider accounts.
+- Use short-lived secure sessions.
+- Detect unusual login activity.
+- Require reauthentication for prescription-related actions.
+- Clearly display verified provider identity.
+
+---
+
+### Threat 2: Message Tampering
+
+**STRIDE Category:** Tampering
+
+**Threat Description:**
+
+An attacker modifies a healthcare message while it is stored or transmitted.
+
+**Threat Scenario:**
+
+1. A provider sends “Take one tablet daily.”
+2. An attacker exploits the API or database.
+3. The message is changed to “Take three tablets daily.”
+4. The patient follows the altered instruction.
+
+**Affected Assets:**
+
+- Asset A002: Provider messages
+- Asset A003: Prescription data
+
+**Attack Vector:**
+
+- Insecure API
+- Excessive database permissions
+- Compromised provider account
+- Insecure network communication
+
+**Likelihood:**
+
+- **Qualitative:** Medium
+- **Reasoning:** Exploitation requires access to the message API, database, or account.
+
+**Impact:**
+
+- **Confidentiality:** Low
+- **Integrity:** Critical
+- **Availability:** Low
+- **Overall:** Critical
+- **Reasoning:** Modified clinical information could cause patient injury.
+
+**Risk Level:** Critical
+
+**Existing Controls:**
+
+- HTTPS
+- User authentication
+
+**Mitigation Recommendations:**
+
+- Use TLS for all communication.
+- Enforce server-side authorization.
+- Restrict database modification permissions.
+- Store message version history.
+- Log all message changes.
+
+---
+
+### Threat 3: Message Repudiation
+
+**STRIDE Category:** Repudiation
+
+**Threat Description:**
+
+A patient or provider denies sending or receiving an important message.
+
+**Threat Scenario:**
+
+1. A provider sends prescription instructions.
+2. A dispute occurs later.
+3. The system has incomplete or editable logs.
+4. The organization cannot confirm who sent or accessed the message.
+
+**Affected Assets:**
+
+- Asset A002: Provider messages
+- Asset A005: Audit logs
+
+**Attack Vector:**
+
+- Missing audit logs
+- Shared accounts
+- Editable logs
+- Unsynchronized timestamps
+
+**Likelihood:**
+
+- **Qualitative:** Medium
+- **Reasoning:** The threat is realistic when audit logging is incomplete.
+
+**Impact:**
+
+- **Confidentiality:** Low
+- **Integrity:** Medium
+- **Availability:** Low
+- **Overall:** High
+- **Reasoning:** The organization may be unable to investigate disputes or incidents.
+
+**Risk Level:** High
+
+**Existing Controls:**
+
+- Basic application logs
+
+**Mitigation Recommendations:**
+
+- Record sender, recipient, timestamp, and message ID.
+- Protect logs from alteration.
+- Use synchronized system clocks.
+- Use unique accounts.
+- Log delivery and access status.
+
+---
+
+### Threat 4: Unauthorized Message Access
+
+**STRIDE Category:** Information Disclosure
+
+**Threat Description:**
+
+A patient accesses another patient's messages because the API does not verify record ownership.
+
+**Threat Scenario:**
+
+1. A patient requests `/api/messages/1050`.
+2. The patient changes the ID to `/api/messages/1051`.
+3. The backend verifies login but not message ownership.
+4. Another patient's conversation is returned.
+
+**Affected Assets:**
+
+- Asset A001: Patient ePHI
+- Asset A002: Provider messages
+
+**Attack Vector:**
+
+- Broken object-level authorization
+- Predictable object IDs
+- Missing server-side access checks
+
+**Likelihood:**
+
+- **Qualitative:** High
+- **Reasoning:** Record IDs are easy to modify when authorization is not checked for every object.
+
+**Impact:**
+
+- **Confidentiality:** Critical
+- **Integrity:** Low
+- **Availability:** Low
+- **Overall:** Critical
+- **Reasoning:** Sensitive medical information may be exposed.
+
+**Risk Level:** Critical
+
+**Existing Controls:**
+
+- User login
+- API authentication
+
+**Mitigation Recommendations:**
+
+- Check ownership on every message request.
+- Use server-side role and access checks.
+- Never trust patient IDs from the mobile client.
+- Test horizontal and vertical privilege escalation.
+- Log failed authorization attempts.
+
+---
+
+## Vulnerability Analysis
+
+### Identified Vulnerabilities
+
+|   |   |   |   |   |   |
+|---|---|---|---|---|---|
+|Vuln ID|Vulnerability|Type|Exploitability|Severity|Related Threats|
+|V001|Missing MFA for providers|Authentication|High|Critical|Provider impersonation|
+|V002|Broken object-level authorization|Authorization|High|Critical|Message disclosure|
+|V003|Excessive database permissions|Access control|Medium|High|Message tampering|
+|V004|Weak session handling|Session management|High|High|Account takeover|
+|V005|Incomplete audit logging|Logging|Medium|High|Repudiation|
+|V006|Sensitive data stored insecurely|Data protection|Medium|Critical|ePHI exposure|
+
+---
+
+## Attack Surface Analysis
+
+### Entry Points
+
+|   |   |   |   |   |
+|---|---|---|---|---|
+|Entry Point|Description|Authentication Required|Access Level|Threats|
+|EP001|Login endpoint|No|Public|Credential stuffing|
+|EP002|Medical-record API|Yes|Patient/provider|Data disclosure|
+|EP003|Messaging API|Yes|Patient/provider|Spoofing and tampering|
+|EP004|Prescription API|Yes|Restricted|Unauthorized refill|
+|EP005|Appointment API|Yes|Patient/provider|Unauthorized changes|
+|EP006|Hospital integration|Service authentication|Internal/external|Data tampering|
+|EP007|Mobile device storage|Device access|Local|Token and data theft|
+
+### Data Flows
+
+1. The patient authenticates through the mobile app.
+2. The mobile app sends HTTPS requests to the REST API.
+3. The API reads and writes patient information in the cloud database.
+4. The API exchanges records and messages with hospital systems.
+5. Providers access patient information through hospital systems.
+6. Audit logs record important access and actions.
+
+---
+
+## Risk Assessment
+
+### Risk Summary
+
+|   |   |   |   |   |   |   |
+|---|---|---|---|---|---|---|
+|Risk ID|Threat|Vulnerability|Likelihood|Impact|Risk Level|Priority|
+|R001|Provider impersonation|V001, V004|Medium–High|Critical|Critical|1|
+|R002|Message tampering|V003|Medium|Critical|Critical|1|
+|R003|Message repudiation|V005|Medium|High|High|2|
+|R004|Unauthorized message access|V002|High|Critical|Critical|1|
+|R005|Local patient-data exposure|V006|Medium|Critical|High|2|
+
+### Risk Matrix
+
+|   |   |   |   |
+|---|---|---|---|
+|Impact \ Likelihood|Low|Medium|High|
+|**Critical**|High|Critical|Critical|
+|**High**|Medium|High|High|
+|**Medium**|Low|Medium|High|
+
+---
+
+## Mitigation Strategies
+
+### Recommended Controls
+
+|   |   |   |   |   |   |   |
+|---|---|---|---|---|---|---|
+|Control ID|Control Name|Control Type|Mitigates|Implementation Priority|Cost|Effectiveness|
+|C001|MFA and secure authentication|Preventive|Account impersonation|Immediate|Medium|High|
+|C002|Server-side authorization|Preventive|Unauthorized data access|Immediate|Medium|Critical|
+|C003|Encryption in transit and at rest|Preventive|ePHI exposure|Immediate|Medium|High|
+|C004|Audit logging and monitoring|Detective|Repudiation and misuse|Immediate|Medium|High|
+|C005|Secure session management|Preventive|Session theft|Immediate|Low–Medium|High|
+|C006|Secure mobile storage|Preventive|Local data exposure|Short-term|Medium|High|
+|C007|API security testing|Detective|API vulnerabilities|Short-term|Medium|High|
+|C008|Incident response process|Corrective|Security incidents|Short-term|Medium|High|
+
+### Defense-in-Depth Layers
+
+|   |   |   |
+|---|---|---|
+|Layer|Controls|Effectiveness|
+|Physical|Secure cloud facilities, protected provider devices|Medium|
+|Network|TLS, segmentation, API gateway|High|
+|Host|Server hardening, patching, endpoint monitoring|High|
+|Application|MFA, authorization, validation, secure sessions|Critical|
+|Data|Encryption, backups, least privilege|Critical|
+|Policies/Procedures|Access reviews, incident response, staff training|High|
+
+---
+
+## DREAD Analysis
+
+### DREAD Scoring
+
+|   |   |   |   |   |   |   |   |
+|---|---|---|---|---|---|---|---|
+|Threat|Damage|Reproducibility|Exploitability|Affected Users|Discoverability|Total Score|Risk Level|
+|Provider impersonation|10|8|7|8|7|40|Critical|
+|Message tampering|10|7|6|7|6|36|High|
+|Message repudiation|7|8|5|5|6|31|High|
+|Unauthorized message access|9|9|8|9|9|44|Critical|
+
+**Average scores:**
+
+```
+Provider impersonation: 40 / 5 = 8.0
+Message tampering: 36 / 5 = 7.2
+Message repudiation: 31 / 5 = 6.2
+Unauthorized message access: 44 / 5 = 8.8
 ```
 
 ---
 
-# 2. Most Critical Asset
+## Diagrams
 
-## Electronic Protected Health Information
+### System Architecture Diagram
 
-The most critical asset is the patient's **electronic protected health information**, or **ePHI**.
+```mermaid
+flowchart LR
+    P[Patient]
+    M[Mobile App]
+    A[REST API]
+    D[(Cloud Database)]
+    H[Hospital System]
+    C[Provider]
 
-This includes:
+    P --> M
+    M --> A
+    A --> D
+    A <--> H
+    C --> H
+```
 
-- Medical records
-- Diagnoses
-- Test results
-- Prescriptions
-- Provider messages
-- Appointment information
-- Patient identity information
+### Data Flow Diagram
 
-Where HIPAA applies, regulated organizations must protect the confidentiality, integrity, and availability of ePHI.[1]
+```mermaid
+flowchart TD
+    P[Patient]
+    M[Mobile App]
+    A[REST API]
+    D[(ePHI Database)]
+    H[Hospital System]
+    C[Healthcare Provider]
 
-## CIA Triad Analysis
+    P -->|Login and requests| M
+    M -->|HTTPS| A
+    A -->|Read or update records| D
+    A <--> H
+    H --> C
+    C -->|Messages and prescriptions| H
+```
 
-|CIA Component|Importance in the Healthcare App|
-|---|---|
-|**Confidentiality**|Medical information must only be accessible to the patient and authorized healthcare workers. Unauthorized disclosure could cause privacy violations, discrimination, identity theft, and regulatory consequences.|
-|**Integrity**|Medical information must remain correct and complete. Altered prescriptions, test results, or provider messages could lead to incorrect treatment and patient harm.|
-|**Availability**|Doctors and patients must be able to access important information when needed. An unavailable medical record or prescription system could delay treatment.|
+### Attack Tree
 
-## Conclusion
+```mermaid
+flowchart TD
+    A[Compromise Patient Data]
+    B[Take Over Account]
+    C[Exploit API Authorization]
+    D[Modify Messages]
+    E[Steal Mobile Data]
 
-Patient ePHI is the most critical asset because failure in any part of the CIA Triad can create serious consequences:
+    A --> B
+    A --> C
+    A --> D
+    A --> E
 
-- Loss of confidentiality causes a privacy breach.
-- Loss of integrity may cause incorrect medical decisions.
-- Loss of availability may delay patient care.
-
-Integrity and availability are especially important in healthcare because incorrect or inaccessible information can affect patient safety.
-
----
-
-# 3. STRIDE Analysis: Message Healthcare Providers
-
-The messaging feature allows sensitive medical information to move between patients and healthcare professionals.
-
-## Threat A: Attacker Impersonates a Doctor
-
-|Attribute|Details|
-|---|---|
-|**STRIDE Category**|**Spoofing**|
-|**Threat Description**|An attacker gains access to a provider account or creates requests that appear to come from a legitimate doctor.|
-|**Attack Scenario**|1. An attacker steals a doctor's password through phishing.2. The attacker logs in to the provider account.3. They send a message telling a patient to change medication or disclose additional medical information.4. The patient believes the message came from the real doctor.|
-|**Impact**|Incorrect treatment, medication misuse, disclosure of sensitive information, loss of trust, and possible patient harm.|
-|**Likelihood**|**Medium to High**, especially if provider accounts use only passwords.|
-|**Mitigation**|Require multifactor authentication for provider accounts, use strong session controls, detect unusual logins, and clearly display the verified identity and professional role of the message sender.|
-
----
-
-## Threat B: Unauthorized Message Modification
-
-|Attribute|Details|
-|---|---|
-|**STRIDE Category**|**Tampering**|
-|**Threat Description**|An attacker changes the content of a message while it is transmitted or stored.|
-|**Attack Scenario**|1. A doctor sends the message, “Take one tablet daily.”2. An attacker exploits an insecure API or database account.3. The message is changed to, “Take three tablets daily.”4. The patient follows the modified instruction.|
-|**Impact**|Incorrect medication use, patient injury, inaccurate medical records, and legal consequences.|
-|**Likelihood**|**Medium**, depending on API security, database permissions, and encryption.|
-|**Mitigation**|Use TLS for communication, restrict database modification permissions, validate message ownership, maintain message version history, and use integrity checks or digital signatures for highly sensitive clinical instructions.|
+    B --> F[Steal Password or Session]
+    C --> G[Change Record ID]
+    D --> H[Abuse Database Permissions]
+    E --> I[Access Insecure Device Storage]
+```
 
 ---
 
-## Threat C: Sender Denies Sending a Message
+## Recommendations
 
-|Attribute|Details|
-|---|---|
-|**STRIDE Category**|**Repudiation**|
-|**Threat Description**|A patient or healthcare provider denies sending or receiving an important medical message, and the system cannot prove what occurred.|
-|**Attack Scenario**|1. A provider sends instructions about a prescription refill.2. The patient later reports that the instructions were never sent.3. The system has incomplete logs and cannot confirm who sent the message or when it was delivered.|
-|**Impact**|Medical disputes, weak legal evidence, delayed treatment, investigation difficulties, and reduced accountability.|
-|**Likelihood**|**Medium** if message activity is not logged securely.|
-|**Mitigation**|Record the sender, recipient, timestamp, message ID, delivery status, and access events. Protect audit logs from alteration and synchronize system clocks. Sensitive message content should not be unnecessarily copied into general-purpose logs.|
+### Immediate Actions
 
----
+- Require MFA for provider accounts.
+- Enforce authorization on every API object.
+- Encrypt ePHI in transit and at rest.
+- Use secure sessions and mobile token storage.
+- Implement protected audit logging.
 
-## Threat D: Medical Messages Exposed to Another User
+### Short-Term Actions
 
-|Attribute|Details|
-|---|---|
-|**STRIDE Category**|**Information Disclosure**|
-|**Threat Description**|A user accesses another patient's messages because the API does not correctly verify ownership.|
-|**Attack Scenario**|1. A patient requests `/api/messages/1050`.2. They change the message ID to `/api/messages/1051`.3. The backend checks that the user is logged in but does not verify that message 1051 belongs to them.4. The API returns another patient's medical conversation.|
-|**Impact**|Exposure of diagnoses, medications, personal information, and provider discussions; privacy violations; regulatory consequences.|
-|**Likelihood**|**High** if object-level authorization is missing. APIs commonly expose record identifiers that attackers can modify.[2]|
-|**Mitigation**|Perform object-level authorization on every message request. The backend must confirm that the authenticated user is the patient, assigned provider, or another explicitly authorized party before returning or modifying a message.|
+- Test messaging and record APIs.
+- Review database and cloud permissions.
+- Add anomaly detection.
+- Improve incident-response procedures.
+- Perform access reviews.
 
----
+### Long-Term Actions
 
-## STRIDE Threat Summary
-
-|Threat|STRIDE Category|Likelihood|Main Impact|Priority|
-|---|---|--:|---|---|
-|Doctor impersonation|Spoofing|Medium–High|Patient harm and fraud|Critical|
-|Message modification|Tampering|Medium|Incorrect treatment|Critical|
-|Denial of sending a message|Repudiation|Medium|Weak accountability|High|
-|Unauthorized message access|Information Disclosure|High|Medical data breach|Critical|
+- Conduct regular penetration tests.
+- Review hospital-system integrations.
+- Maintain mobile and API security standards.
+- Train healthcare staff against phishing.
+- Continuously monitor ePHI access.
 
 ---
 
-# 4. Priority Security Controls
+## Review and Update
 
-## Priority 1: Strong Authentication
+**Next Review Date:** December 22, 2026
 
-### Control
+**Review Triggers:**
 
-- Require multifactor authentication for healthcare providers.
-- Offer MFA to patients.
-- Use strong password hashing.
-- Add login rate limiting.
-- Detect credential-stuffing attacks.
-- Use short-lived and securely managed sessions.
-
-### Why it is first
-
-If an attacker takes over a patient or provider account, many other controls can be bypassed. The attacker may read records, send messages, request refills, or change appointments.
-
-Strong authentication reduces the chance that an unauthorized person can enter the system.
-
-### Practical constraint
-
-Requiring MFA for every patient immediately may create usability and support problems. Provider MFA should be mandatory first because provider accounts usually have access to many patients.
+- New mobile or API features
+- Hospital-integration changes
+- Security incidents
+- Regulatory changes
+- Cloud architecture changes
+- New threats or vulnerabilities
 
 ---
 
-## Priority 2: Server-Side Authorization and Least Privilege
+## References
 
-### Control
-
-- Check authorization on every API request.
-- Verify ownership of records, messages, appointments, and prescriptions.
-- Use role-based access control.
-- Give users and services only the permissions they require.
-- Do not trust patient IDs or provider IDs supplied by the mobile client.
-
-### Why it is second
-
-Authentication confirms identity, but authorization determines what that identity is allowed to access.
-
-A logged-in patient must not be able to access another patient's records by changing an ID. OWASP identifies broken object-level authorization as a major API risk.[2]
-
-### Practical constraint
-
-Authorization must be implemented centrally in the REST API. Relying on controls inside individual mobile screens creates inconsistent protection.
+- HHS, **HIPAA Security Rule**
+- NIST, **SP 800-66 Rev. 2**
+- OWASP, **API Security Top 10**
+- OWASP, **Mobile Application Security Verification Standard**
+- OWASP, **Authentication Cheat Sheet**
+- OWASP, **Logging Cheat Sheet**
 
 ---
 
-## Priority 3: Encryption in Transit and at Rest
-
-### Control
-
-- Use TLS for all mobile, API, cloud, and hospital-system connections.
-- Encrypt sensitive database fields and backups.
-- Use secure cloud key-management services.
-- Store mobile secrets and tokens using iOS Keychain or Android Keystore.
-- Do not store unnecessary medical information on the device.
-
-### Why it is third
-
-Encryption protects patient data if network traffic is intercepted, a backup is exposed, or a mobile device is lost.
-
-OWASP's mobile-security standard includes secure storage, cryptography, authentication, and network communication as key mobile security areas.[3]
-
-### Practical constraint
-
-Encryption is only effective when encryption keys are protected. Keys should not be hard-coded into the application or stored beside the encrypted database.
-
----
-
-## Priority 4: Secure Audit Logging and Monitoring
-
-### Control
-
-Log important events such as:
-
-- Successful and failed logins
-- Medical-record access
-- Message creation and access
-- Prescription-refill requests
-- Permission changes
-- Failed authorization checks
-- Unusual download activity
-
-Protect logs from alteration and monitor them for suspicious behaviour.
-
-### Why it is fourth
-
-Audit logs help the organization:
-
-- Detect attacks
-- Investigate breaches
-- Prove who accessed patient data
-- Resolve disputes
-- Support compliance reviews
-
-NIST notes that log management supports the identification and investigation of security incidents.[4]
-
-### Practical constraint
-
-Logs should not contain passwords, authentication tokens, full prescription details, or unnecessary medical data. Logging too much sensitive information can create an additional data-breach risk.
-
----
-
-## Priority 5: Secure Mobile and API Development
-
-### Control
-
-- Validate all API input.
-- Use parameterized database queries.
-- Test object-level authorization.
-- Prevent sensitive data from appearing in mobile logs or screenshots.
-- Keep libraries and mobile dependencies updated.
-- Perform static analysis and API security testing.
-- Test hospital-system integrations.
-- Use secure coding requirements based on OWASP MASVS and ASVS.
-
-### Why it is fifth
-
-The application contains several connected attack surfaces:
-
-- Mobile client
-- REST API
-- Cloud database
-- Hospital integration
-- Third-party libraries
-
-A weakness in any one of these components may expose patient information.
-
-### Practical constraint
-
-A small team should first test the highest-risk features:
-
-1. Login and session management
-2. Medical-record access
-3. Messaging
-4. Prescription refills
-5. Hospital integration
-
-More advanced testing can be introduced over time.
-
----
-
-# 5. Control Priority Summary
-
-|Priority|Security Control|Main Risk Reduced|
-|--:|---|---|
-|1|Strong authentication|Stolen or compromised accounts|
-|2|Authorization and least privilege|Unauthorized access to patient data|
-|3|Encryption|Data interception and storage exposure|
-|4|Audit logging and monitoring|Undetected misuse and weak accountability|
-|5|Secure mobile and API development|Application and integration vulnerabilities|
-
----
-
-# Conclusion
-
-The most critical asset is the patient's electronic protected health information because it requires strong confidentiality, integrity, and availability.
-
-The healthcare messaging feature faces several serious STRIDE threats:
-
-- Attackers impersonating doctors
-- Medical messages being modified
-- Users denying that they sent messages
-- Patients accessing another patient's conversations
-
-
-The five highest-priority controls are:
-
-1. Strong authentication
-2. Server-side authorization and least privilege
-3. Encryption in transit and at rest
-4. Secure audit logging and monitoring
-5. Secure mobile and API development
-
-
-Authentication and authorization should be implemented first because they prevent unauthorized users from entering the system and restrict what authenticated users can access.
-
----
-
-# References
-
-[1] U.S. Department of Health and Human Services, **HIPAA Security Rule**.
-[2] OWASP, **API1:2023 — Broken Object Level Authorization**.
-[3] OWASP, **Mobile Application Security Verification Standard**.
-[4] NIST, **Guide to Computer Security Log Management**.
+_This threat model should be reviewed and updated when the system changes or new threats are identified._
