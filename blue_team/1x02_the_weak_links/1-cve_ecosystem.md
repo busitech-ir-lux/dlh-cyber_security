@@ -43,6 +43,17 @@ After the 3 CVE analyses, answer these questions:
 
 # The CVE Ecosystem
 
+The CVEs were selected according to their NVD severity ratings:
+
+- Critical: CVE-2021-44790 — CVSS 9.8
+- High: CVE-2021-34527 — CVSS 8.8
+- Medium: CVE-2011-3389 — CVSS 4.3 using CVSS v2.0
+
+CVE-2011-3389 is an older vulnerability for which NVD does not provide
+a CVSS v3.1 assessment. The unavailable v3.1 field is documented as
+N/A rather than estimated or fabricated.
+
+
 ## 1. Critical Finding — CVE-2021-44790
 
 | Field                              | Research result                                                                                                                                                                                                                                                                                                             |
@@ -102,36 +113,64 @@ NVD classifies these references as a vendor patch and mitigation, a government a
 
 ---
 
-## 3. Medium Finding — CVE-2023-38408
+## 3. Medium CVE — CVE-2011-3389
 
-This CVE was selected from **Finding 020**, which SecurePoint rated Medium in the MedDefense scan because exploitation requires specific environmental conditions. NVD’s technical Base Score is nevertheless 9.8 Critical.
+**CVE ID:** CVE-2011-3389
 
-| Field                              | Research result                                                                                                                                                                                                                                                         |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **CVE ID**                         | CVE-2023-38408                                                                                                                                                                                                                                                          |
-| **NVD URL**                        | https://nvd.nist.gov/vuln/detail/CVE-2023-38408                                                                                                                                                                                                                         |
-| **Description**                    | OpenSSH’s `ssh-agent` may load unsafe libraries through its PKCS#11 support when an SSH agent is forwarded to a machine controlled by an attacker. Under these specific conditions, the attacker could execute code on the system where the forwarded agent is running. |
-| **Affected products and versions** | NVD CPE data includes **OpenSSH versions before 9.3**, **OpenSSH 9.3**, and **OpenSSH 9.3p1**. Fedora 37 and Fedora 38 are also listed as affected configurations.                                                                                                      |
-| **CVSS v3.1 vector**               | `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H`                                                                                                                                                                                                                          |
-| **CVSS Base Score**                | **9.8 — Critical**                                                                                                                                                                                                                                                      |
-| **CWE**                            | **CWE-428: Unquoted Search Path or Element**                                                                                                                                                                                                                            |
-| **Published date**                 | 19 July 2023                                                                                                                                                                                                                                                            |
-| **Last modified**                  | 17 June 2026                                                                                                                                                                                                                                                            |
+**NVD URL:**  
+[https://nvd.nist.gov/vuln/detail/CVE-2011-3389](https://nvd.nist.gov/vuln/detail/CVE-2011-3389)
 
-NVD identifies OpenSSH releases before 9.3p2 as vulnerable and lists the affected OpenSSH and Fedora configurations.
+**Description:**  
+This vulnerability, commonly called BEAST, affects older SSL and TLS implementations that use CBC encryption with predictable initialization vectors. An attacker who can intercept a victim’s HTTPS traffic and run malicious JavaScript in the victim’s browser may gradually recover sensitive plaintext information, such as HTTP session cookies.
 
-### References from NVD
+**Affected Products:**  
+Examples listed in the NVD CPE data include:
 
-1. [OpenSSH security page](https://www.openssh.com/security.html) — Official vendor security advisory.
+1. Google Chrome
     
-2. [OpenSSH 9.3p2 release notes](https://www.openssh.com/txt/release-9.3p2) — Vendor release notes describing the corrected version.
+2. Mozilla Firefox
     
-3. [Qualys technical analysis](https://blog.qualys.com/vulnerabilities-threat-research/2023/07/19/cve-2023-38408-remote-code-execution-in-opensshs-forwarded-ssh-agent) — Detailed technical write-up explaining exploitation conditions.
+3. Microsoft Internet Explorer
     
-4. [OpenBSD source-code patch](https://github.com/openbsd/src/commit/7bc29a9d5cd697290aa056e94ecee6253d3425f8) — Source-code change associated with remediation.
+4. Opera Browser
+    
+5. Microsoft Windows
     
 
-These are identified by NVD as a vendor advisory, release notes, third-party analysis and patch.
+The NVD also lists affected operating-system and application versions, including Ubuntu Linux 10.04, Ubuntu Linux 10.10, Ubuntu Linux 11.04 and Ubuntu Linux 11.10.
+
+**CVSS v3.1 Vector String:**  
+N/A — NVD does not currently provide a CVSS v3.1 assessment for this CVE.
+
+**Available NVD CVSS Vector:**  
+`AV:N/AC:M/Au:N/C:P/I:N/A:N` — CVSS v2.0
+
+**CVSS Base Score:**  
+4.3 — Medium, using the NVD CVSS v2.0 assessment.
+
+**CWE:**  
+CWE-326 — Inadequate Encryption Strength
+
+**References:**
+
+1. [https://blog.mozilla.org/security/2011/09/27/attack-against-tls-protected-communications/](https://blog.mozilla.org/security/2011/09/27/attack-against-tls-protected-communications/)  
+    **Type:** Mozilla security advisory and technical explanation.
+    
+2. [https://docs.microsoft.com/en-us/security-updates/securitybulletins/2012/ms12-006](https://docs.microsoft.com/en-us/security-updates/securitybulletins/2012/ms12-006)  
+    **Type:** Microsoft vendor advisory and security patch.
+    
+3. [https://googlechromereleases.blogspot.com/2011/10/chrome-stable-release.html](https://googlechromereleases.blogspot.com/2011/10/chrome-stable-release.html)  
+    **Type:** Google Chrome vendor release and remediation information.
+    
+
+**Published Date:**  
+6 September 2011
+
+**Last Modified:**  
+16 June 2026
+
+**Severity clarification:**  
+Finding 005 in the MedDefense scan was rated High because the affected patient portal transmits protected health information. The NVD technical score for CVE-2011-3389 is 4.3 Medium. This demonstrates that scanner or environmental priority may differ from the NVD Base Score.
 
 ---
 
