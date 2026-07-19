@@ -61,8 +61,6 @@ The score decreases because the attacker must first have local access instead of
 ---
 ## Exercise 3: Comparison
 
-The scan does not contain an explicit CVSS score between 5.0 and 7.0. Therefore, Finding 017 is scored manually from its description.
-
 ### Finding 001
 
 `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H`
@@ -75,12 +73,28 @@ The scan does not contain an explicit CVSS score between 5.0 and 7.0. Therefore,
 
 **Score: 5.3 — Medium**
 
-### Main differences
+### Metric comparison
 
-|Metric|Finding 001|Finding 017|
-|---|---|---|
-|Confidentiality|High|Low|
-|Integrity|High|None|
-|Availability|High|None|
+|Metric|Finding 001|Finding 017|Effect|
+|---|---|---|---|
+|Attack Vector|Network|Network|Same|
+|Attack Complexity|Low|Low|Same|
+|Privileges Required|None|None|Same|
+|User Interaction|None|None|Same|
+|Scope|Unchanged|Unchanged|Same|
+|Confidentiality|High|Low|Finding 017 has less data exposure|
+|Integrity|High|None|Finding 017 cannot directly change data|
+|Availability|High|None|Finding 017 cannot directly stop the service|
 
-The Impact metrics have the biggest effect. Finding 001 can seriously affect confidentiality, integrity and availability, while Finding 017 only causes limited information disclosure.
+The exploitability metrics are the same in both findings: `AV:N/AC:L/PR:N/UI:N/S:U`.
+
+The score difference comes from the impact metrics:
+
+- Finding 001: `C:H/I:H/A:H`
+    
+- Finding 017: `C:L/I:N/A:N`
+    
+
+Finding 001 can seriously affect confidentiality, integrity and availability, so it scores 9.8. Finding 017 only causes limited confidentiality impact, so it scores 5.3.
+
+The components with the biggest impact are **Integrity and Availability**, because they change from High to None. Confidentiality also drops from High to Low.
