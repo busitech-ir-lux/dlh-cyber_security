@@ -59,7 +59,7 @@ The scan does not contain an explicit CVSS score between 5.0 and 7.0. Therefore,
 
 `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N`
 
-**Score: 5.1 — Medium**
+**Score: 5.3 — Medium**
 
 ### Main differences
 
