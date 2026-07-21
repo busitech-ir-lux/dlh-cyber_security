@@ -48,7 +48,7 @@ This residual risk should be partly managed through Wazuh alerts, documented esc
 
 ## Part 3 — Alternative Allocation
 
-A lower-cost option is to defer the EDR upgrade while funding the other five selected controls.
+A lower cost alternative is to defer the EDR upgrade while funding the other five selected controls.
 
 | Alternative Control  |        Cost |  ALE Reduction |
 | -------------------- | ----------: | -------------: |
@@ -59,7 +59,7 @@ A lower-cost option is to defer the EDR upgrade while funding the other five sel
 | Offsite backups      |     $14000 |        $74403 |
 | **Total**            | **$96000** | **$5301210** |
 
-### Comparison
+### Compare the Allocations
 
 | Allocation             |     Cost | Estimated ALE Reduction |
 | ---------------------- | -------: | ----------------------: |
