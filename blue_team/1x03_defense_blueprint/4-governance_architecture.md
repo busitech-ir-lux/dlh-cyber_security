@@ -7,7 +7,7 @@
 **C = Consulted**  
 **I = Informed**
 
-|Security Activity|CEO|Deputy CISO|IT Director|Department Heads|Security Analyst|
+|Security Activity|CEO|Deputy CISO|IT Director|Dept Heads|Security Analyst|
 |---|---|---|---|---|---|
 |Security budget approval|A|R|C|C|I|
 |Vulnerability remediation|I|C|A|C|R|
