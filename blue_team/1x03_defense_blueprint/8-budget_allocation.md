@@ -6,13 +6,13 @@
 
 | Control                         |  Annual Cost | Estimated ALE Reduction |
 | ------------------------------- | -----------: | ----------------------: |
-| MFA for VPN and administrators  |      $12,000 |              $2,387,000 |
-| Network segmentation            |      $35,000 |              $2,299,000 |
-| Wazuh SIEM                      |      $26,000 |                $349,847 |
-| Endpoint Detection and Response |      $24,000 |                $254,619 |
-| Westside Clinic firewall        |       $9,000 |                $190,960 |
-| Offsite immutable backups       |      $14,000 |                 $74,403 |
-| **Total**                       | **$120,000** |          **$5,555,829** |
+| MFA for VPN and administrators  |      $12000 |              $2387000 |
+| Network segmentation            |      $35000 |              $2299000 |
+| Wazuh SIEM                      |      $26000 |                $349847 |
+| Endpoint Detection and Response |      $24000 |                $254619 |
+| Westside Clinic firewall        |       $9000 |                $190960 |
+| Offsite immutable backups       |      $14000 |                 $74403 |
+| **Total**                       | **$120000** |          **$5555829** |
 
 These controls provide prevention, detection and recovery while using the full budget.
 
@@ -52,20 +52,20 @@ A lower-cost option is to defer the EDR upgrade while funding the other five sel
 
 | Alternative Control  |        Cost |  ALE Reduction |
 | -------------------- | ----------: | -------------: |
-| MFA                  |     $12,000 |     $2,387,000 |
-| Network segmentation |     $35,000 |     $2,299,000 |
-| Wazuh SIEM           |     $26,000 |       $349,847 |
-| Westside firewall    |      $9,000 |       $190,960 |
-| Offsite backups      |     $14,000 |        $74,403 |
-| **Total**            | **$96,000** | **$5,301,210** |
+| MFA                  |     $12000 |     $2387000 |
+| Network segmentation |     $35000 |     $2299000 |
+| Wazuh SIEM           |     $26000 |       $349847 |
+| Westside firewall    |      $9000 |       $190960 |
+| Offsite backups      |     $14000 |        $74403 |
+| **Total**            | **$96000** | **$5301210** |
 
 ### Comparison
 
 | Allocation             |     Cost | Estimated ALE Reduction |
 | ---------------------- | -------: | ----------------------: |
-| Primary recommendation | $120,000 |              $5,555,829 |
-| Alternative allocation |  $96,000 |              $5,301,210 |
-| Difference             |  $24,000 |                $254,619 |
+| Primary recommendation | $120000 |              $5555829 |
+| Alternative allocation |  $96000 |              $5301210 |
+| Difference             |  $24000 |                $254619 |
 
 The alternative costs **$24,000 less** while retaining about **95%** of the calculated risk reduction. However, the primary plan is preferred because EDR adds an important protection layer against ransomware and malware.
 
