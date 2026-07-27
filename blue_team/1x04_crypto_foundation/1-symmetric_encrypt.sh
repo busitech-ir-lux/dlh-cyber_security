@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Encrypt a file with AES-256-CBC or AES-256-GCM using OpenSSL.
 #
 # Usage:
