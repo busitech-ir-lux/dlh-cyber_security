@@ -1,5 +1,4 @@
-#!/bin/bash
-# 3. The Hash Laboratory
+# The Hash Laboratory
 
 ## Part 1 — The Avalanche Effect
 
@@ -31,9 +30,12 @@ Result:
 
 ### SHA-256 comparison
 
-* Hexadecimal characters different: **62 of 64**
-* Bits different: **131 of 256**
-* Percentage of bits changed: **51.17%**
+- Hexadecimal characters different: **62 of 64**
+    
+- Bits different: **131 of 256**
+    
+- Percentage of bits changed: **51.17%**
+    
 
 ---
 
@@ -65,9 +67,12 @@ Result:
 
 ### MD5 comparison
 
-* Hexadecimal characters different: **30 of 32**
-* Bits different: **71 of 128**
-* Percentage of bits changed: **55.47%**
+- Hexadecimal characters different: **30 of 32**
+    
+- Bits different: **71 of 128**
+    
+- Percentage of bits changed: **55.47%**
+    
 
 ### Explanation
 
@@ -83,19 +88,19 @@ Hexadecimal-character differences are not the most accurate measurement because 
 
 | Hash algorithm | Output length | Possible unique outputs |
 | -------------- | ------------: | ----------------------: |
-| MD5            |      128 bits |                **2¹²⁸** |
-| SHA-256        |      256 bits |                **2²⁵⁶** |
+| MD5            |      128 bits |               **2^128** |
+| SHA-256        |      256 bits |               **2^256** |
 
 A perfect 128-bit hash has approximately:
 
 ```text
-2¹²⁸ possible outputs
+2^128 possible outputs
 ```
 
 A perfect 256-bit hash has approximately:
 
 ```text
-2²⁵⁶ possible outputs
+2^256 possible outputs
 ```
 
 ## Birthday-attack resistance
@@ -103,7 +108,7 @@ A perfect 256-bit hash has approximately:
 A generic collision attack does not normally require testing every possible output. Because of the birthday problem, a collision in an ideal `n`-bit hash is expected after approximately:
 
 ```text
-2ⁿ⁄² attempts
+2^n/2 attempts
 ```
 
 Therefore:
@@ -143,9 +148,9 @@ Result:
 
 The expected CrackStation lookup is:
 
-| Hash                               | Type | Result          |
-| ---------------------------------- | ---- | --------------- |
-| `482c811da5d5b4bc6d497ffa98491e38` | MD5  | **password123** |
+|Hash|Type|Result|
+|---|---|---|
+|`482c811da5d5b4bc6d497ffa98491e38`|MD5|**password123**|
 
 This is a very common password and its unsalted MD5 digest is present in public password-hash lookup databases.
 
@@ -171,9 +176,9 @@ Result:
 
 The expected result is:
 
-| Hash                               | Result        |
-| ---------------------------------- | ------------- |
-| `6d537fa53f1db2c22b0451ef4ef9fbe8` | **Not found** |
+|Hash|Result|
+|---|---|
+|`6d537fa53f1db2c22b0451ef4ef9fbe8`|**Not found**|
 
 The CrackStation form requires interactive browser submission, so this lookup could not be submitted automatically from this environment. Record the exact displayed result from your manual browser test; it should normally show that the salted value is not present in its table.
 
@@ -213,9 +218,12 @@ Argon2 is designed specifically as a memory-hard password-hashing function. It f
 
 Argon2 has several adjustable parameters:
 
-* **Memory cost:** amount of memory used
-* **Time cost:** number of passes or iterations
-* **Parallelism:** number of processing lanes
+- **Memory cost:** amount of memory used
+    
+- **Time cost:** number of passes or iterations
+    
+- **Parallelism:** number of processing lanes
+    
 
 Argon2id combines data-independent and data-dependent memory access, balancing side-channel resistance with protection against time-memory trade-off attacks. RFC 9106 requires Argon2id support and describes it as the primary general-purpose variant.
 
@@ -236,11 +244,17 @@ MedDefense should use **Argon2id** for new application password storage. Its mem
 The implementation should:
 
 1. Generate a unique cryptographically random salt for every password.
+    
 2. Store the algorithm and parameter values with the password hash.
+    
 3. Select parameters through performance testing on MedDefense production hardware.
+    
 4. Rehash passwords after login when parameters become outdated.
+    
 5. Consider a separately protected pepper as an additional control.
+    
 6. Use MFA so password hashing is not the only account-protection layer.
+    
 
 Where MedDefense has a formal requirement to use a FIPS-validated cryptographic implementation, **PBKDF2-HMAC-SHA-256** may be the more appropriate compliance choice because Argon2 is not currently a FIPS-approved password derivation algorithm.
 
@@ -256,11 +270,16 @@ Microsoft Active Directory stores an **NT hash**, calculated by applying MD4 to 
 
 The NT hash is not adequate as a modern standalone password-storage construction because:
 
-* MD4 is extremely fast.
-* It has no per-user salt.
-* Extracted hashes can be tested offline very quickly.
-* NT hashes may also be abused directly in pass-the-hash attacks.
-* Weak passwords remain vulnerable even if the database file itself was encrypted.
+- MD4 is extremely fast.
+    
+- It has no per-user salt.
+    
+- Extracted hashes can be tested offline very quickly.
+    
+- NT hashes may also be abused directly in pass-the-hash attacks.
+    
+- Weak passwords remain vulnerable even if the database file itself was encrypted.
+    
 
 MedDefense generally cannot replace Active Directory’s internal NT-hash format with Argon2. It must reduce the risk through long passwords or managed service accounts, MFA, Credential Guard, protection of domain controllers, limitation of administrative access, disabling legacy NTLM and RC4 where possible, and monitoring for credential dumping.
 
@@ -393,4 +412,3 @@ Result:
 A matching SHA-256 digest shows that the file is identical to the file from which the expected digest was calculated. It does not prove who created the file because an attacker who can modify both the file and the expected hash can replace both.
 
 For authenticated integrity, MedDefense should obtain the expected hash through a trusted channel or use a digital signature or HMAC.
-
