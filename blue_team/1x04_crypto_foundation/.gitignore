@@ -1,0 +1,10 @@
+# Private cryptographic material
+gcm-lab-key.pem
+.cbc-pass
+.bench-pass
+
+# Large or generated files
+testfile
+*.enc
+*.cms
+*.dec.txt
