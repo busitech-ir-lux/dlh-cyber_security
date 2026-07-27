@@ -146,7 +146,7 @@ Result:
 
 ### CrackStation result
 
-The expected CrackStation lookup is:
+The expected crackstation.net lookup is:
 
 |Hash|Type|Result|
 |---|---|---|
