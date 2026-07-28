@@ -54,14 +54,38 @@ Using the ALE calculations from 1x03, evaluate whether MedDefense should invest 
 
 |Technology|What It Is|What It Protects|Typical Cost|Typical Deployment|
 |---|---|---|---|---|
-|**TPM**|A security chip built into a computer or server that provides a hardware root of trust.|Device-bound encryption keys, boot integrity, BitLocker keys and device identity.|Usually included in the device; low additional cost.|Individual laptops, desktops and servers.|
-|**HSM**|A tamper-resistant device that generates, stores and uses cryptographic keys without exposing them outside its protected boundary.|High-value database keys, CA keys, TLS private keys and signing keys.|Managed KMS: approximately `$1–2/key/month`; dedicated cloud HSM: about `$1.45/hour` per device.|Central enterprise or cloud key-management infrastructure.|
-|**Secure Enclave**|An isolated security processor built into a device’s system-on-chip.|Device keys, biometric data, authentication keys and application secrets.|Included in supported hardware.|Smartphones, tablets and modern laptops.|
-|**Software KMS**|Central software or cloud service that creates, stores, rotates and controls access to keys.|Application, database, storage and cloud-service encryption keys.|Open-source software may have no licence cost; cloud services often charge per key and request.|Central data centre or cloud service.|
+|**TPM**|A hardware security chip built into an individual computer or server.|Device-bound encryption keys, measured boot information, BitLocker recovery material and device identity.|Usually included with the device; little or no additional cost.|Employee laptops, desktops and individual servers.|
+|**HSM**|A dedicated tamper-resistant hardware device that generates, stores and uses keys without exposing their plaintext values outside the device.|High-value database master keys, certificate-authority keys, code-signing keys and TLS private keys.|High: dedicated appliances or cloud HSM instances may cost thousands per year.|Central data centre appliance, network HSM cluster or dedicated cloud HSM service.|
+|**Secure Enclave**|An isolated processor inside a device’s main hardware platform, separated from the normal operating system.|Biometric information, device authentication keys, payment keys and application secrets.|Normally included in supported phones, tablets or computers.|Smartphones, tablets, modern laptops and embedded devices.|
+|**Software KMS**|Software that manages the creation, storage, access control, rotation, backup and auditing of encryption keys. Its protection depends mainly on operating-system security, software controls and encrypted storage.|Application keys, database encryption keys and service secrets where dedicated hardware protection is not required.|Low to moderate: open-source software may have no licence fee, but servers, administration and support create operational costs.|An on-premises key-management server, virtual machine or software platform such as a self-managed secrets vault.|
 
-A TPM is mainly device-specific and supports controls such as BitLocker and Windows Hello. An HSM centrally protects cryptographic keys and performs cryptographic operations inside tamper-resistant hardware. Secure Enclave technology isolates sensitive operations from the main processor, even if the main operating system is compromised.
+### Clear Distinction
 
-AWS KMS currently charges `$1` per customer-managed key per month and protects its keys using FIPS 140-3 Level 3 HSMs. A dedicated AWS CloudHSM currently costs approximately `$1.45` per hour per HSM, depending on region.
+A **software KMS** manages keys through software and relies mainly on system hardening, access controls and encrypted storage.
+
+An **HSM** protects keys inside dedicated tamper-resistant hardware and performs cryptographic operations without releasing the plaintext keys.
+
+A managed cloud service such as AWS KMS, Azure Key Vault or Google Cloud KMS is usually a **hybrid design**:
+
+```text
+Software management layer
+        +
+Provider-operated HSM protection
+```
+
+Therefore, an HSM-backed cloud KMS should not be used as the example of a purely software-managed KMS.
+
+### MedDefense Interpretation
+
+- Use **TPM** for employee laptop full-disk encryption.
+    
+- Use **secure enclaves** where supported by mobile or embedded medical devices.
+    
+- Use a **software KMS** only for lower-risk internal keys or where cost is the main concern.
+    
+- Use an **HSM-backed managed KMS** for EHR database and backup master keys.
+    
+- Consider a **dedicated HSM** only for very high-value signing keys, an internal certificate authority or strict compliance requirements.
 
 ---
 
@@ -221,7 +245,7 @@ A dedicated HSM would need to reduce the risk by approximately **0.84%** to equa
 
 ## Decision
 
-**MedDefense should invest in an HSM-backed managed KMS for database and backup encryption keys.**
+**MedDefense should purchase an HSM-backed managed KMS service, not necessarily a dedicated HSM appliance. The KMS provides software-based lifecycle management, access policies, rotation and auditing, while the provider’s HSM protects the master keys. A purely software KMS would be cheaper but would provide weaker protection if its operating system or administrator account were compromised.**
 
 The annual cost of approximately `$48–96` for four managed keys is extremely small compared with the `$3,025,000` EHR breach ALE. It also solves the main design problem: database keys are no longer stored in plaintext on `ehr-db-01` or NAS-01.
 
