@@ -64,12 +64,12 @@ The inspection must confirm the full subject, both SAN entries, an EC P-256 publ
     
 3. **Validation process:** The internal CA verifies the requester, system ownership, and approved internal hostnames. For a public OV certificate, the commercial CA verifies control of every SAN domain, MedDefense's legal identity, registered address, and the requester's authority.
     
-4. **Issue the certificate:** The CA signs the CSR and provides the leaf certificate plus the required intermediate CA certificates. MedDefense verifies the subject, SAN entries, validity dates, issuer, key usage, and public-key fingerprint before installation.
+4. **Certificate issuance:** The CA signs the CSR and provides the leaf certificate plus the required intermediate CA certificates. MedDefense verifies the subject, SAN entries, validity dates, issuer, key usage, and public-key fingerprint before installation.
     
-5. **Install the certificate:** Install the new leaf certificate, intermediate chain, and matching private key on every portal web server, reverse proxy, load balancer, and disaster-recovery endpoint. Limit private-key permissions and configure TLS 1.2 or TLS 1.3 with approved cipher suites.
+5. **Installation on the web server:** Install the new leaf certificate, intermediate chain, and matching private key on every portal web server, reverse proxy, load balancer, and disaster-recovery endpoint. Limit private-key permissions and configure TLS 1.2 or TLS 1.3 with approved cipher suites.
     
-6. **Verify the live service:** Test the portal with `openssl s_client`, current desktop browsers, mobile devices, and portal applications. Confirm the correct hostname, complete chain, new serial number and fingerprint, valid dates, and `Verify return code: 0 (ok)`.
+6. **Verification that the new certificate is serving correctly:** Test the portal with `openssl s_client`, current desktop browsers, mobile devices, and portal applications. Confirm the correct hostname, complete chain, new serial number and fingerprint, valid dates, and `Verify return code: 0 (ok)`.
     
-7. **Decommission the old certificate:** Remove the old certificate and private key from all active endpoints after the new deployment is confirmed. Revoke the old certificate immediately if its private key was compromised; otherwise archive only the public certificate and required audit evidence.
+7. **Decommission of the old certificate:** Remove the old certificate and private key from all active endpoints after the new deployment is confirmed. Revoke the old certificate immediately if its private key was compromised; otherwise archive only the public certificate and required audit evidence.
     
-8. **Monitor renewal:** Record the certificate owner, CA, serial number, deployment locations, issue date, and expiry date in the certificate inventory. Enable automated renewal where possible and alert at 45, 30, 14, and 7 days before expiry. Test the renewal process and confirm that the renewed certificate is actually deployed on every endpoint.
+8. **Monitoring for the next renewal:** Record the certificate owner, CA, serial number, deployment locations, issue date, and expiry date in the certificate inventory. Enable automated renewal where possible and alert at 45, 30, 14, and 7 days before expiry. Test the renewal process and confirm that the renewed certificate is actually deployed on every endpoint.
