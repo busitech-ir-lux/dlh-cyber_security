@@ -53,7 +53,7 @@ CSR generated (done). The remaining lifecycle stages are:
 
 Generate and protect the CSR materials: Create the P-256 private key and CSR on a trusted administrative system. Restrict the private key to authorised administrators and never send it to the CA or commit it to Git.
 
-Submit to the correct CA: Submit this .local lab CSR to the MedDefense internal CA. For the real public patient portal, generate a new CSR using registered public DNS names and submit it to an approved commercial CA that supports OV certificates and automated renewal.
+Submission to CA: Submit this .local lab CSR to the MedDefense internal CA. For the real public patient portal, generate a new CSR using registered public DNS names and submit it to an approved commercial CA that supports OV certificates and automated renewal.
 
 Complete validation: The internal CA verifies the requester, system ownership, and approved internal hostnames. For a public OV certificate, the commercial CA verifies control of every SAN domain, MedDefense's legal identity, registered address, and the requester's authority.
 
