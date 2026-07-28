@@ -210,7 +210,7 @@ secure_vol /mnt/secure_vol
 
 Use **volume-level encryption** for the NAS backup storage.
 
-This protects all database dumps, medical records, configuration files, and backup metadata without requiring each application to encrypt individual files. Full-disk encryption would also protect the NAS operating system, but volume-level encryption provides better control over the dedicated backup area.
+This protects all database dumps, medical records, configuration files, and backup metadata without requiring each application to encrypt individual files. Full-disk(full-disk) encryption would also protect the NAS operating system, but volume-level encryption provides better control over the dedicated backup area.
 
 ### Performance impact
 
