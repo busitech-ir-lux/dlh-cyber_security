@@ -208,9 +208,9 @@ secure_vol /mnt/secure_vol
 
 ### Encryption level
 
-Use **volume-level encryption** for the NAS backup storage.
+Use **volume-level encryption** for the NAS backup storage. What about file-level?
 
-This protects all database dumps, medical records, configuration files, and backup metadata without requiring each application to encrypt individual files. Full-disk(full-disk) encryption would also protect the NAS operating system, but volume-level encryption provides better control over the dedicated backup area.
+This protects all database dumps, medical records, configuration files, and backup metadata without requiring each application to encrypt individual files. Full-disk (full-disk) encryption would also protect the NAS operating system, but volume-level encryption provides better control over the dedicated backup area.
 
 ### Performance impact
 
@@ -230,9 +230,12 @@ If the T1 AES throughput was higher than the NAS disk or network speed, the prac
 
 The encryption key must be stored in a separate:
 
-* key-management system
-* hardware security module
-* protected backup-management server
+- key-management system
+    
+- hardware security module
+    
+- protected backup-management server
+    
 
 It must not be stored on NAS-01 because an attacker who compromises the NAS could obtain both the encrypted backups and the key.
 
@@ -244,10 +247,14 @@ If the encryption key and all recovery copies are lost, the backups are permanen
 
 MedDefense must therefore:
 
-* maintain controlled recovery copies
-* test key recovery
-* document authorised key custodians
-* protect the LUKS header and key backups
+- maintain controlled recovery copies
+    
+- test key recovery
+    
+- document authorised key custodians
+    
+- protect the LUKS header and key backups
+    
 
 ### Offsite replication
 
@@ -256,4 +263,3 @@ The cloud replica must also remain encrypted.
 MedDefense should encrypt the backup before it leaves NAS-01 and retain control of the encryption key. The cloud provider may add its own storage encryption, but provider-managed encryption should not replace MedDefense-controlled encryption.
 
 The offsite location must not store the plaintext key beside the encrypted backup.
-
