@@ -1,0 +1,195 @@
+{
+  "hardening_index": "66",
+  "findings": [
+    {
+      "severity": "suggestion",
+      "test_id": "DEB-0280",
+      "message": "Install libpam-tmpdir to set $TMP and $TMPDIR for PAM sessions"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "DEB-0810",
+      "message": "Install apt-listbugs to display a list of critical bugs prior to each APT installation."
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "DEB-0811",
+      "message": "Install apt-listchanges to display any significant changes prior to any upgrade via APT."
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "DEB-0831",
+      "message": "Install needrestart, alternatively to debian-goodies, so that you can run needrestart after upgrades to determine which daemons are using old versions of libraries and need restarting."
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "DEB-0880",
+      "message": "Install fail2ban to automatically ban hosts that commit multiple authentication errors."
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "BOOT-5180",
+      "message": "Determine runlevel and services at startup"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "BOOT-5264",
+      "message": "Consider hardening system services"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "KRNL-5788",
+      "message": "Determine why /vmlinuz or /boot/vmlinuz is missing on this Debian/Ubuntu system."
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "AUTH-9230",
+      "message": "Configure password hashing rounds in /etc/login.defs"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "AUTH-9262",
+      "message": "Install a PAM module for password strength testing like pam_cracklib or pam_passwdqc or libpam-passwdqc"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "AUTH-9282",
+      "message": "When possible set expire dates for all password protected accounts"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "AUTH-9286",
+      "message": "Configure minimum password age in /etc/login.defs"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "AUTH-9286",
+      "message": "Configure maximum password age in /etc/login.defs"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "AUTH-9328",
+      "message": "Default umask in /etc/login.defs could not be found and defaults usually to 022, which could be more strict like 027"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "FILE-6310",
+      "message": "To decrease the impact of a full /home file system, place /home on a separate partition"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "FILE-6310",
+      "message": "To decrease the impact of a full /var file system, place /var on a separate partition"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "USB-1000",
+      "message": "Disable drivers like USB storage when not used, to prevent unauthorized storage or data theft"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "PKGS-7370",
+      "message": "Install debsums utility for the verification of packages with known good database."
+    },
+    {
+      "severity": "warning",
+      "test_id": "PKGS-7392",
+      "message": "Found one or more vulnerable packages."
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "PKGS-7392",
+      "message": "Update your system with apt-get update, apt-get upgrade, apt-get dist-upgrade and/or unattended-upgrades"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "PKGS-7394",
+      "message": "Install package apt-show-versions for patch management purposes"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "NETW-3200",
+      "message": "Determine if protocol 'dccp' is really needed on this system"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "NETW-3200",
+      "message": "Determine if protocol 'sctp' is really needed on this system"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "NETW-3200",
+      "message": "Determine if protocol 'rds' is really needed on this system"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "NETW-3200",
+      "message": "Determine if protocol 'tipc' is really needed on this system"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "LOGG-2154",
+      "message": "Enable logging to an external logging host for archiving purposes and additional protection"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "BANN-7126",
+      "message": "Add a legal banner to /etc/issue, to warn unauthorized users"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "BANN-7130",
+      "message": "Add legal banner to /etc/issue.net, to warn unauthorized users"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "ACCT-9622",
+      "message": "Enable process accounting"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "ACCT-9626",
+      "message": "Enable sysstat to collect accounting (no results)"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "ACCT-9628",
+      "message": "Enable auditd to collect audit information"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "MACF-6208",
+      "message": "Check output of aa-status"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "FINT-4350",
+      "message": "Install a file integrity tool to monitor changes to critical and sensitive files"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "TOOL-5002",
+      "message": "Determine if automation tools are present for system management"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "FILE-7524",
+      "message": "Consider restricting file permissions"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "KRNL-6000",
+      "message": "One or more sysctl values differ from the scan profile and could be tweaked"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "HRDN-7222",
+      "message": "Harden compilers like restricting access to root user only"
+    },
+    {
+      "severity": "suggestion",
+      "test_id": "HRDN-7230",
+      "message": "Harden the system by installing at least one malware scanner, to perform periodic file system scans"
+    }
+  ]
+}
