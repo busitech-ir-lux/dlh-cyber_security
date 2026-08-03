@@ -1,4 +1,7 @@
 #!/bin/bash
+# This script recieves a lynis audit report and produces a structured JSON report of the hardening score and severity messages
+
+set -euo pipefail
 
 hardening_index=$(grep  -m1 "^hardening" "$1" | cut -d'=' -f2)
 findings=$(grep -E "^(warning\[\]|suggestion\[\]|manual_check|manual_control\[\])" /var/log/lynis-report.dat | while IFS="=" read -r key value; do
