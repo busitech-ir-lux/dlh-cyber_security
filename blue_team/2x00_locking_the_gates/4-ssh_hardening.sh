@@ -78,7 +78,7 @@ if sshd -t; then
     echo -e "    sshd -t: ${GREEN}OK${RESET}"
 else
     echo -e "    ${RED}sshd -t: FAILED${RESET}"
-    echo -e "${RED}[*] Restoring SSH configuration...${RESET}"
+    echo -e "${RED}[*] Restore backup...${RESET}"
     cp -p "$BAK" "$CONFIG"
     exit 1
 fi
