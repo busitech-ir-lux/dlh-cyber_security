@@ -163,19 +163,18 @@ sleep 1
 
 
 # Check whether the authentication event reached auth.log
-if grep -q "$TEST_ID authentication event" "$AUTH_LOG"; then
+if tail -n 20 "$AUTH_LOG" | grep -q "$TEST_ID authentication event"; then
     echo "    /var/log/auth.log: receiving events       [OK]"
 else
     echo "    /var/log/auth.log: not receiving events   [FAIL]"
 fi
 
 # Check whether the system event reached syslog
-if grep -q "$TEST_ID system event" "$SYSLOG"; then
+if tail -n 20 "$SYSLOG" | grep -q "$TEST_ID system event"; then
     echo "    /var/log/syslog: receiving events         [OK]"
 else
     echo "    /var/log/syslog: not receiving events     [FAIL]"
 fi
-
 
 # ---------------------------------------------------------
 # Verify file permissions
