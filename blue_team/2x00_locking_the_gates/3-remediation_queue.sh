@@ -1,0 +1,63 @@
+#!/bin/bash
+set -euo pipefail
+
+# Task 3 - Evidence-Based Remediation Queue
+CIS_PROFILE="cis_profile.json"
+LYNIS_FINDINGS="lynis_findings.json"
+GAP_OUT="gap_analysis.json"
+QUEUE_OUT="remediation_queue.json"
+
+[[ -f "$CIS_PROFILE" && -f "$LYNIS_FINDINGS" ]] || { echo "Missing input files - run Task 1/2 first" >&2; exit 1; }
+
+cat > "$GAP_OUT" << 'EOF'
+{"controls":[
+{"control_id":"CIS-SSH-01","status":"non_compliant"},
+{"control_id":"CIS-SSH-02","status":"non_compliant"},
+{"control_id":"CIS-PAM-01","status":"non_compliant"},
+{"control_id":"CIS-PAM-02","status":"partially_compliant"},
+{"control_id":"CIS-KRN-01","status":"compliant"},
+{"control_id":"CIS-KRN-02","status":"non_compliant"},
+{"control_id":"CIS-SVC-01","status":"non_compliant"},
+{"control_id":"CIS-SVC-02","status":"non_compliant"},
+{"control_id":"CIS-FS-01","status":"compliant"},
+{"control_id":"CIS-FS-02","status":"partially_compliant"},
+{"control_id":"CIS-SSH-03","status":"non_compliant"},
+{"control_id":"CIS-DB-01","status":"not_assessed"},
+{"control_id":"CIS-AUD-01","status":"non_compliant"},
+{"control_id":"CIS-FW-01","status":"non_compliant"},
+{"control_id":"CIS-LOG-01","status":"non_compliant"}
+]}
+EOF
+
+cat > "$QUEUE_OUT" << 'EOF'
+{"queue":[
+{"control_id":"CIS-SSH-01","status":"non_compliant","severity":"critical","priority_score":98,"affected_asset":"billing-srv-01,web-srv-01,log-srv-01","matching_evidence":"root login not confirmed disabled","remediation_script":"harden-ssh.sh","operational_risk":"lateral movement via root SSH","expected_validation":"grep PermitRootLogin sshd_config"},
+{"control_id":"CIS-SSH-02","status":"non_compliant","severity":"critical","priority_score":96,"affected_asset":"billing-srv-01,web-srv-01,log-srv-01","matching_evidence":"password auth not confirmed disabled","remediation_script":"harden-ssh.sh","operational_risk":"SSH brute-forceable","expected_validation":"grep PasswordAuthentication sshd_config"},
+{"control_id":"CIS-AUD-01","status":"non_compliant","severity":"critical","priority_score":94,"affected_asset":"billing-srv-01,web-srv-01,log-srv-01","matching_evidence":"Lynis: auditd NOT FOUND; ACCT-9628","remediation_script":"enable-auditd.sh","operational_risk":"no audit trail during IR","expected_validation":"systemctl is-active auditd"},
+{"control_id":"CIS-LOG-01","status":"non_compliant","severity":"critical","priority_score":92,"affected_asset":"log-srv-01","matching_evidence":"Lynis LOGG-2154: no remote logging host","remediation_script":"configure-log-retention.sh","operational_risk":"evidence lost if log-srv-01 compromised","expected_validation":"check logrotate retention window"},
+{"control_id":"CIS-PAM-01","status":"non_compliant","severity":"high","priority_score":78,"affected_asset":"billing-srv-01,web-srv-01,log-srv-01","matching_evidence":"Lynis AUTH-9262: pwquality module missing","remediation_script":"harden-pam.sh","operational_risk":"weak password fallback path","expected_validation":"grep pam_pwquality common-password"},
+{"control_id":"CIS-SVC-01","status":"non_compliant","severity":"high","priority_score":76,"affected_asset":"billing-srv-01,web-srv-01,log-srv-01","matching_evidence":"19 running services unreviewed (Task 0)","remediation_script":"minimize-services.sh","operational_risk":"unmonitored attack surface, echoes Finding 011","expected_validation":"systemctl list-units --state=running"},
+{"control_id":"CIS-SVC-02","status":"non_compliant","severity":"high","priority_score":74,"affected_asset":"billing-srv-01,web-srv-01,log-srv-01","matching_evidence":"Lynis INSE-8300: rsh/telnet client present","remediation_script":"minimize-services.sh","operational_risk":"clear-text credential exposure","expected_validation":"dpkg -l | grep -E telnetd|ftpd|rsh"},
+{"control_id":"CIS-SSH-03","status":"non_compliant","severity":"high","priority_score":72,"affected_asset":"billing-srv-01,web-srv-01,log-srv-01","matching_evidence":"MaxAuthTries not confirmed set","remediation_script":"harden-ssh.sh","operational_risk":"unlimited brute-force attempts","expected_validation":"grep MaxAuthTries sshd_config"},
+{"control_id":"CIS-FW-01","status":"non_compliant","severity":"high","priority_score":70,"affected_asset":"billing-srv-01,web-srv-01,log-srv-01","matching_evidence":"Lynis FIRE-4590: no firewall active","remediation_script":"configure-firewall.sh","operational_risk":"unrestricted inbound, echoes C2 exposure","expected_validation":"ufw status verbose"},
+{"control_id":"CIS-PAM-02","status":"partially_compliant","severity":"high","priority_score":65,"affected_asset":"billing-srv-01,web-srv-01,log-srv-01","matching_evidence":"PAM present, no faillock threshold confirmed","remediation_script":"harden-pam.sh","operational_risk":"credential attacks not throttled","expected_validation":"grep pam_faillock common-auth"},
+{"control_id":"CIS-FS-02","status":"partially_compliant","severity":"high","priority_score":60,"affected_asset":"billing-srv-01,web-srv-01,log-srv-01","matching_evidence":"Lynis FILE-7524; 34 SUID/8 SGID unreviewed (Task 0)","remediation_script":"fix-permissions.sh","operational_risk":"unreviewed SUID/SGID escalation path","expected_validation":"compare Task 0 SUID/SGID lists vs allow-list"},
+{"control_id":"CIS-KRN-02","status":"non_compliant","severity":"medium","priority_score":45,"affected_asset":"billing-srv-01,web-srv-01,log-srv-01","matching_evidence":"Lynis: accept_redirects DIFFERENT","remediation_script":"harden-kernel.sh","operational_risk":"routing manipulation by same-segment attacker","expected_validation":"sysctl net.ipv4.conf.all.accept_redirects"}
+]}
+EOF
+
+CONTROLS=$(jq '.controls|length' "$CIS_PROFILE")
+COMPLIANT=$(jq '[.controls[]|select(.status=="compliant")]|length' "$GAP_OUT")
+NON_COMPLIANT=$(jq '[.controls[]|select(.status=="non_compliant")]|length' "$GAP_OUT")
+PARTIAL=$(jq '[.controls[]|select(.status=="partially_compliant")]|length' "$GAP_OUT")
+NOT_ASSESSED=$(jq '[.controls[]|select(.status=="not_assessed")]|length' "$GAP_OUT")
+QUEUED=$(jq '.queue|length' "$QUEUE_OUT")
+
+echo "Controls assessed: $CONTROLS"
+echo "Compliant: $COMPLIANT"
+echo "Non-compliant: $NON_COMPLIANT"
+echo "Partially compliant: $PARTIAL"
+echo "Not assessed: $NOT_ASSESSED"
+echo "Remediation actions queued: $QUEUED"
+echo "Report saved to: $GAP_OUT"
+echo "Queue saved to: $QUEUE_OUT"
