@@ -1,20 +1,25 @@
 #!/bin/bash
 
-# 15-validation.sh - Post-Hardening Validator
-# Read-only validation of security controls from Tasks 4-13.
+# 16-lynis_diff.sh - Compare baseline and post-hardening Lynis findings
 #
-# This script does not change the system.
+# Reads:
+#   lynis_findings.json
+#   lynis_post_findings.json
 #
-# Exit codes:
-#   0 = all checks passed
-#   1 = one or more checks failed
-#
-# Usage:
-#   sudo ./15-validation.sh
+# Creates:
+#   hardening_improvement.json
 # ============================================================================
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+BEFORE_FILE="$SCRIPT_DIR/lynis_findings.json"
+AFTER_FILE="$SCRIPT_DIR/lynis_post_findings.json"
+REPORT_FILE="$SCRIPT_DIR/hardening_improvement.json"
+
+LYNIS_REPORT="/var/log/lynis-report.dat"
+PARSER="$SCRIPT_DIR/2-lynis_parse.sh"
 PASS_COUNT=0
 FAIL_COUNT=0
 
