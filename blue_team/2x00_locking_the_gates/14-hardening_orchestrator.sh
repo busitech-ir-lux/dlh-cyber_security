@@ -1,10 +1,11 @@
 #!/bin/bash
-set -euo pipefail
 
 # ---------------------------------------------------------
 # Production Hardening Orchestrator
 # Runs all hardening scripts in dependency order
 # ---------------------------------------------------------
+
+set -euo pipefail
 
 # Directory containing this script
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
