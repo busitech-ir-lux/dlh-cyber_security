@@ -1,0 +1,17 @@
+{"controls":[
+{"control_id":"CIS-SSH-01","status":"non_compliant"},
+{"control_id":"CIS-SSH-02","status":"non_compliant"},
+{"control_id":"CIS-PAM-01","status":"non_compliant"},
+{"control_id":"CIS-PAM-02","status":"partially_compliant"},
+{"control_id":"CIS-KRN-01","status":"compliant"},
+{"control_id":"CIS-KRN-02","status":"non_compliant"},
+{"control_id":"CIS-SVC-01","status":"non_compliant"},
+{"control_id":"CIS-SVC-02","status":"non_compliant"},
+{"control_id":"CIS-FS-01","status":"compliant"},
+{"control_id":"CIS-FS-02","status":"partially_compliant"},
+{"control_id":"CIS-SSH-03","status":"non_compliant"},
+{"control_id":"CIS-DB-01","status":"not_assessed"},
+{"control_id":"CIS-AUD-01","status":"non_compliant"},
+{"control_id":"CIS-FW-01","status":"non_compliant"},
+{"control_id":"CIS-LOG-01","status":"non_compliant"}
+]}
