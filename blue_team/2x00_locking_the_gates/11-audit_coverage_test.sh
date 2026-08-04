@@ -11,6 +11,8 @@ TEMP_RESULTS=$(mktemp)
 TEST_FILE="/var/log/meddefense-audit-test/coverage-test.txt"
 CRON_FILE="/etc/cron.d/meddefense-audit-test"
 
+TEST_USER="audit-test-user"
+
 CAPTURED=0
 MISSED=0
 
@@ -25,6 +27,11 @@ cleanup() {
     rm -f "$TEST_FILE"
     rm -f "$CRON_FILE"
     rm -f "$TEMP_RESULTS"
+
+    # Remove the temporary test user if it exists
+    if id "$TEST_USER" >/dev/null 2>&1; then
+        userdel "$TEST_USER"
+    fi
 }
 
 trap cleanup EXIT
