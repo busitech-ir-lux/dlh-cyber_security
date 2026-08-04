@@ -1,22 +1,22 @@
 #!/bin/bash
-
 set -euo pipefail
 
 # ---------------------------------------------------------
-# Main file locations
+# Production Hardening Orchestrator
+# Runs all hardening scripts in dependency order
 # ---------------------------------------------------------
 
-# Directory containing this orchestrator and the other scripts
+# Directory containing this script
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Temporary file used to store one JSON result per step
+# Temporary file containing one JSON object per completed step
 RESULTS_FILE=$(mktemp)
 
-# Final JSON reports
+# Final report files
 RUN_REPORT="$SCRIPT_DIR/hardening_run.json"
 IMPROVEMENT_REPORT="$SCRIPT_DIR/hardening_improvement.json"
 
-# Lynis report location
+# Default Lynis report location
 LYNIS_REPORT="/var/log/lynis-report.dat"
 
 # Counters
@@ -27,16 +27,19 @@ FAILED=0
 BEFORE_SCORE=0
 AFTER_SCORE=0
 
+# Overall start time
+RUN_START=$(date --iso-8601=seconds)
+
 
 # ---------------------------------------------------------
-# List scripts in the required execution order
+# Hardening scripts in required order
 # ---------------------------------------------------------
 
 STEPS=(
     "Baseline snapshot|0-baseline_snapshot.sh"
-    "Lynis report parser|2-lynis_parse.sh"
+    "Lynis baseline parser|2-lynis_parse.sh"
     "SSH hardening|4-ssh_hardening.sh"
-    "Kernel hardening|5-sysctl_hardening.sh"
+    "Sysctl hardening|5-sysctl_hardening.sh"
     "Filesystem hardening|6-filesystem_hardening.sh"
     "Service minimization|7-service_minimization.sh"
     "PAM hardening|8-pam_hardening.sh"
@@ -50,7 +53,7 @@ STEPS=(
 
 
 # ---------------------------------------------------------
-# Remove the temporary file when the script finishes
+# Remove temporary files when the script exits
 # ---------------------------------------------------------
 
 cleanup() {
@@ -61,34 +64,81 @@ trap cleanup EXIT
 
 
 # ---------------------------------------------------------
-# Function that creates the final JSON reports
+# Read the Lynis hardening score
+# ---------------------------------------------------------
+
+get_lynis_score() {
+    local score
+
+    # Return 0 if the report or score is unavailable
+    if [[ ! -f "$LYNIS_REPORT" ]]; then
+        echo "0"
+        return
+    fi
+
+    score=$(
+        grep "^hardening_index=" "$LYNIS_REPORT" 2>/dev/null |
+        head -1 |
+        cut -d= -f2 || true
+    )
+
+    if [[ "$score" =~ ^[0-9]+$ ]]; then
+        echo "$score"
+    else
+        echo "0"
+    fi
+}
+
+
+# ---------------------------------------------------------
+# Create the final JSON reports
 # ---------------------------------------------------------
 
 create_reports() {
+    local finished_at
+    local delta
 
-    # Combine all step results into one JSON array
-    jq -s \
-        --arg started_at "$RUN_START" \
-        --arg finished_at "$(date --iso-8601=seconds)" \
-        --argjson scheduled "${#STEPS[@]}" \
-        --argjson completed "$COMPLETED" \
-        --argjson failed "$FAILED" \
-        '{
-            started_at: $started_at,
-            finished_at: $finished_at,
-            steps_scheduled: $scheduled,
-            steps_completed: $completed,
-            steps_failed: $failed,
-            steps: .
-        }' "$RESULTS_FILE" > "$RUN_REPORT"
+    finished_at=$(date --iso-8601=seconds)
+    delta=$((AFTER_SCORE - BEFORE_SCORE))
 
-    # Calculate the difference between Lynis scores
-    DELTA=$((AFTER_SCORE - BEFORE_SCORE))
+    # Convert all individual JSON objects into one JSON array
+    if [[ -s "$RESULTS_FILE" ]]; then
+        jq -s \
+            --arg started_at "$RUN_START" \
+            --arg finished_at "$finished_at" \
+            --argjson scheduled "${#STEPS[@]}" \
+            --argjson completed "$COMPLETED" \
+            --argjson failed "$FAILED" \
+            '{
+                started_at: $started_at,
+                finished_at: $finished_at,
+                steps_scheduled: $scheduled,
+                steps_completed: $completed,
+                steps_failed: $failed,
+                steps: .
+            }' "$RESULTS_FILE" > "$RUN_REPORT"
+    else
+        jq -n \
+            --arg started_at "$RUN_START" \
+            --arg finished_at "$finished_at" \
+            --argjson scheduled "${#STEPS[@]}" \
+            --argjson completed "$COMPLETED" \
+            --argjson failed "$FAILED" \
+            '{
+                started_at: $started_at,
+                finished_at: $finished_at,
+                steps_scheduled: $scheduled,
+                steps_completed: $completed,
+                steps_failed: $failed,
+                steps: []
+            }' > "$RUN_REPORT"
+    fi
 
+    # Create the before-and-after improvement report
     jq -n \
         --argjson before_score "$BEFORE_SCORE" \
         --argjson after_score "$AFTER_SCORE" \
-        --argjson delta "$DELTA" \
+        --argjson delta "$delta" \
         '{
             before_lynis_score: $before_score,
             after_lynis_score: $after_score,
@@ -98,74 +148,75 @@ create_reports() {
 
 
 # ---------------------------------------------------------
-# Function that runs one hardening script
+# Run one hardening step
 # ---------------------------------------------------------
 
 run_step() {
+    local step_number="$1"
+    local step_name="$2"
+    local script_name="$3"
 
-    # Information passed to the function
-    STEP_NUMBER="$1"
-    STEP_NAME="$2"
-    SCRIPT_NAME="$3"
+    local script_path="$SCRIPT_DIR/$script_name"
+    local step_log="$SCRIPT_DIR/${script_name%.sh}.log"
 
-    SCRIPT_PATH="$SCRIPT_DIR/$SCRIPT_NAME"
-    STEP_LOG="$SCRIPT_DIR/${SCRIPT_NAME%.sh}.log"
+    local start_time
+    local end_time
+    local start_seconds
+    local end_seconds
+    local duration
+    local exit_code
+    local status
 
-    echo "[$STEP_NUMBER/${#STEPS[@]}] Running $SCRIPT_NAME..."
+    echo "[$step_number/${#STEPS[@]}] Running $script_name..."
 
-    # Record the start time
-    START_TIME=$(date --iso-8601=seconds)
-    START_SECONDS=$(date +%s)
+    start_time=$(date --iso-8601=seconds)
+    start_seconds=$(date +%s)
 
-    # Task 2 needs the Lynis report path as its first argument
-    if [[ "$SCRIPT_NAME" == "2-lynis_parse.sh" ]]; then
-
-        if bash "$SCRIPT_PATH" "$LYNIS_REPORT" \
+    # Task 2 receives the Lynis report as an argument
+    if [[ "$script_name" == "2-lynis_parse.sh" ]]; then
+        if bash "$script_path" "$LYNIS_REPORT" \
             > "$SCRIPT_DIR/lynis_findings.json" \
-            2> "$STEP_LOG"; then
+            2> "$step_log"; then
 
-            EXIT_CODE=0
+            exit_code=0
         else
-            EXIT_CODE=$?
+            exit_code=$?
         fi
-
     else
-
-        # Run other scripts normally and save their output
-        if bash "$SCRIPT_PATH" > "$STEP_LOG" 2>&1; then
-            EXIT_CODE=0
+        # Run all other scripts and save their output to a log file
+        if bash "$script_path" > "$step_log" 2>&1; then
+            exit_code=0
         else
-            EXIT_CODE=$?
+            exit_code=$?
         fi
     fi
 
-    # Record the finish time and calculate duration
-    END_TIME=$(date --iso-8601=seconds)
-    END_SECONDS=$(date +%s)
-    DURATION=$((END_SECONDS - START_SECONDS))
+    end_time=$(date --iso-8601=seconds)
+    end_seconds=$(date +%s)
+    duration=$((end_seconds - start_seconds))
 
-    if [[ "$EXIT_CODE" -eq 0 ]]; then
-        STATUS="completed"
-        ((COMPLETED+=1))
+    if [[ "$exit_code" -eq 0 ]]; then
+        status="completed"
+        COMPLETED=$((COMPLETED + 1))
 
-        echo "    $STEP_NAME: PASS (${DURATION}s)"
+        echo "    $step_name: PASS (${duration}s)"
     else
-        STATUS="failed"
-        ((FAILED+=1))
+        status="failed"
+        FAILED=$((FAILED + 1))
 
-        echo "    $STEP_NAME: FAIL (exit code $EXIT_CODE)"
+        echo "    $step_name: FAIL (exit code $exit_code)"
     fi
 
-    # Store the step result as one JSON object
+    # Add this step result to the temporary JSON file
     jq -n \
-        --arg name "$STEP_NAME" \
-        --arg script "$SCRIPT_NAME" \
-        --arg status "$STATUS" \
-        --arg started_at "$START_TIME" \
-        --arg finished_at "$END_TIME" \
-        --arg log_file "$STEP_LOG" \
-        --argjson duration_seconds "$DURATION" \
-        --argjson exit_code "$EXIT_CODE" \
+        --arg name "$step_name" \
+        --arg script "$script_name" \
+        --arg status "$status" \
+        --arg started_at "$start_time" \
+        --arg finished_at "$end_time" \
+        --arg log_file "$step_log" \
+        --argjson duration_seconds "$duration" \
+        --argjson exit_code "$exit_code" \
         '{
             name: $name,
             script: $script,
@@ -177,16 +228,19 @@ run_step() {
             log_file: $log_file
         }' >> "$RESULTS_FILE"
 
-    # Stop the workflow immediately when a script fails
-    if [[ "$EXIT_CODE" -ne 0 ]]; then
+    # Stop immediately when a step fails
+    if [[ "$exit_code" -ne 0 ]]; then
+        AFTER_SCORE="$BEFORE_SCORE"
+
         create_reports
 
         echo
-        echo "Hardening stopped because $SCRIPT_NAME failed."
-        echo "Check log: $STEP_LOG"
+        echo "Hardening stopped because $script_name failed."
+        echo "Check log: $step_log"
         echo "Run log saved to: hardening_run.json"
+        echo "Improvement saved to: hardening_improvement.json"
 
-        exit "$EXIT_CODE"
+        exit "$exit_code"
     fi
 }
 
@@ -195,30 +249,26 @@ run_step() {
 # Pre-checks
 # ---------------------------------------------------------
 
-RUN_START=$(date --iso-8601=seconds)
-
 # The orchestrator must run as root
 if [[ "$EUID" -ne 0 ]]; then
     echo "Run this script with sudo."
     exit 1
 fi
 
-# Check the commands required by the orchestrator
-for command in jq lynis grep cut; do
-    if ! command -v "$command" >/dev/null 2>&1; then
-        echo "Missing required command: $command"
+# Check required commands
+for command_name in bash jq grep cut lynis; do
+    if ! command -v "$command_name" >/dev/null 2>&1; then
+        echo "Missing required command: $command_name"
         exit 1
     fi
 done
 
 # Check that every required script exists
 for step in "${STEPS[@]}"; do
+    script_name="${step#*|}"
 
-    # Extract the script name after the | character
-    SCRIPT_NAME="${step#*|}"
-
-    if [[ ! -f "$SCRIPT_DIR/$SCRIPT_NAME" ]]; then
-        echo "Missing required script: $SCRIPT_NAME"
+    if [[ ! -f "$SCRIPT_DIR/$script_name" ]]; then
+        echo "Missing required script: $script_name"
         exit 1
     fi
 done
@@ -228,33 +278,30 @@ echo "Steps scheduled: ${#STEPS[@]}"
 
 
 # ---------------------------------------------------------
-# Capture the Lynis score before hardening
+# Capture the pre-hardening Lynis score
 # ---------------------------------------------------------
 
 echo "[*] Running pre-hardening Lynis audit..."
 
-lynis audit system --quick >/dev/null 2>&1
+lynis audit system --quick > "$SCRIPT_DIR/lynis-before.log" 2>&1
 
-BEFORE_SCORE=$(
-    grep "^hardening_index=" "$LYNIS_REPORT" |
-    head -1 |
-    cut -d= -f2
-)
+BEFORE_SCORE=$(get_lynis_score)
 
-# Save a copy of the original Lynis report
-cp "$LYNIS_REPORT" "$SCRIPT_DIR/lynis-report-before.dat"
+# Save the pre-hardening Lynis report
+if [[ -f "$LYNIS_REPORT" ]]; then
+    cp "$LYNIS_REPORT" "$SCRIPT_DIR/lynis-report-before.dat"
+fi
 
 echo "    Before Lynis score: $BEFORE_SCORE"
 
 
 # ---------------------------------------------------------
-# Run all hardening scripts in order
+# Run all hardening scripts
 # ---------------------------------------------------------
 
 STEP_NUMBER=1
 
 for step in "${STEPS[@]}"; do
-
     # Text before | is the readable step name
     STEP_NAME="${step%%|*}"
 
@@ -263,41 +310,43 @@ for step in "${STEPS[@]}"; do
 
     run_step "$STEP_NUMBER" "$STEP_NAME" "$SCRIPT_NAME"
 
-    ((STEP_NUMBER+=1))
+    STEP_NUMBER=$((STEP_NUMBER + 1))
 done
 
 
 # ---------------------------------------------------------
-# Capture the Lynis score after hardening
+# Capture the post-hardening Lynis score
 # ---------------------------------------------------------
 
 echo "[*] Running post-hardening Lynis audit..."
 
-lynis audit system --quick >/dev/null 2>&1
+lynis audit system --quick > "$SCRIPT_DIR/lynis-after.log" 2>&1
 
-AFTER_SCORE=$(
-    grep "^hardening_index=" "$LYNIS_REPORT" |
-    head -1 |
-    cut -d= -f2
-)
+AFTER_SCORE=$(get_lynis_score)
 
-# Save the final Lynis report
-cp "$LYNIS_REPORT" "$SCRIPT_DIR/lynis-report-after.dat"
+# Save the post-hardening Lynis report
+if [[ -f "$LYNIS_REPORT" ]]; then
+    cp "$LYNIS_REPORT" "$SCRIPT_DIR/lynis-report-after.dat"
 
-# Generate a JSON version of the final Lynis findings
-bash "$SCRIPT_DIR/2-lynis_parse.sh" "$LYNIS_REPORT" \
-    > "$SCRIPT_DIR/lynis_findings_after.json"
+    bash "$SCRIPT_DIR/2-lynis_parse.sh" "$LYNIS_REPORT" \
+        > "$SCRIPT_DIR/lynis_findings_after.json"
+fi
 
 echo "    After Lynis score: $AFTER_SCORE"
 
 
 # ---------------------------------------------------------
-# Create the final JSON reports
+# Generate final reports
 # ---------------------------------------------------------
 
 create_reports
 
 DELTA=$((AFTER_SCORE - BEFORE_SCORE))
+
+
+# ---------------------------------------------------------
+# Display final summary
+# ---------------------------------------------------------
 
 echo
 echo "Steps completed: $COMPLETED"
@@ -305,7 +354,6 @@ echo "Steps failed: $FAILED"
 echo "Before Lynis score: $BEFORE_SCORE"
 echo "After Lynis score: $AFTER_SCORE"
 
-# Add a plus sign when the improvement is positive
 if [[ "$DELTA" -ge 0 ]]; then
     echo "Delta: +$DELTA"
 else
