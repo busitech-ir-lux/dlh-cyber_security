@@ -897,3 +897,4 @@ catch {
     Write-Error "Domain baseline collection failed: $($_.Exception.Message)"
     exit 1
 }
+
