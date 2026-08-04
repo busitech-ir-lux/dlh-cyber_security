@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# 14-hardening_orchestrator.sh — Production Hardening Workflow Orchestrator
+#                                  Executes hardening scripts in dependency order,
+#                                  records timing/exit codes, captures Lynis delta.
+#
 # ---------------------------------------------------------
 # Production Hardening Orchestrator
 # Runs all hardening scripts in dependency order
