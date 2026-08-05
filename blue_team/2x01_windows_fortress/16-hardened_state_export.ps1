@@ -68,7 +68,10 @@ $powershellLogging = [ordered]@{
     script_block_logging = (Get-ItemProperty "$psBase\ScriptBlockLogging" -ErrorAction SilentlyContinue).EnableScriptBlockLogging
     module_logging = (Get-ItemProperty "$psBase\ModuleLogging" -ErrorAction SilentlyContinue).EnableModuleLogging
     transcription = (Get-ItemProperty "$psBase\Transcription" -ErrorAction SilentlyContinue).EnableTranscripting
-    event_ids = @(4103,4104)
+    event_ids = [ordered]@{
+            id_4103 = "Module Logging"
+            id_4104 = "Script Block Logging"
+        }
 }
 
 Write-Host "[*] Exporting Sysmon config..." -NoNewline
