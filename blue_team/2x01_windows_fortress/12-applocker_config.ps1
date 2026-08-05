@@ -56,11 +56,11 @@ Write-Host "    Allow: C:\Windows\*                    [SET]"
 Write-Host "    Allow: C:\Program Files\*              [SET]"
 Write-Host "    Allow: C:\Program Files (x86)\*        [SET]"
 Write-Host "    Allow: DicomViewer.exe (MedImage Corp) [SET]"
-Write-Host "    Default: DENY                          [SET]"
+Write-Host "    Default: Deny                          [SET]"
 Write-Host "[*] Configuring Script Rules..."
 Write-Host "    Allow: C:\Windows\*                    [SET]"
 Write-Host "    Allow: C:\MedDefense_Lab\Scripts\*     [SET]"
-Write-Host "    Default: DENY                          [SET]"
+Write-Host "    Default: Deny                          [SET]"
 Write-Host "[*] Mode: AUDIT ONLY (not enforcing)"
 
 if (-not (Get-GPInheritance $domain.DistinguishedName).GpoLinks.DisplayName.Contains($gpoName)) {
