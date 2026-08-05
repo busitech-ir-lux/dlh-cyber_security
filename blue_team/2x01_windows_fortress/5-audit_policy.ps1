@@ -48,7 +48,7 @@ Set-GPRegistryValue -Name $gpoName `
     -ValueName "ProcessCreationIncludeCmdLine_Enabled" -Type DWord -Value 1 | Out-Null
 Write-Host "[*] Enabling CommandLine in process creation events (Event ID 4688)... [SET]"
 
-# Only administrators can clear the Security log by default. Reinforce log access.
+# Only administrators can Clear the Security log by default. Reinforce log access.
 Set-GPRegistryValue -Name $gpoName `
     -Key "HKLM\SYSTEM\CurrentControlSet\Services\EventLog\Security" `
     -ValueName "CustomSD" -Type String `
