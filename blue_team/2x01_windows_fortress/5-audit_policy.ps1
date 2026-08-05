@@ -46,7 +46,7 @@ foreach ($item in $settings) {
 Set-GPRegistryValue -Name $gpoName `
     -Key "HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\System\Audit" `
     -ValueName "ProcessCreationIncludeCmdLine_Enabled" -Type DWord -Value 1 | Out-Null
-Write-Host "[*] Enabling command-line in process creation events (Event ID 4688)... [SET]"
+Write-Host "[*] Enabling commandLine in process creation events (Event ID 4688)... [SET]"
 
 # Only administrators can clear the Security log by default. Reinforce log access.
 Set-GPRegistryValue -Name $gpoName `
