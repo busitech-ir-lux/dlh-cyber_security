@@ -67,6 +67,10 @@ Write-Host "[*] Forcing Group Policy update..." -NoNewline
 gpupdate.exe /force | Out-Null
 Write-Host " COMPLETE"
 
+# ===========================================================================
+# VERIFY EFFECTIVE POLICY
+# ===========================================================================
+
 $verify = Get-ADDefaultDomainPasswordPolicy -Identity $domain.DNSRoot
 # Verify effective password and lockout policy
 if ($verify.MinPasswordLength -ne 14 -or
