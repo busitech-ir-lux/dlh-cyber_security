@@ -80,4 +80,4 @@ if ($verify.MinPasswordLength -ne 14 -or
     throw "Policy verification failed."
 }
 
-Write-Host "[*] Effective policy verified."
+Write-Host "[*] Effective policy VERIFIED."
