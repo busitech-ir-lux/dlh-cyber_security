@@ -1,6 +1,6 @@
 <#
 Script Name: 12-applocker_config.ps1
-Purpose: Build and export a MedDefense AppLocker audit policy.
+Purpose: Build and export a MedDefense AppLocker audit policy(Export-AppLockerPolicy).
 Author: NS
 Date: 2026-08-05
 #>
