@@ -1,7 +1,8 @@
 <#
 Script Name: 14-service_accounts.ps1
-Purpose: Audit and harden MedDefense service accounts.
-Author: NS
+Purpose: Audits all MedDefense service accounts, identifies excessive privileges and security weaknesses, then implements hardening measures that would have prevented the svc_ehr compromise. Excessive group memberships and delegation settings are detected and remediated. Detects suspicious logons like the 03:17 AM activity seen with svc_ehr during the Crimson Tide attack.
+
+Author: Mahdi
 Date: 2026-08-05
 #>
 
