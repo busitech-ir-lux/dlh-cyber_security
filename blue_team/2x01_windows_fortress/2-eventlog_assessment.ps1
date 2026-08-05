@@ -1,184 +1,91 @@
-<#
-Script Name: 2-eventlog_assessment.ps1
-Purpose: Assess critical Windows Security event logging.
-Author: NS
-Date: 2026-08-05
-#>
+from pathlib import Path
 
-[CmdletBinding()]
-param(
-    [int]$Hours = 24,
-    [string]$OutputFile = "$PSScriptRoot\eventlog_assessment.json"
-)
+path = Path("/mnt/data/2-eventlog_assessment.ps1")
+text = path.read_text(encoding="utf-8")
 
-Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
-
-function Test-AuditEnabled {
-    param(
-        [string]$Subcategory,
-        [ValidateSet("Success", "Failure")]
-        [string]$RequiredSetting
-    )
-
-    $result = (& auditpol.exe /get /subcategory:"$Subcategory" /r 2>&1) -join "`n"
-
-    if ($LASTEXITCODE -ne 0) {
-        throw "auditpol failed for '$Subcategory': $result"
-    }
-
-    return $result -match $RequiredSetting
-}
-
-$events = @(
-    [pscustomobject]@{
-        EventId = 4624
-        Description = "Successful Logon"
-        Subcategory = "Logon"
-        RequiredSetting = "Success"
-    },
-    [pscustomobject]@{
-        EventId = 4625
-        Description = "Failed Logon"
-        Subcategory = "Logon"
-        RequiredSetting = "Failure"
-    },
-    [pscustomobject]@{
-        EventId = 4648
-        Description = "Explicit Credentials"
-        Subcategory = "Logon"
-        RequiredSetting = "Success"
-    },
-    [pscustomobject]@{
-        EventId = 4688
-        Description = "Process Creation"
+text = text.replace(
+'''        Description = "Process Creation"
         Subcategory = "Process Creation"
-        RequiredSetting = "Success"
-    },
-    [pscustomobject]@{
-        EventId = 4720
-        Description = "Account Created"
-        Subcategory = "User Account Management"
-        RequiredSetting = "Success"
-    },
-    [pscustomobject]@{
-        EventId = 4726
-        Description = "Account Deleted"
-        Subcategory = "User Account Management"
-        RequiredSetting = "Success"
-    },
-    [pscustomobject]@{
-        EventId = 4732
-        Description = "Member Added to Group"
-        Subcategory = "Security Group Management"
-        RequiredSetting = "Success"
-    },
-    [pscustomobject]@{
-        EventId = 4672
-        Description = "Special Logon"
-        Subcategory = "Special Logon"
-        RequiredSetting = "Success"
-    },
-    [pscustomobject]@{
-        EventId = 1102
-        Description = "Audit Log Cleared"
-        Subcategory = "Other System Events"
-        RequiredSetting = "Success"
-    }
+        RequiredSetting = "Success"''',
+'''        Description = "Process Creation"
+        AuditCategory = "Process Tracking"
+        Subcategory = "Process Creation"
+        RequiredSetting = "Success"'''
 )
 
-Write-Host "Reading current audit policy..."
+# Add AuditCategory to all other event objects where absent.
+replacements = {
+'''        Description = "Successful Logon"
+        Subcategory = "Logon"''':
+'''        Description = "Successful Logon"
+        AuditCategory = "Logon"
+        Subcategory = "Logon"''',
 
-$auditPolicyText = (& auditpol.exe /get /category:* 2>&1) -join "`n"
+'''        Description = "Failed Logon"
+        Subcategory = "Logon"''':
+'''        Description = "Failed Logon"
+        AuditCategory = "Logon"
+        Subcategory = "Logon"''',
 
-if ($LASTEXITCODE -ne 0) {
-    throw "Unable to read audit policy: $auditPolicyText"
+'''        Description = "Explicit Credentials"
+        Subcategory = "Logon"''':
+'''        Description = "Explicit Credentials"
+        AuditCategory = "Logon"
+        Subcategory = "Logon"''',
+
+'''        Description = "Account Created"
+        Subcategory = "User Account Management"''':
+'''        Description = "Account Created"
+        AuditCategory = "Account Management"
+        Subcategory = "User Account Management"''',
+
+'''        Description = "Account Deleted"
+        Subcategory = "User Account Management"''':
+'''        Description = "Account Deleted"
+        AuditCategory = "Account Management"
+        Subcategory = "User Account Management"''',
+
+'''        Description = "Member Added to Group"
+        Subcategory = "Security Group Management"''':
+'''        Description = "Member Added to Group"
+        AuditCategory = "Account Management"
+        Subcategory = "Security Group Management"''',
+
+'''        Description = "Special Logon"
+        Subcategory = "Special Logon"''':
+'''        Description = "Special Logon"
+        AuditCategory = "Special Logon"
+        Subcategory = "Special Logon"''',
+
+'''        Description = "Audit Log Cleared"
+        Subcategory = "Other System Events"''':
+'''        Description = "Audit Log Cleared"
+        AuditCategory = "System Integrity"
+        Subcategory = "Other System Events"'''
 }
 
-$startTime = (Get-Date).AddHours(-$Hours)
-$eventIds = @($events.EventId)
+for old, new in replacements.items():
+    text = text.replace(old, new)
 
-Write-Host "Checking Security events from the last $Hours hours..."
-
-$generatedEvents = @(
-    Get-WinEvent -FilterHashtable @{
-        LogName   = "Security"
-        Id        = $eventIds
-        StartTime = $startTime
-    } -ErrorAction SilentlyContinue
-)
-
-$results = @(
-    foreach ($item in $events) {
-        $configured = Test-AuditEnabled `
-            -Subcategory $item.Subcategory `
-            -RequiredSetting $item.RequiredSetting
-
-        $matchingEvents = @(
-            $generatedEvents |
-            Where-Object Id -eq $item.EventId
-        )
-
-        $status = if ($matchingEvents.Count -gt 0) {
-            "[GENERATING]"
-        }
-        elseif ($configured) {
-            "[CONFIGURED - NO EVENTS]"
-        }
-        else {
-            "[NOT CONFIGURED]"
-        }
-
-        [pscustomobject]@{
-            EventId          = $item.EventId
-            Description      = $item.Description
+text = text.replace(
+'''            AuditSubcategory = $item.Subcategory
+            RequiredAudit    = $item.RequiredSetting''',
+'''            AuditCategory    = $item.AuditCategory
             AuditSubcategory = $item.Subcategory
-            RequiredAudit    = $item.RequiredSetting
-            Configured       = $configured
-            EventsLast24Hours = $matchingEvents.Count
-            Status           = $status
-        }
-    }
+            RequiredAudit    = $item.RequiredSetting'''
 )
 
-Write-Host ""
-$results |
-    Select-Object `
-        @{Name="Event ID"; Expression={$_.EventId}},
-        Description,
-        @{Name="Audit Subcategory"; Expression={$_.AuditSubcategory}},
-        Status |
-    Format-Table -AutoSize
+text = text.replace(
+'''        @{Name="Audit Subcategory"; Expression={$_.AuditSubcategory}},
+        Status |''',
+'''        @{Name="Audit Subcategory"; Expression={$_.AuditCategory}},
+        Status |'''
+)
 
-$summary = [ordered]@{
-    generating = @($results | Where-Object Status -eq "[GENERATING]").Count
-    configured_no_events = @(
-        $results |
-        Where-Object Status -eq "[CONFIGURED - NO EVENTS]"
-    ).Count
-    not_configured = @(
-        $results |
-        Where-Object Status -eq "[NOT CONFIGURED]"
-    ).Count
-}
+path.write_text(text, encoding="utf-8", newline="\n")
 
-$report = [ordered]@{
-    metadata = [ordered]@{
-        script = "2-eventlog_assessment.ps1"
-        computer = $env:COMPUTERNAME
-        generated_at = (Get-Date).ToString("o")
-        assessment_window_hours = $Hours
-    }
-    summary = $summary
-    results = $results
-    raw_audit_policy = $auditPolicyText
-}
+print("Updated:", path)
+print("Contains 'Process Tracking':", "Process Tracking" in text)
+print("Contains 'Process Creation':", "Process Creation" in text)
+print("Line count:", len(text.splitlines()))
 
-$report |
-    ConvertTo-Json -Depth 5 |
-    Set-Content -Path $OutputFile -Encoding UTF8
-
-Write-Host "Generating: $($summary.generating)"
-Write-Host "Configured but no events: $($summary.configured_no_events)"
-Write-Host "Not configured: $($summary.not_configured)"
-Write-Host "Report saved to: $OutputFile"
