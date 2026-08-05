@@ -49,8 +49,14 @@ Write-Host "[*] Configuring Transcription..."
 Write-Host "    OutputDirectory = C:\PSTranscripts     [SET]"
 
 $amsi = [type]::GetType("System.Management.Automation.AmsiUtils")
-if ($amsi) { Write-Host "[*] Verifying AMSI... AMSI integration present [OK]" }
-else { Write-Warning "AMSI type was not found in this PowerShell host." }
+$amsiDll = Get-Process -Id $PID -Module -ErrorAction SilentlyContinue |
+    Where-Object ModuleName -ieq "amsi.dll"
+if ($amsi -or $amsiDll) {
+    Write-Host "[*] Verifying AMSI... amsi.dll loaded [OK]"
+}
+else {
+    Write-Warning "AMSI integration or amsi.dll was not detected in this host."
+}
 
 if (-not (Get-GPInheritance $domain.DistinguishedName).GpoLinks.DisplayName.Contains($gpoName)) {
     New-GPLink -Name $gpoName -Target $domain.DistinguishedName | Out-Null

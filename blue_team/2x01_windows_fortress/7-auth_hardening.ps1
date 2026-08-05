@@ -64,7 +64,7 @@ Write-Host "    Supported encryption: AES128 + AES256   [SET]"
 Set-GPRegistryValue -Name $gpoName `
     -Key "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" `
     -ValueName "LmCompatibilityLevel" -Type DWord -Value 5 | Out-Null
-Write-Host "    NTLMv1: Refused (LmCompatibilityLevel=5) [SET]"
+Write-Host "    NTLMv1: Refused; NTLMv2 only (LmCompatibilityLevel=5) [SET]"
 
 Set-GPRegistryValue -Name $gpoName `
     -Key "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard" `
@@ -85,4 +85,4 @@ if ($verify) { throw "DES flag remains on one or more accounts." }
 
 Write-Host "[*] Verifying..."
 Write-Host "    Kerberos: AES128, AES256 only           [VERIFIED]"
-Write-Host "    NTLM: v2 only                           [VERIFIED]"
+Write-Host "    NTLMv2 only                           [VERIFIED]"

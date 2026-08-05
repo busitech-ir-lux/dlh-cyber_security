@@ -8,13 +8,13 @@ Date: 2026-08-05
 [CmdletBinding()]
 param(
     [string]$SysmonExe = "$PSScriptRoot\Sysmon\Sysmon64.exe",
-    [string]$ConfigFile = "$PSScriptRoot\sysmonconfig_tuned.xml"
+    [string]$ConfigFile = "$PSScriptRoot\sysmonconfig.xml"
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-Write-Host "[*] Loading Sysmon config... OK"
+Write-Host "[*] Loading sysmonconfig.xml... OK"
 [xml]$config = Get-Content $ConfigFile
 
 $ruleNames = @(
@@ -31,7 +31,7 @@ for ($i = 0; $i -lt $ruleNames.Count; $i++) {
 }
 
 & $SysmonExe -c $ConfigFile | Out-Null
-Write-Host "[*] Updating Sysmon config... OK"
+Write-Host "[*] Updating sysmonconfig.xml... OK"
 
 function Test-SysmonEvent {
     param([int]$Id, [datetime]$Start, [string]$Pattern)

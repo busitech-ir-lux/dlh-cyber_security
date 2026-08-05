@@ -43,15 +43,22 @@ Write-Host "[*] Encryption: High/SSL                         [SET]"
 
 Set-ItemProperty $tsKey -Name fDisableClip -Value 1
 Set-ItemProperty $tsKey -Name fDisableCdm -Value 1
-Write-Host "[*] Clipboard: Disabled                          [SET]"
-Write-Host "[*] Drive redirection: Disabled                  [SET]"
+Write-Host "[*] Clipboard Redirection: Disabled                          [SET]"
+Write-Host "[*] Drive Redirection: Disabled                  [SET]"
 
 Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance" `
     -Name fAllowToGetHelp -Value 0
 Write-Host "[*] Remote Assistance: Disabled                  [SET]"
 
-if ((Get-ItemProperty $rdpKey).UserAuthentication -ne 1) {
-    throw "NLA verification failed."
+$rdpVerify = Get-ItemProperty $rdpKey
+$tsVerify = Get-ItemProperty $tsKey
+$raVerify = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance"
+if ($rdpVerify.UserAuthentication -ne 1 -or
+    $rdpVerify.MinEncryptionLevel -ne 3 -or
+    $tsVerify.fDisableClip -ne 1 -or
+    $tsVerify.fDisableCdm -ne 1 -or
+    $raVerify.fAllowToGetHelp -ne 0) {
+    throw "RDP verification failed."
 }
 Write-Host "[*] Verification..."
 Write-Host "    NLA: Required                                [VERIFIED]"

@@ -58,6 +58,7 @@ $auditStatus = @(
 $auditPolicy = [ordered]@{
     raw_output = (& auditpol.exe /get /category:* 2>&1) -join "`n"
     required_subcategories = $auditStatus
+    required_windows_event_ids = @(4624,4625,4648,4672,4688,4720,4726,4732,1102)
 }
 Write-Host " $($requiredAudit.Count) subcategories"
 

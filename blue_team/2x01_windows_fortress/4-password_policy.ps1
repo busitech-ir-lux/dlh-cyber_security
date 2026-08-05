@@ -14,6 +14,15 @@ $ErrorActionPreference = "Stop"
 Import-Module ActiveDirectory
 Import-Module GroupPolicy
 
+# MinimumPasswordLength = 14
+# ComplexityEnabled = True
+# PasswordHistoryCount = 24
+# MaximumPasswordAge = 0
+# MinimumPasswordAge = 1 day
+# LockoutThreshold = 5
+# LockoutDuration = 15 minutes
+# LockoutObservationWindow = 15 minutes
+
 $gpoName = "MedDefense - Password and Lockout Policy"
 $domain = Get-ADDomain
 $gpo = Get-GPO -Name $gpoName -ErrorAction SilentlyContinue
@@ -59,6 +68,7 @@ gpupdate.exe /force | Out-Null
 Write-Host " COMPLETE"
 
 $verify = Get-ADDefaultDomainPasswordPolicy -Identity $domain.DNSRoot
+# Verify effective password and lockout policy
 if ($verify.MinPasswordLength -ne 14 -or
     -not $verify.ComplexityEnabled -or
     $verify.PasswordHistoryCount -ne 24 -or

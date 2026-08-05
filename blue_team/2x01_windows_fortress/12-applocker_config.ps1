@@ -25,6 +25,8 @@ Write-Host "[*] Creating GPO: `"$gpoName`"... CREATED"
 
 Set-Service AppIDSvc -StartupType Automatic
 Start-Service AppIDSvc
+$appIdService = Get-Service AppIDSvc
+if ($appIdService.Status -ne "Running") { throw "Application Identity service did not start." }
 Write-Host "[*] Starting AppIDSvc... Running           [OK]"
 
 $xml = @'

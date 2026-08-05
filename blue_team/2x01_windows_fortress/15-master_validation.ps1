@@ -93,7 +93,7 @@ $rdpMembers = @(Get-LocalGroupMember "Remote Desktop Users" -ErrorAction Silentl
 $onlyAdmins = @($rdpMembers | Where-Object Name -notmatch "G_IT_Admins").Count -eq 0
 Add-Result "RDP" "G_IT_Admins only" $(if($onlyAdmins){"PASS"}else{"FAIL"}) "$($rdpMembers.Name -join ', ')" $true
 
-Write-Host "`n--- Service Accounts ---"
+Write-Host "`n--- service accounts ---"
 $svc = @(Get-ADUser -Filter * -Properties AccountNotDelegated, PasswordLastSet |
     Where-Object SamAccountName -match "(?i)svc")
 $restricted = @($svc | Where-Object AccountNotDelegated).Count

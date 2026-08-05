@@ -41,6 +41,10 @@ foreach ($account in $accounts) {
     else { -1 }
 
     Write-Host "$($account.SamAccountName):"
+    if ($groups | Where-Object { $_ -in $privilegedGroups }) { Write-Host "  excessive privileges: privileged group membership [!]" }
+    if ($age -gt $OldPasswordDays) { Write-Host "  old passwords: password age exceeds threshold [!]" }
+    if ($account.TrustedForDelegation) { Write-Host "  unconstrained delegation: enabled [!]" }
+    if ($account.LastLogonDate -and $account.LastLogonDate.Hour -lt 5) { Write-Host "  suspicious logons: off-hours last logon [!!!]" }
     Write-Host "  Groups: $($groups -join ', ')"
     Write-Host "  Password age: $age days $(if($age -gt $OldPasswordDays){'[!]'}else{'[OK]'})"
     Write-Host "  Delegation: $(if($account.TrustedForDelegation){'Unconstrained [!]'}else{'Restricted'})"
@@ -49,7 +53,7 @@ foreach ($account in $accounts) {
     Write-Host "  Last logon: $($account.LastLogonDate)"
 
     Set-ADAccountControl -Identity $account `
-        -AccountNotDelegated $true `
+        -AccountNotDelegated $true ` # Account is sensitive and cannot be delegated
         -TrustedForDelegation $false `
         -UseDESKeyOnly $false
 

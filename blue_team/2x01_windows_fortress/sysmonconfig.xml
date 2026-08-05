@@ -1,13 +1,30 @@
 <Sysmon schemaversion="4.90">
   <HashAlgorithms>sha256</HashAlgorithms>
   <EventFiltering>
-    <ProcessCreate onmatch="include" />
+    <ProcessCreate onmatch="include">
+      <Rule groupRelation="or" name="MedDefense-Rclone">
+        <Image condition="end with">rclone.exe</Image>
+      </Rule>
+      <Rule groupRelation="or" name="MedDefense-Encoded-PowerShell">
+        <Image condition="end with">powershell.exe</Image>
+        <CommandLine condition="contains"> -enc </CommandLine>
+      </Rule>
+      <Rule groupRelation="or" name="MedDefense-Shadow-Deletion">
+        <Image condition="end with">vssadmin.exe</Image>
+        <CommandLine condition="contains all">delete;shadows</CommandLine>
+      </Rule>
+      <Rule groupRelation="or" name="MedDefense-Scheduled-Task">
+        <Image condition="end with">schtasks.exe</Image>
+        <CommandLine condition="contains">/create</CommandLine>
+      </Rule>
+    </ProcessCreate>
     <NetworkConnect onmatch="include" />
-    <ImageLoad onmatch="include">
-      <ImageLoaded condition="end with">.dll</ImageLoaded>
-    </ImageLoad>
     <FileCreate onmatch="include" />
-    <RegistryEvent onmatch="include" />
+    <RegistryEvent onmatch="include">
+      <Rule groupRelation="or" name="MedDefense-PsExec-Service">
+        <TargetObject condition="contains">\SYSTEM\CurrentControlSet\Services\PSEXESVC</TargetObject>
+      </Rule>
+    </RegistryEvent>
     <DnsQuery onmatch="include" />
   </EventFiltering>
 </Sysmon>

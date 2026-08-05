@@ -23,7 +23,7 @@ if (-not (Get-GPO -Name $gpoName -ErrorAction SilentlyContinue)) {
 $beforeServer = Get-SmbServerConfiguration
 $beforeClient = Get-SmbClientConfiguration
 
-Write-Host "[*] Current SMB Configuration..."
+Write-Host "[*] Before - Current SMB Configuration..."
 Write-Host "    SMBv1: $($beforeServer.EnableSMB1Protocol)"
 Write-Host "    Signing Required: $($beforeServer.RequireSecuritySignature)"
 Write-Host "    Encryption: $($beforeServer.EncryptData)"
@@ -55,7 +55,7 @@ if (-not (Get-GPInheritance $domain.DistinguishedName).GpoLinks.DisplayName.Cont
 gpupdate.exe /force | Out-Null
 
 $after = Get-SmbServerConfiguration
-Write-Host "[*] Verification..."
+Write-Host "[*] After - Verification..."
 Write-Host "    SMBv1: $(if (-not $after.EnableSMB1Protocol) {'Disabled [VERIFIED]'} else {'Enabled [FAIL]'})"
 Write-Host "    Signing: $(if ($after.RequireSecuritySignature) {'Required [VERIFIED]'} else {'Not required [FAIL]'})"
 Write-Host "    Encryption: $(if ($after.EncryptData) {'Enabled [VERIFIED]'} else {'Disabled [FAIL]'})"
