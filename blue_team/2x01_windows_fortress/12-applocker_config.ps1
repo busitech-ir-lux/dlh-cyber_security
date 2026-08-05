@@ -5,6 +5,10 @@ Author: NS
 Date: 2026-08-05
 #>
 
+<#
+".ps1, .bat, .cmd, .vbs"
+#>
+
 [CmdletBinding()]
 param(
     [string]$OutputFile = "$PSScriptRoot\applocker_policy.xml"
