@@ -1,91 +1,122 @@
-from pathlib import Path
+<#
+.Synopsis
+    2-eventlog_assessment.ps1 - Windows Event Log Assessment
+.Purpose
+    Assesses current event logging capability by checking which critical Event IDs
+    the domain is generating, verifying audit policy configuration and actual
+    log generation within the last 24 hours.
+.Author
+    Steve - Cybersecurity Engineer
+.Date
+    August 4, 2026
+#>
 
-path = Path("/mnt/data/2-eventlog_assessment.ps1")
-text = path.read_text(encoding="utf-8")
-
-text = text.replace(
-'''        Description = "Process Creation"
-        Subcategory = "Process Creation"
-        RequiredSetting = "Success"''',
-'''        Description = "Process Creation"
-        AuditCategory = "Process Tracking"
-        Subcategory = "Process Creation"
-        RequiredSetting = "Success"'''
+param(
+    [string]$OutputPath = "eventlog_assessment.json"
 )
 
-# Add AuditCategory to all other event objects where absent.
-replacements = {
-'''        Description = "Successful Logon"
-        Subcategory = "Logon"''':
-'''        Description = "Successful Logon"
-        AuditCategory = "Logon"
-        Subcategory = "Logon"''',
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
 
-'''        Description = "Failed Logon"
-        Subcategory = "Logon"''':
-'''        Description = "Failed Logon"
-        AuditCategory = "Logon"
-        Subcategory = "Logon"''',
+# Critical Event IDs and their corresponding audit categories/subcategories
+$eventDefinitions = @(
+    @{ Id = 4624; Description = "Successful Logon"; AuditSubcategory = "Logon" }
+    @{ Id = 4625; Description = "Failed Logon"; AuditSubcategory = "Logon" }
+    @{ Id = 4648; Description = "Explicit Credentials"; AuditSubcategory = "Logon" }
+    @{ Id = 4688; Description = "Process Creation"; AuditSubcategory = "Process Tracking" }
+    @{ Id = 4720; Description = "Account Created"; AuditSubcategory = "Account Management" }
+    @{ Id = 4726; Description = "Account Deleted"; AuditSubcategory = "Account Management" }
+    @{ Id = 4732; Description = "Member Added to Group"; AuditSubcategory = "Account Management" }
+    @{ Id = 4672; Description = "Special Logon"; AuditSubcategory = "Special Logon" }
+    @{ Id = 1102; Description = "Audit Log Cleared"; AuditSubcategory = "System Integrity" }
+)
 
-'''        Description = "Explicit Credentials"
-        Subcategory = "Logon"''':
-'''        Description = "Explicit Credentials"
-        AuditCategory = "Logon"
-        Subcategory = "Logon"''',
+Write-Host "[*] Assessing Windows Event Log Capability..." -ForegroundColor Yellow
 
-'''        Description = "Account Created"
-        Subcategory = "User Account Management"''':
-'''        Description = "Account Created"
-        AuditCategory = "Account Management"
-        Subcategory = "User Account Management"''',
+# 1. Get current audit policy using auditpol
+Write-Host "[1/3] Retrieving current audit policy..." -ForegroundColor Yellow
+$auditConfig = @{}
 
-'''        Description = "Account Deleted"
-        Subcategory = "User Account Management"''':
-'''        Description = "Account Deleted"
-        AuditCategory = "Account Management"
-        Subcategory = "User Account Management"''',
-
-'''        Description = "Member Added to Group"
-        Subcategory = "Security Group Management"''':
-'''        Description = "Member Added to Group"
-        AuditCategory = "Account Management"
-        Subcategory = "Security Group Management"''',
-
-'''        Description = "Special Logon"
-        Subcategory = "Special Logon"''':
-'''        Description = "Special Logon"
-        AuditCategory = "Special Logon"
-        Subcategory = "Special Logon"''',
-
-'''        Description = "Audit Log Cleared"
-        Subcategory = "Other System Events"''':
-'''        Description = "Audit Log Cleared"
-        AuditCategory = "System Integrity"
-        Subcategory = "Other System Events"'''
+try {
+    $auditRawOutput = & auditpol.exe /get /category:* 2>&1
+    foreach ($line in $auditRawOutput) {
+        if ($line -match '^\s*(.+?)\s+(Success and Failure|Success|Failure|No Auditing)\s*$') {
+            $subcategory = $Matches[1].Trim()
+            $status = $Matches[2].Trim()
+            $auditConfig[$subcategory] = $status
+        }
+    }
+} catch {
+    Write-Warning "Could not retrieve audit policy via auditpol (may require elevation). Continuing with assumed 'No Auditing' for all subcategories."
 }
 
-for old, new in replacements.items():
-    text = text.replace(old, new)
+# 2. Query Security event log for Event IDs generated in the last 24 hours
+Write-Host "[2/3] Querying Security event log for last 24 hours..." -ForegroundColor Yellow
+$generatedEvents = @{}
+$startTime = (Get-Date).AddHours(-24)
 
-text = text.replace(
-'''            AuditSubcategory = $item.Subcategory
-            RequiredAudit    = $item.RequiredSetting''',
-'''            AuditCategory    = $item.AuditCategory
-            AuditSubcategory = $item.Subcategory
-            RequiredAudit    = $item.RequiredSetting'''
-)
+try {
+    $targetIds = $eventDefinitions | ForEach-Object { $_.Id }
+    $events = Get-WinEvent -FilterHashtable @{ LogName = 'Security'; Id = $targetIds; StartTime = $startTime } -ErrorAction SilentlyContinue
 
-text = text.replace(
-'''        @{Name="Audit Subcategory"; Expression={$_.AuditSubcategory}},
-        Status |''',
-'''        @{Name="Audit Subcategory"; Expression={$_.AuditCategory}},
-        Status |'''
-)
+    if ($null -ne $events) {
+        foreach ($event in $events) {
+            $generatedEvents[$event.Id] = $true
+        }
+    }
+} catch {
+    Write-Warning "Could not query Security event log (may require elevation). Assuming no events generated."
+}
 
-path.write_text(text, encoding="utf-8", newline="\n")
+# 3. Correlate and display results
+Write-Host "[3/3] Correlating audit policy and event log data..." -ForegroundColor Yellow
+Write-Host ""
 
-print("Updated:", path)
-print("Contains 'Process Tracking':", "Process Tracking" in text)
-print("Contains 'Process Creation':", "Process Creation" in text)
-print("Line count:", len(text.splitlines()))
+$results = @()
 
+$header = "{0,-10} {1,-25} {2,-25} {3}" -f "Event ID", "Description", "Audit Subcategory", "Status"
+Write-Host $header
+Write-Host ("-" * $header.Length)
+
+foreach ($def in $eventDefinitions) {
+    $isConfigured = $false
+    $subcat = $def.AuditSubcategory
+
+    if ($auditConfig.ContainsKey($subcat)) {
+        if ($auditConfig[$subcat] -match "Success and Failure|Success|Failure") {
+            $isConfigured = $true
+        }
+    }
+
+    $isGenerating = $generatedEvents.ContainsKey($def.Id)
+
+    if ($isGenerating) {
+        $status = "[GENERATING]"
+    } elseif ($isConfigured) {
+        $status = "[CONFIGURED BUT NOT GENERATING]"
+    } else {
+        $status = "[NOT CONFIGURED]"
+    }
+
+    $row = "{0,-10} {1,-25} {2,-25} {3}" -f $def.Id, $def.Description, $def.AuditSubcategory, $status
+    Write-Host $row
+
+    $results += [PSCustomObject]@{
+        event_id = $def.Id
+        description = $def.Description
+        audit_subcategory = $def.AuditSubcategory
+        audit_status = $auditConfig[$subcat]
+        status = $status
+    }
+}
+
+# Export results to JSON
+$report = [PSCustomObject]@{
+    assessment_time = (Get-Date).ToString("yyyy-MM-ddTHH:mm:ssZ")
+    total_events_checked = $results.Count
+    results = $results
+}
+
+$report | ConvertTo-Json -Depth 4 | Out-File -FilePath $OutputPath -Force -Encoding UTF8
+Write-Host ""
+Write-Host "Report saved to: $OutputPath" -ForegroundColor Green
