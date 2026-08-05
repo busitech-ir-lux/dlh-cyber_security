@@ -78,7 +78,7 @@ if ($serviceGroup) {
     $text = $text -replace "^SeDenyRemoteInteractiveLogonRight.*", "SeDenyRemoteInteractiveLogonRight = *$sid"
     $text | Set-Content $cfg -Encoding Unicode
     secedit.exe /configure /db "$env:TEMP\service_accounts.sdb" /cfg $cfg /areas USER_RIGHTS | Out-Null
-    Write-Host "Deny interactive and RDP logon rights: [SET]"
+    Write-Host "Deny interactive logon and RDP logon rights: [SET]"
 }
 
 Write-Host "Service accounts processed: $($accounts.Count)"
