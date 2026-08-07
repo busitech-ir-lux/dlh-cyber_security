@@ -266,7 +266,7 @@ $definitions = @(
     @{
         source = "PowerShell"
         id = 4104
-        fields = @("script_block_text")
+        fields = @("ScriptBlockText")
     },
 
     @{
@@ -397,7 +397,7 @@ $scriptEvents = @(
 
 $scriptGood = @(
     $scriptEvents | Where-Object {
-        Test-FieldValue (Get-EventValue $_ "script_block_text")
+        Test-FieldValue (Get-EventValue $_ "ScriptBlockText")
     }
 ).Count
 
