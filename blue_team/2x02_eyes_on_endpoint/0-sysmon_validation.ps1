@@ -1,7 +1,7 @@
 <#
-Name: 0-sysmon_validation.ps1
-Purpose: Validate Sysmon telemetry by testing important Sysmon Event IDs.
-Author: Mahdi Hamidi
+name: 0-sysmon_validation.ps1
+purpose: Validate Sysmon telemetry by testing important Sysmon Event IDs.
+author: Mahdi Hamidi
 #>
 
 Set-StrictMode -Version Latest
