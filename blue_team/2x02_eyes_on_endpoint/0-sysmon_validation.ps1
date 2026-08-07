@@ -78,7 +78,8 @@ $reg = "HKCU:\Software\SysmonTest"
 $time = Get-Date
 
 New-Item $reg -Force | Out-Null
-Set-ItemProperty $reg -Name "TestValue" -Value "Hello"
+$name = "TestValue"
+Set-ItemProperty $reg -Name $name -Value "Hello"
 Start-Sleep 2
 
 $event = Get-WinEvent -FilterHashtable @{
