@@ -11,7 +11,8 @@ param(
 )
 
 $outputFile = Join-Path $PSScriptRoot "windows_events_export.json"
-$startTime = (Get-Date).AddHours(-$Hours)
+$endTime = Get-Date
+$startTime = $endTime.AddHours(-$Hours)
 
 Write-Host "[*] Exporting Windows telemetry from last $Hours hours..."
 
