@@ -40,7 +40,7 @@ source_distribution=$(jq '
 
 
 # -----------------------------
-# Time coverage
+# Time coverage - events per hour
 # -----------------------------
 
 events_per_hour=$(jq '
