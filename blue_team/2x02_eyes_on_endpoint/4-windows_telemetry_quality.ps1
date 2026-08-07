@@ -69,7 +69,7 @@ function Get-Percent {
 
 
 # -------------------------------------------------
-# Event distribution
+# Event Distribution
 # -------------------------------------------------
 
 $eventDistribution = @()
