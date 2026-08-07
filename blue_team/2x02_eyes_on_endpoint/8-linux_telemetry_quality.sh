@@ -80,7 +80,7 @@ gap_count=$(echo "$gaps" | jq 'length')
 # Field completeness
 # -----------------------------
 
-percent() {
+percentage() {
     good="$1"
     all="$2"
 
@@ -96,16 +96,16 @@ hostname_good=$(jq '[.[] | select(.hostname != null and .hostname != "")] | leng
 source_good=$(jq '[.[] | select(.source_type != null and .source_type != "")] | length' "$INPUT")
 category_good=$(jq '[.[] | select(.event_category != null and .event_category != "")] | length' "$INPUT")
 
-timestamp_pct=$(percent "$timestamp_good" "$total")
-hostname_pct=$(percent "$hostname_good" "$total")
-source_pct=$(percent "$source_good" "$total")
-category_pct=$(percent "$category_good" "$total")
+timestamp_pct=$(percentage "$timestamp_good" "$total")
+hostname_pct=$(percentage "$hostname_good" "$total")
+source_pct=$(percentage "$source_good" "$total")
+category_pct=$(percentage "$category_good" "$total")
 
 
 # execve command line
 exec_total=$(jq '[.[] | select(.event_category=="execve")] | length' "$INPUT")
 exec_good=$(jq '[.[] | select(.event_category=="execve" and .command != null and .command != "")] | length' "$INPUT")
-exec_pct=$(percent "$exec_good" "$exec_total")
+exec_pct=$(percentage "$exec_good" "$exec_total")
 
 
 # SSH source IP and user
@@ -125,8 +125,8 @@ ssh_user_good=$(jq '[.[] |
         and .user != ""
     )] | length' "$INPUT")
 
-ssh_ip_pct=$(percent "$ssh_ip_good" "$ssh_total")
-ssh_user_pct=$(percent "$ssh_user_good" "$ssh_total")
+ssh_ip_pct=$(percentage "$ssh_ip_good" "$ssh_total")
+ssh_user_pct=$(percentage "$ssh_user_good" "$ssh_total")
 
 
 # auditd file events
@@ -144,9 +144,9 @@ file_key_good=$(jq '[.[] |
     select(.event_category=="file_access" and .key != null and .key != "")
 ] | length' "$INPUT")
 
-file_path_pct=$(percent "$file_path_good" "$file_total")
-file_operation_pct=$(percent "$file_operation_good" "$file_total")
-file_key_pct=$(percent "$file_key_good" "$file_total")
+file_path_pct=$(percentage "$file_path_good" "$file_total")
+file_operation_pct=$(percentage "$file_operation_good" "$file_total")
+file_key_pct=$(percentage "$file_key_good" "$file_total")
 
 
 # -----------------------------
