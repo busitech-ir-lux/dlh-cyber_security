@@ -14,7 +14,7 @@ found=0
 missing=0
 
 printf "%-18s %-32s %-10s %-14s %-10s %-10s\n" \
-"Source" "Path" "Format" "Rotation" "events/hr" "Relevance"
+"Source" "Path" "Format" "Rotation" "Events/hr" "Relevance"
 
 printf "%-18s %-32s %-10s %-14s %-10s %-10s\n" \
 "------" "----" "------" "--------" "---------" "---------"
@@ -106,7 +106,7 @@ check_log() {
         found=$((found + 1))
 
         if [ ! -s "$path" ]; then
-            echo "[WARNING] $path exists but is not generating events."
+            echo "[WARNING] $path exists but is not generating events/hr."
         fi
 
     else
