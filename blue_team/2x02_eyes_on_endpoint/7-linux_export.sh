@@ -15,7 +15,7 @@ SYSLOG="/var/log/syslog"
 OUTPUT="linux_events_export.json"
 TEMP=$(mktemp)
 
-# Default: last 24 hours
+# Default time window: last 24 hours
 START="${1:-24 hours ago}"
 END="${2:-now}"
 
@@ -41,7 +41,7 @@ error_count=0
 syslog_other=0
 
 
-# Convert syslog timestamp to ISO 8601 UTC
+# Convert normal Linux log timestamp to ISO 8601 UTC
 to_iso() {
     local stamp="$1"
 
@@ -50,7 +50,7 @@ to_iso() {
 }
 
 
-# Check if event is inside time window
+# Check if timestamp is inside selected time window
 in_window() {
     local iso="$1"
 
@@ -64,7 +64,7 @@ in_window() {
 }
 
 
-# Add JSON event
+# Add normalized JSON event
 add_event() {
 
     jq -nc \
@@ -143,7 +143,7 @@ if [ -f "$AUTH_LOG" ]; then
             auth_count=$((auth_count + 1))
 
 
-        # sudo
+        # sudo events
         elif echo "$line" | grep -q "sudo:"; then
 
             user=$(echo "$line" |
@@ -159,7 +159,7 @@ if [ -f "$AUTH_LOG" ]; then
             auth_count=$((auth_count + 1))
 
 
-        # su
+        # su events
         elif echo "$line" | grep -q "su:"; then
 
             user=$(echo "$line" |
@@ -172,7 +172,7 @@ if [ -f "$AUTH_LOG" ]; then
             auth_count=$((auth_count + 1))
 
 
-        # PAM
+        # PAM events
         elif echo "$line" | grep -qi "pam_"; then
 
             add_event "$iso" "$host" "auth" \
@@ -190,7 +190,7 @@ echo "    SSH logins: $ssh_count | sudo: $sudo_count | su: $su_count | PAM: $pam
 
 
 # -------------------------------------------------
-# audit.log
+# audit.log using ausearch
 # -------------------------------------------------
 
 echo -n "[*] Parsing audit.log..."
@@ -199,11 +199,13 @@ if [ -f "$AUDIT_LOG" ]; then
 
     while IFS= read -r line; do
 
+        # Extract audit timestamp
         audit_epoch=$(echo "$line" |
             sed -n 's/.*msg=audit(\([0-9]*\).*/\1/p')
 
         [ -z "$audit_epoch" ] && continue
 
+        # Only events inside requested time window
         if [ "$audit_epoch" -lt "$START_EPOCH" ] ||
            [ "$audit_epoch" -gt "$END_EPOCH" ]; then
             continue
@@ -212,13 +214,14 @@ if [ -f "$AUDIT_LOG" ]; then
         iso=$(date -u -d "@$audit_epoch" "+%Y-%m-%dT%H:%M:%SZ")
         host=$(hostname)
 
+
         # execve / process execution
         if echo "$line" | grep -q "type=EXECVE"; then
 
             command=$(echo "$line" |
                 grep -oE 'a[0-9]+="[^"]*"' |
                 sed 's/a[0-9]*=//g' |
-                tr '\n' ' ')
+                tr '\n' ' ' || true)
 
             add_event "$iso" "$host" "auditd" \
                 "execve" "" "" "$command" "" "" "$line"
@@ -226,7 +229,7 @@ if [ -f "$AUDIT_LOG" ]; then
             execve_count=$((execve_count + 1))
 
 
-        # file access
+        # File access
         elif echo "$line" | grep -q "type=PATH"; then
 
             path=$(echo "$line" |
@@ -238,7 +241,7 @@ if [ -f "$AUDIT_LOG" ]; then
             file_count=$((file_count + 1))
 
 
-        # network socket
+        # Network socket/connect event
         elif echo "$line" | grep -Eq "type=SOCKADDR|network_connect"; then
 
             destination=$(echo "$line" |
@@ -250,6 +253,7 @@ if [ -f "$AUDIT_LOG" ]; then
             network_count=$((network_count + 1))
 
 
+        # Other audit events
         else
 
             add_event "$iso" "$host" "auditd" \
@@ -260,7 +264,8 @@ if [ -f "$AUDIT_LOG" ]; then
 
         audit_count=$((audit_count + 1))
 
-    done < "$AUDIT_LOG"
+    done < <(ausearch --raw 2>/dev/null || true)
+
 fi
 
 echo " $audit_count events"
@@ -284,7 +289,8 @@ if [ -f "$SYSLOG" ]; then
 
         host=$(echo "$line" | awk '{print $4}')
 
-        # Service start / stop
+
+        # Service start/stop
         if echo "$line" |
             grep -Eqi "Started |Stopped |Starting |Stopping "; then
 
@@ -292,17 +298,20 @@ if [ -f "$SYSLOG" ]; then
             service_count=$((service_count + 1))
 
 
-        # Error conditions
+        # Errors
         elif echo "$line" |
             grep -Eqi "error|failed|failure|critical"; then
 
             category="error"
             error_count=$((error_count + 1))
 
+
         else
+
             category="other"
             syslog_other=$((syslog_other + 1))
         fi
+
 
         add_event "$iso" "$host" "syslog" \
             "$category" "" "" "" "" "" "$line"
@@ -317,16 +326,18 @@ echo "    service: $service_count | error: $error_count | other: $syslog_other"
 
 
 # -------------------------------------------------
-# Save JSON
+# Create final JSON
 # -------------------------------------------------
 
 jq -s '.' "$TEMP" > "$OUTPUT"
+
 rm -f "$TEMP"
 
 total=$((auth_count + audit_count + syslog_count))
 
 start_iso=$(date -u -d "@$START_EPOCH" "+%Y-%m-%dT%H:%M:%SZ")
 end_iso=$(date -u -d "@$END_EPOCH" "+%Y-%m-%dT%H:%M:%SZ")
+
 
 echo "Total events: $total"
 echo "Time range: $start_iso to $end_iso"
