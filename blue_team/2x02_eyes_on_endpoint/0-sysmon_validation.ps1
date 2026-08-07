@@ -1,7 +1,12 @@
-# 0-sysmon_validation.ps1
+<#
+Name: 0-sysmon_validation.ps1
+Purpose: Validate Sysmon telemetry by testing important Sysmon Event IDs.
+Author: Mahdi Hamidi
+#>
+
+Set-StrictMode -Version Latest
 
 $log = "Microsoft-Windows-Sysmon/Operational"
-$purpose = "Sysmon telemetry validation"
 $passed = 0
 
 Write-Host "[*] Running Sysmon telemetry validation..."
