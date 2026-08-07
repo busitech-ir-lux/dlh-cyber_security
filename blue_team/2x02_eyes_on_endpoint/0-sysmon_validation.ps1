@@ -1,6 +1,7 @@
 # 0-sysmon_validation.ps1
 
 $log = "Microsoft-Windows-Sysmon/Operational"
+$purpose = "Sysmon telemetry validation"
 $passed = 0
 
 Write-Host "[*] Running Sysmon telemetry validation..."
