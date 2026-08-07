@@ -48,7 +48,7 @@ $event = Get-WinEvent -FilterHashtable @{
 } | Select-Object -First 1
 
 if ($event) {
-    Write-Host "          Outbound TCP -> Sysmon EID 3 captured, destinationIp / destination port / DestinationPort present   [PASS]"
+    Write-Host "          Outbound TCP -> Sysmon EID 3 captured, DestinationIp / Destination port / DestinationPort present   [PASS]"
     $passed++
 } else {
     Write-Host "          Network connection not captured                              [FAIL]"
