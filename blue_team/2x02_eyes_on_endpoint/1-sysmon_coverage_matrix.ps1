@@ -18,6 +18,13 @@ if (-not (Test-Path $configPath)) {
 
 [xml]$xml = Get-Content $configPath
 
+$EventFiltering = $xml.Sysmon.EventFiltering
+
+if ($null -eq $EventFiltering) {
+    Write-Host "[ERROR] EventFiltering section not found."
+    exit 1
+}
+
 # Sysmon event name -> Event ID
 $eventMap = @{
     "ProcessCreate"         = @(1)
