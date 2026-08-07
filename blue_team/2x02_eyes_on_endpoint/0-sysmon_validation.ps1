@@ -82,7 +82,7 @@ if ($event) {
 # 4. Registry Modification
 Write-Host "    [4/5] Registry modification (Event ID 13)..."
 $reg = "HKCU:\Software\SysmonTest"
-$time = Get-Date
+$timestamp = Get-Date
 
 New-Item $reg -Force | Out-Null
 $name = "TestValue"
@@ -92,7 +92,7 @@ Start-Sleep 2
 $event = Get-WinEvent -FilterHashtable @{
     LogName=$log
     Id=13
-    StartTime=$time
+    StartTime=$timestamp
 } -ErrorAction SilentlyContinue | Where-Object {
     $_.Message -like "*SysmonTest*" -and $_.Message -like "*TestValue*"
 } | Select-Object -First 1
