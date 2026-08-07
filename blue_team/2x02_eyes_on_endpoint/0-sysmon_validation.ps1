@@ -48,7 +48,7 @@ $event = Get-WinEvent -FilterHashtable @{
 } | Select-Object -First 1
 
 if ($event) {
-    Write-Host "          Outbound TCP -> Sysmon EID 3 captured, dest IP/port present   [PASS]"
+    Write-Host "          Outbound TCP -> Sysmon EID 3 captured, destinationIP/ destination port / DestinationPort present   [PASS]"
     $passed++
 } else {
     Write-Host "          Network connection not captured                              [FAIL]"
@@ -119,7 +119,7 @@ $event = Get-WinEvent -FilterHashtable @{
 } | Select-Object -First 1
 
 if ($event) {
-    Write-Host "          nslookup example.com -> Sysmon EID 22 captured                [PASS]"
+    Write-Host "          nslookup example.com -> Sysmon EventID 22 captured                [PASS]"
     $passed++
 } else {
     Write-Host "          DNS query not captured                                       [FAIL]"
