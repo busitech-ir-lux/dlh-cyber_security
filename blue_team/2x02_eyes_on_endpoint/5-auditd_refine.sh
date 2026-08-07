@@ -4,7 +4,9 @@
 # purpose: Add and validate detection-focused auditd rules.
 # author: Mahdi Hamidi
 
-set -euo pipefail
+set -e
+set -u
+set -o pipefail
 
 RULE_FILE="/etc/audit/rules.d/meddefense-refine.rules"
 
