@@ -124,7 +124,7 @@ $event = Get-WinEvent -FilterHashtable @{
 } | Select-Object -First 1
 
 if ($event) {
-    Write-Host "          EID 4104: Full block captured (12 lines) [CAPTURED: FULL] [PASS]"
+    Write-Host "          EID 4104: full block captured (12 lines) [CAPTURED: FULL] [PASS]"
     $passed++
 }
 else {
