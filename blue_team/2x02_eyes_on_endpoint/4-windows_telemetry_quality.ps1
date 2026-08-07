@@ -505,7 +505,7 @@ $report |
 Write-Host "Total events: $totalEvents"
 Write-Host "Hours with events: $hoursWithEvents/$windowHours"
 Write-Host "Largest gap: $largestGap minutes"
-Write-Host "Command-line completeness: $commandCompleteness%"
+Write-Host "CommandLine completeness: $commandCompleteness%"
 Write-Host "Source IP completeness: $sourceIpCompleteness%"
 Write-Host "Script block completeness: $scriptCompleteness%"
 Write-Host "Quality score: $qualityScore% ($assessment)"
