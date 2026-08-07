@@ -90,7 +90,7 @@ foreach ($group in $groups) {
 
 
 # -------------------------------------------------
-# Channel distribution
+# Channel Distribution
 # -------------------------------------------------
 
 $channelDistribution = @()
@@ -110,7 +110,7 @@ foreach ($channel in @("Security", "Sysmon", "PowerShell")) {
 
 
 # -------------------------------------------------
-# Time coverage - events per hour
+# Time Coverage - events per hour
 # -------------------------------------------------
 
 $endTime = (Get-Date).ToUniversalTime()
@@ -165,7 +165,7 @@ $hoursWithoutEvents = $windowHours - $hoursWithEvents
 
 
 # -------------------------------------------------
-# Gap detection - longer than 30 minutes
+# Gap Detection - longer than 30 minutes
 # -------------------------------------------------
 
 $gaps = @()
@@ -234,7 +234,7 @@ $largestGap = [math]::Round(
 
 
 # -------------------------------------------------
-# Field completeness
+# Field Completeness
 # -------------------------------------------------
 
 $definitions = @(
@@ -353,7 +353,7 @@ foreach ($definition in $definitions) {
 
 
 # -------------------------------------------------
-# Important completeness checks
+# Important Completeness Checks
 # -------------------------------------------------
 
 $processEvents = @(
@@ -405,7 +405,7 @@ $scriptCompleteness = Get-Percent $scriptGood $scriptEvents.Count
 
 
 # -------------------------------------------------
-# Quality score 0-100
+# Quality Score 0-100
 # -------------------------------------------------
 
 if ($fieldScores.Count -gt 0) {
@@ -437,7 +437,7 @@ $activeChannels = @(
 $channelScore = ($activeChannels / 3) * 100
 
 
-# Weighted score
+# Weighted Ccore
 $qualityScore = (
     ($fieldScore * 0.40) +
     ($timeScore * 0.30) +
@@ -459,7 +459,7 @@ else {
 
 
 # -------------------------------------------------
-# JSON report
+# JSON Report
 # -------------------------------------------------
 
 $report = [PSCustomObject]@{
