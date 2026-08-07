@@ -92,7 +92,7 @@ else {
 }
 
 
-# 4. Multi-line script block
+# 4. multi-line script block
 Write-Host "    [4/5] Multi-line ScriptBlock..."
 
 $multiLine = @'
