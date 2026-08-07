@@ -250,21 +250,25 @@ function Convert-WindowsEvent {
 $securityEvents = @(
     Get-WinEvent -FilterHashtable @{
         LogName   = "Security"
-        StartTime = $startTime
+        StartTime = $StartTime
+        EndTime   = $EndTime
+
     } -ErrorAction SilentlyContinue
 )
 
 $sysmonEvents = @(
     Get-WinEvent -FilterHashtable @{
         LogName   = "Microsoft-Windows-Sysmon/Operational"
-        StartTime = $startTime
+        StartTime = $StartTime
+        EndTime   = $EndTime
+
     } -ErrorAction SilentlyContinue
 )
 
 $powerShellEvents = @(
     Get-WinEvent -FilterHashtable @{
         LogName   = "Microsoft-Windows-PowerShell/Operational"
-        StartTime = $startTime
+        StartTime = $StartTime
     } -ErrorAction SilentlyContinue
 )
 
