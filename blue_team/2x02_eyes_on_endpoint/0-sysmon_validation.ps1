@@ -26,7 +26,7 @@ $event = Get-WinEvent -FilterHashtable @{
 } | Select-Object -First 1
 
 if ($event) {
-    Write-Host "          cmd.exe /c whoami -> Sysmon EID 1 captured, cmdline present   [PASS]"
+    Write-Host "          cmd.exe /c whoami -> Sysmon EID 1 captured, CommandLine present   [PASS]"
     $passed++
 } else {
     Write-Host "          Process creation not captured                               [FAIL]"
