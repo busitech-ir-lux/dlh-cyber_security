@@ -131,6 +131,7 @@ if ($event) {
 Write-Host "[*] Cleanup: removing test artifacts..."
 
 Remove-Item $file -Force -ErrorAction SilentlyContinue
+Remove-ItemProperty -Path $reg -Name "TestValue" -ErrorAction SilentlyContinue
 Remove-Item $reg -Recurse -Force -ErrorAction SilentlyContinue
 
 $missed = 5 - $passed
