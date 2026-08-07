@@ -1,8 +1,9 @@
 <#
-Name: 2-powershell_logging_validation.ps1
-Purpose: Validate PowerShell Script Block, Module and Transcription logging.
-Author: NS
+name: 1-sysmon_coverage_matrix.ps1
+purpose: Check Sysmon coverage against MITRE ATT&CK techniques.
+author: Mahdi Hamidi
 #>
+
 
 Set-StrictMode -Version Latest
 
