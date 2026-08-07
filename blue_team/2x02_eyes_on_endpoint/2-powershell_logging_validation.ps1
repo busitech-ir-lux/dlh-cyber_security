@@ -128,6 +128,7 @@ if ($event) {
     $passed++
 }
 else {
+    # include partial
     Write-Host "          EID 4104: Full block not found [MISSED/PARTIAL] [FAIL]"
 }
 
