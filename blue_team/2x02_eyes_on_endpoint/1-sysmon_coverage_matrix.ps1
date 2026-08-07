@@ -1,7 +1,7 @@
 <#
-Name: 1-sysmon_coverage_matrix.ps1
-Purpose: Check Sysmon coverage against MITRE ATT&CK techniques.
-Author: NS
+name: 1-sysmon_coverage_matrix.ps1
+purpose: Check Sysmon coverage against MITRE ATT&CK techniques.
+author: Mahdi Hamidi
 #>
 
 Set-StrictMode -Version Latest
