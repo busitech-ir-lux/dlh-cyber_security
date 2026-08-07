@@ -269,6 +269,8 @@ $powerShellEvents = @(
     Get-WinEvent -FilterHashtable @{
         LogName   = "Microsoft-Windows-PowerShell/Operational"
         StartTime = $StartTime
+        EndTime   = $EndTime
+
     } -ErrorAction SilentlyContinue
 )
 
