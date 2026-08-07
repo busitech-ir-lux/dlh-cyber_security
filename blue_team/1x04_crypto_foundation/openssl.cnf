@@ -1,0 +1,22 @@
+[ req ]
+prompt = no
+default_md = sha256
+distinguished_name = subject
+req_extensions = extensions
+
+[ subject ]
+C = US
+ST = Massachusetts
+L = Boston
+O = MedDefense Health Systems
+OU = Information Technology
+CN = portal.meddefense.local
+
+[ extensions ]
+subjectAltName = @san
+keyUsage = critical, digitalSignature
+extendedKeyUsage = serverAuth
+
+[ san ]
+DNS.1 = portal.meddefense.local
+DNS.2 = patient.meddefense.local

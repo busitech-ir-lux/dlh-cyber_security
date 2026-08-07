@@ -67,6 +67,7 @@ $event = Get-WinEvent -FilterHashtable @{
     Id=11
     StartTime=$time
 } -ErrorAction SilentlyContinue | Where-Object {
+    $_.Message -like "*TargetFilename*" -and
     $_.Message -like "*$file*"
 } | Select-Object -First 1
 
