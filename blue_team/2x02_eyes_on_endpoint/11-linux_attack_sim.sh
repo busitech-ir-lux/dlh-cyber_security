@@ -5,7 +5,8 @@
 #
 # purpose: Executes a controlled, BENIGN sequence of attacker-like actions against the
 # LOCAL hardened endpoint to validate detection instrumentation, records each
-# with a UTC timestamp, writes ground truth JSON, then removes all artifacts.
+# with a UTC timestamp and MITRE mapping, writes ground truth JSON, then removes all artifacts.
+# 
 # author: Mahdi Hamidi
 #
 #   >>> RUN ONLY ON A SYSTEM YOU OWN OR ARE AUTHORIZED TO TEST. <<<
