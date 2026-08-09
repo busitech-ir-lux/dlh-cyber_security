@@ -114,7 +114,7 @@ try {
     "@echo off`r`necho simulation-artifact" | Out-File -FilePath $StartupFile -Encoding ASCII
     Record-Action -Number 6 `
         -Description "Dropped file in Startup folder: $StartupFile" `
-        -DetectionSource "Sysmon 11 (file create); Security 4663 (if object-access auditing enabled)" `
+        -DetectionSource "Sysmon Event ID 11 (file create); Security 4663 (if object-access auditing enabled)" `
         -MitreTechnique "Boot or Logon Autostart Execution: Startup Folder" `
         -MitreId "T1547.001"
 }
