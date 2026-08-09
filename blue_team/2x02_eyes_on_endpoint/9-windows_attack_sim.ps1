@@ -1,19 +1,25 @@
 <#
-name: Windows Attack Simulation - Telemetry Validation
+name:
+    Windows Attack Simulation - Telemetry Validation (Block 2, Task 9)
 
-purpose: Executes a controlled, BENIGN sequence of attacker-like actions against the LOCAL hardened endpoint to validate detection instrumentation. Every action is timestamped (ISO-8601, ms precision) and mapped to its expected detection source and MITRE ATT&CK technique. All artifacts are removed after logging.     >>> RUN ONLY ON A SYSTEM YOU OWN OR ARE AUTHORIZED TO TEST. <<<
+purpose and description:
+    Executes a controlled, BENIGN sequence of attacker-like actions against the
+    LOCAL hardened endpoint to validate detection instrumentation. Every action
+    is timestamped (ISO-8601, ms precision) and mapped to its expected detection
+    source and MITRE ATT&CK technique. All artifacts are removed after logging.
+
+    >>> RUN ONLY ON A SYSTEM YOU OWN OR ARE AUTHORIZED TO TEST. <<<
     No real C2, no real malware. All payloads are inert placeholders.
-
-author: Mahdi Hamidi
 
 NOTES
     Requires: Administrator privileges, PowerShell 5.1+
     Output:   ground_truth.json (kept as deliverable for Task 10)
+
+author: Mahdi Hamidi
 #>
 
 #Requires -RunAsAdministrator
 
-Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # ---------------------------- Configuration ----------------------------------
@@ -78,11 +84,11 @@ try {
     $bytes   = [System.Text.Encoding]::Unicode.GetBytes($payload)
     $encoded = [Convert]::ToBase64String($bytes)
     Start-Process -FilePath 'powershell.exe' `
-        -ArgumentList "-NoProfile -EncodedCommand $encoded" `
+        -ArgumentList "-NoProfile -enc $encoded" `
         -WindowStyle Hidden -Wait
     Record-Action -Number 3 `
         -Description "Ran encoded PowerShell (decoded payload: Write-Host 'C2 beacon')" `
-        -DetectionSource "Sysmon 1 (cmdline contains -EncodedCommand); PowerShell 4104 (Script Block Logging); Security 4688" `
+        -DetectionSource "Sysmon 1 (cmdline contains -enc / -e / -EncodedCommand variants); PowerShell 4104 (Script Block Logging); Security 4688" `
         -MitreTechnique "Command and Scripting Interpreter: PowerShell; Obfuscated Files or Information" `
         -MitreId "T1059.001; T1027"
 
