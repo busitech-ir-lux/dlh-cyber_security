@@ -133,10 +133,10 @@ RECMAP='{
 gaps=$(jq -n --argjson a "$attack" --argjson rec "$RECMAP" '
     [ $a.blind[]   | {severity:"blind", description:.action, impacted_platform:.platform, impacted_technique:.technique,
                       reason:"No telemetry source captured this action within the detection window.",
-                      recommended_instrumentation_improvement:($rec[.technique] // "Add or enable a telemetry source for this technique.")} ]
+                      recommendation:($rec[.technique] // "Add or enable a telemetry source for this technique.")} ]
   + [ $a.partial[] | {severity:"partial", description:.action, impacted_platform:.platform, impacted_technique:.technique,
                       reason:"Action captured but with incomplete field-level detail.",
-                      recommended_instrumentation_improvement:($rec[.technique] // "Increase field capture / logging verbosity for this source.")} ]
+                      recommendation:($rec[.technique] // "Increase field capture / logging verbosity for this source.")} ]
 ')
 
 # ------------------------------ Quality scores -------------------------------
