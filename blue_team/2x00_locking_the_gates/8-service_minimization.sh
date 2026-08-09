@@ -247,6 +247,15 @@ if grep -Eq '^[[:space:]]*even_deny_root' "$FAILLOCK_FILE"; then
     FAILED=1
 fi
 
+# ---------------------------------------------------------
+# Check that systemd is running
+# ---------------------------------------------------------
+
+if systemctl is-system-running >/dev/null 2>&1; then
+    echo "    systemd status                         [OK]"
+else
+    echo "    systemd status                         [WARN]"
+fi
 
 # ---------------------------------------------------------
 # Roll back automatically if validation fails
