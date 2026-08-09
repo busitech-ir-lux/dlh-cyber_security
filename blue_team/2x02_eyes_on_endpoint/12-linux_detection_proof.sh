@@ -19,7 +19,7 @@ set -u pipefail
 
 INPUT_DEFAULT="linux_attack_log.json"
 
-# ------------------------------ Setup ----------------------------------------
+# ------------------------------ Setup - start ----------------------------------------
 if [ "$(id -u)" -ne 0 ]; then
     echo "[!] Must run as root (sudo)." >&2
     exit 1
