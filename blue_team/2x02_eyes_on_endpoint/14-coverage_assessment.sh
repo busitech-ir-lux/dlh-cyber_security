@@ -67,10 +67,10 @@ dm_val() { # file, filter, default
 }
 win_tot=$(dm_val "$WIN_DM" '.total_actions // (.matrix | length)' 0)
 win_cap=$(dm_val "$WIN_DM" '.captured' 0)
-win_multi=$(dm_val "$WIN_DM" '.multi_source' 0)
+win_multi=$(dm_val "$WIN_DM" '.multi-source' 0)
 lin_tot=$(dm_val "$LIN_DM" '.total_actions // (.matrix | length)' 0)
 lin_cap=$(dm_val "$LIN_DM" '.captured' 0)
-lin_multi=$(dm_val "$LIN_DM" '.multi_source' 0)
+lin_multi=$(dm_val "$LIN_DM" '.multi-source' 0)
 
 total=$(( win_tot + lin_tot ))
 captured=$(( win_cap + lin_cap ))
@@ -196,7 +196,7 @@ jq -n \
             total_simulated_actions: $total,
             captured_actions: $captured,
             missed_actions: $missed,
-            multi_source_detections: $multi
+            multi-source_detections: $multi
         },
         attack_coverage: {
             covered: {
