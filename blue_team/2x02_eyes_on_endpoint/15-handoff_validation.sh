@@ -12,7 +12,6 @@
 # Requires jq.
 # author: Mahdi Hamidi
 
-set -e
 set -u
 set -o pipefail
 
