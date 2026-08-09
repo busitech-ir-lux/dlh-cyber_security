@@ -17,7 +17,9 @@
 # correctness on multi-thousand-event files and mixed input formats.
 # author: Mahdi Hamidi
 
-set -euo pipefail
+set -e
+set -u
+set -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
