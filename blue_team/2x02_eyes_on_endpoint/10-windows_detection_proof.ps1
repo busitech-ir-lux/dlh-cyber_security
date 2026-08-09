@@ -22,6 +22,8 @@
 
 #Requires -RunAsAdministrator
 
+Set-StrictMode -Version Latest
+
 $ErrorActionPreference = 'Stop'
 
 # ------------------------------ Paths ----------------------------------------
