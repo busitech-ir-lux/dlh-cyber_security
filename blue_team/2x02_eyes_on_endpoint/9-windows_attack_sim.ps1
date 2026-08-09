@@ -106,7 +106,7 @@ try {
     Test-NetConnection -ComputerName $SafeIP -Port $SafePort -InformationLevel Quiet | Out-Null
     Record-Action -Number 5 `
         -Description "Initiated outbound connection to $SafeIP`:$SafePort" `
-        -DetectionSource "Sysmon 3 (network connection detected)" `
+        -DetectionSource "Sysmon Event ID 3 (network connection detected)" `
         -MitreTechnique "Application Layer Protocol (C2 proxy)" `
         -MitreId "T1071"
 
