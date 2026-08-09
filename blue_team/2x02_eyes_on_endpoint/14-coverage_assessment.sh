@@ -20,10 +20,9 @@ cd "$SCRIPT_DIR"
 command -v jq >/dev/null 2>&1 || { echo "[!] jq is required." >&2; exit 1; }
 
 # ------------------------------ Inputs ---------------------------------------
-HANDOFF="telemetry_handoff"
-WIN_EV="$HANDOFF/windows_events.json"
-LIN_EV="$HANDOFF/linux_events.json"
-GT="$HANDOFF/attack_ground_truth.json"
+WIN_EV="telemetry_handoff/windows_events.json"
+LIN_EV="telemetry_handoff/linux_events.json"
+GT="telemetry_handoff/attack_ground_truth.json"
 WIN_DM="windows_detection_matrix.json"
 LIN_DM="linux_detection_matrix.json"
 WIN_Q="windows_telemetry_quality.json"
