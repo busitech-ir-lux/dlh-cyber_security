@@ -13,7 +13,7 @@ purpose and description:
 
 NOTES
     Requires: Administrator privileges, PowerShell 5.1+
-    Output:   ground_truth.json (kept as deliverable for Task 10)
+    Output:   windows_attack_log.json (kept as deliverable for Task 10)
 
 author: Mahdi Hamidi
 #>
@@ -33,7 +33,7 @@ $SafePort        = 443
 
 # Resolve script directory (fallback to CWD if run interactively)
 $ScriptDir       = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
-$GroundTruthPath = Join-Path $ScriptDir 'ground_truth.json'
+$GroundTruthPath = Join-Path $ScriptDir 'windows_attack_log.json'
 
 # Ordered collector for ground-truth records
 $GroundTruth = [System.Collections.Generic.List[object]]::new()
