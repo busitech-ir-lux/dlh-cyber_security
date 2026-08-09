@@ -6,13 +6,14 @@ purpose: Executes a controlled, BENIGN sequence of attacker-like actions against
 
 author: Mahdi Hamidi
 
-.NOTES
+NOTES
     Requires: Administrator privileges, PowerShell 5.1+
     Output:   ground_truth.json (kept as deliverable for Task 10)
 #>
 
 #Requires -RunAsAdministrator
 
+Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # ---------------------------- Configuration ----------------------------------
