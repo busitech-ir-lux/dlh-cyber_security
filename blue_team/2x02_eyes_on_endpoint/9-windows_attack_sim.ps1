@@ -19,7 +19,7 @@ author: Mahdi Hamidi
 #>
 
 #Requires -RunAsAdministrator
-
+Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # ---------------------------- Configuration ----------------------------------
