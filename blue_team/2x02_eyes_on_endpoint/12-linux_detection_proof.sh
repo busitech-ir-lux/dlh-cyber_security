@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #
 # name: 12-linux_detection_proof.sh
 # Linux Detection Proof (Block 2, Task 12)
