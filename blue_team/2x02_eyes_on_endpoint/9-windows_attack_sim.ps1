@@ -128,6 +128,7 @@ finally {
     # === Cleanup (always runs) =========================================
     Write-Host "`n=== Cleanup ===" -ForegroundColor Yellow
 
+    Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue
     schtasks /delete /tn $TaskName /f 2>$null | Out-Null           # scheduled task
     if (Test-Path $StartupFile) { Remove-Item $StartupFile -Force }  # startup file
     if (Get-LocalUser -Name $TargetUser -ErrorAction SilentlyContinue) {
