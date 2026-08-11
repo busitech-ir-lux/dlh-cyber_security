@@ -1,0 +1,43 @@
+{
+  "generated_at": "2026-08-12T00:51:00Z",
+  "hostname": "billing-srv-01",
+  "kernel": "5.15.0-151-generic",
+  "summary": {
+    "resolved": 6,
+    "open": 1,
+    "deferred_held": 1,
+    "deferred_window": 1,
+    "score": 87.50,
+    "target_score": 95.00,
+    "overdue": 1
+  },
+  "cves": [
+    {
+      "id": "CVE-2024-6387",
+      "package": "openssh-client, openssh-server",
+      "severity": "critical",
+      "state": "resolved",
+      "first_seen": "2026-08-01T07:15:22Z",
+      "resolved_at": "2026-08-05T10:34:17+02:00",
+      "justification": "no longer present in current vulnerability inventory; resolution recorded in patch change log"
+    },
+    {
+      "id": "CVE-2026-12345",
+      "package": "mysql-server-8.0",
+      "severity": "high",
+      "state": "deferred_held",
+      "first_seen": "2026-08-02T09:20:00Z",
+      "resolved_at": null,
+      "justification": "active package hold: mysql-server-8.0: billing app v8.0.35 dependency"
+    },
+    {
+      "id": "CVE-2026-54321",
+      "package": "libssl3",
+      "severity": "critical",
+      "state": "deferred_window",
+      "first_seen": "2026-08-11T06:12:00Z",
+      "resolved_at": null,
+      "justification": "pipeline deferred until the next maintenance window"
+    }
+  ]
+}
