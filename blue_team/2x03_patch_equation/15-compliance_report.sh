@@ -6,6 +6,7 @@
 # Author:      Mahdi Hamidi
 # Date:        August 11, 2026
 #
+# Determine the current state of every CVE: resolved, open, deferred_held, deferred_window
 
 set -euo pipefail
 
