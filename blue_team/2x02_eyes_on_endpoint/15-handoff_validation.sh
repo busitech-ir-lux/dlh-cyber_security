@@ -1,234 +1,433 @@
 #!/bin/bash
 #
-# name: 15-handoff_validation.sh
-# Handoff Validation - the quality gate before the builder -> analyst handoff.
+# name:        15-handoff_validation.sh
+# purpose:     Validate the telemetry handoff package against quality gates for SOC consumption
+# author:      Mahdi
+# date:        August 10, 2026
 #
-# purpose: Validates telemetry_handoff/ against seven gates:
-#   1. File existence      2. JSON validity       3. Required fields
-#   4. Minimum counts      5. Timestamp validity  6. Cross-platform alignment
-#   7. Ground truth completeness (every action has a detection matrix entry)
+# .Purpose
+#     This script validates the telemetry_handoff/ directory to ensure it is ready
+#     for analyst consumption in Module 3. It performs the following checks:
 #
-# Emits PASS/FAIL per check, a final verdict, and handoff_validation.json.
-# Requires jq.
-# author: Mahdi Hamidi
+#         1. File existence: all 3 expected files present
+#         2. JSON validity: each file parses without errors
+#         3. Required fields: every event has timestamp, hostname, source_type, event_category
+#         4. Minimum event counts: Windows >= 1000, Linux >= 500, ground truth >= 10
+#         5. Timestamp consistency: valid ISO 8601, no future timestamps
+#         6. Cross-platform alignment: timestamp ranges overlap
+#         7. Ground truth completeness: every action has a detection matrix entry
+#
+#     Output: handoff_validation.json with PASS/FAIL per check and final verdict
+#
 
-set -uo pipefail
+set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
-command -v jq >/dev/null 2>&1 || { echo "[!] jq is required." >&2; exit 1; }
+# Check for jq
+if ! command -v jq &> /dev/null; then
+    echo "[ERROR] jq is required. Install with: sudo apt install jq" >&2
+    exit 1
+fi
 
-# ------------------------------ Inputs (literal paths) -----------------------
-DIR="telemetry_handoff"
-WIN="telemetry_handoff/windows_events.json"
-LIN="telemetry_handoff/linux_events.json"
-GT="telemetry_handoff/attack_ground_truth.json"
-WIN_DM="windows_detection_matrix.json"
-LIN_DM="linux_detection_matrix.json"
-OUT="handoff_validation.json"
+# Configuration
+HANDOFF_DIR="telemetry_handoff"
+WINDOWS_FILE="$HANDOFF_DIR/windows_events.json"
+LINUX_FILE="$HANDOFF_DIR/linux_events.json"
+GROUND_TRUTH_FILE="$HANDOFF_DIR/attack_ground_truth.json"
+WINDOWS_MATRIX="windows_detection_matrix.json"
+LINUX_MATRIX="linux_detection_matrix.json"
+OUTPUT_FILE="handoff_validation.json"
 
-EMPTY="$(mktemp)"; : > "$EMPTY"
-trap 'rm -f "$EMPTY"' EXIT
-pf() { [ -f "$1" ] && printf '%s' "$1" || printf '%s' "$EMPTY"; }
+MIN_WINDOWS_EVENTS=1000
+MIN_LINUX_EVENTS=500
+MIN_GROUND_TRUTH=10
 
-# ------------------------------ Result tracking ------------------------------
-TOTAL=0; PASSED=0
-RESULTS=()
+PASS_COUNT=0
+FAIL_COUNT=0
+CHECKS_JSON='[]'
 
-add_result() { # category, status(PASS/FAIL), message
-    RESULTS+=("$(jq -n --arg c "$1" --arg s "$2" --arg m "$3" \
-        '{category:$c, status:$s, message:$m}')")
-    TOTAL=$((TOTAL+1)); [ "$2" = "PASS" ] && PASSED=$((PASSED+1))
-    echo "[$2] $3"
+# Helper functions
+pass_check() {
+    local name="$1"
+    local detail="$2"
+    echo "[PASS] $detail"
+    PASS_COUNT=$((PASS_COUNT + 1))
+    CHECKS_JSON=$(jq -n --argjson arr "$CHECKS_JSON" --arg n "$name" --arg s "PASS" --arg d "$detail" \
+        '$arr + [{check: $n, status: $s, detail: $d}]')
 }
 
-human_size() {
-    local b; b=$(stat -c%s "$1" 2>/dev/null || echo 0)
-    awk -v b="$b" 'BEGIN{
-        if (b>=1048576) printf "%.1f MB", b/1048576;
-        else if (b>=1024) printf "%d KB", b/1024;
-        else printf "%d B", b;
-    }'
+fail_check() {
+    local name="$1"
+    local detail="$2"
+    echo "[FAIL] $detail"
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+    CHECKS_JSON=$(jq -n --argjson arr "$CHECKS_JSON" --arg n "$name" --arg s "FAIL" --arg d "$detail" \
+        '$arr + [{check: $n, status: $s, detail: $d}]')
 }
 
-commafy() { echo "$1" | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta'; }
-
-json_count() { # file -> number of top-level objects
-    if [ -f "$1" ]; then
-        jq 'if type=="array" then length else ((.events // .actions // []) | length) end' "$1" 2>/dev/null || echo 0
-    else echo 0; fi
+get_size_kb() {
+    local file="$1"
+    local bytes
+    bytes=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null || echo "0")
+    echo $((bytes / 1024))
 }
 
-echo "[*] Validating telemetry_handoff/ ..."
+# Helper: extract events array from file (handles array or object with .events)
+get_events_count() {
+    local file="$1"
+    jq 'if type == "array" then length else (.events // []) | length end' "$file" 2>/dev/null || echo "0"
+}
 
-# ============================== 1. File existence ============================
+echo "[*] Validating $HANDOFF_DIR/ ..."
+
+# ==========================================
+# 1. File Existence
+# ==========================================
 echo "=== File Existence ==="
-for pair in "$WIN|windows_events.json" "$LIN|linux_events.json" "$GT|attack_ground_truth.json"; do
-    path="${pair%%|*}"; name="${pair##*|}"
-    if [ -f "$path" ]; then
-        add_result "file_existence" "PASS" "$name exists ($(human_size "$path"))"
-    else
-        add_result "file_existence" "FAIL" "$name is missing"
-    fi
-done
 
-# ============================== 2. JSON validity =============================
+if [[ -f "$WINDOWS_FILE" ]]; then
+    SIZE_KB=$(get_size_kb "$WINDOWS_FILE")
+    SIZE_MB_INT=$((SIZE_KB / 1024))
+    SIZE_MB_FRAC=$(( (SIZE_KB % 1024 * 100) / 1024 ))
+    pass_check "file_existence_windows" "windows_events.json exists (${SIZE_MB_INT}.${SIZE_MB_FRAC} MB)"
+else
+    fail_check "file_existence_windows" "windows_events.json missing"
+fi
+
+if [[ -f "$LINUX_FILE" ]]; then
+    SIZE_KB=$(get_size_kb "$LINUX_FILE")
+    SIZE_MB_INT=$((SIZE_KB / 1024))
+    SIZE_MB_FRAC=$(( (SIZE_KB % 1024 * 100) / 1024 ))
+    pass_check "file_existence_linux" "linux_events.json exists (${SIZE_MB_INT}.${SIZE_MB_FRAC} MB)"
+else
+    fail_check "file_existence_linux" "linux_events.json missing"
+fi
+
+if [[ -f "$GROUND_TRUTH_FILE" ]]; then
+    SIZE_KB=$(get_size_kb "$GROUND_TRUTH_FILE")
+    pass_check "file_existence_ground_truth" "attack_ground_truth.json exists ($SIZE_KB KB)"
+else
+    fail_check "file_existence_ground_truth" "attack_ground_truth.json missing"
+fi
+
+# If any file missing, can't continue meaningfully
+if [[ ! -f "$WINDOWS_FILE" ]] || [[ ! -f "$LINUX_FILE" ]] || [[ ! -f "$GROUND_TRUTH_FILE" ]]; then
+    echo ""
+    TOTAL_CHECKS=$((PASS_COUNT + FAIL_COUNT))
+    echo "VERDICT: FAIL ($PASS_COUNT/$TOTAL_CHECKS checks)"
+    echo "Cannot continue validation with missing files."
+    exit 1
+fi
+
+# ==========================================
+# 2. JSON Validity
+# ==========================================
 echo "=== JSON Validity ==="
-for pair in "$WIN|windows_events.json" "$LIN|linux_events.json" "$GT|attack_ground_truth.json"; do
-    path="${pair%%|*}"; name="${pair##*|}"
-    if [ -f "$path" ] && jq empty "$path" >/dev/null 2>&1; then
-        add_result "json_validity" "PASS" "$name: valid JSON, $(json_count "$path") objects"
-    else
-        add_result "json_validity" "FAIL" "$name: invalid or unparseable JSON"
+
+WINDOWS_OBJ_COUNT=$(get_events_count "$WINDOWS_FILE")
+if jq -e '.' "$WINDOWS_FILE" >/dev/null 2>&1 && [[ "$WINDOWS_OBJ_COUNT" != "0" ]]; then
+    pass_check "json_validity_windows" "windows_events.json: valid JSON, $WINDOWS_OBJ_COUNT objects"
+else
+    fail_check "json_validity_windows" "windows_events.json: invalid JSON or 0 objects"
+    WINDOWS_OBJ_COUNT=0
+fi
+
+LINUX_OBJ_COUNT=$(get_events_count "$LINUX_FILE")
+if jq -e '.' "$LINUX_FILE" >/dev/null 2>&1 && [[ "$LINUX_OBJ_COUNT" != "0" ]]; then
+    pass_check "json_validity_linux" "linux_events.json: valid JSON, $LINUX_OBJ_COUNT objects"
+else
+    fail_check "json_validity_linux" "linux_events.json: invalid JSON or 0 objects"
+    LINUX_OBJ_COUNT=0
+fi
+
+# Ground truth count
+GT_TOTAL_ACTIONS=$(jq '
+    if .total_actions then .total_actions
+    elif (.windows_actions // []) + (.linux_actions // []) then ((.windows_actions // []) | length) + ((.linux_actions // []) | length)
+    else 0 end
+' "$GROUND_TRUTH_FILE" 2>/dev/null || echo "0")
+
+if [[ "$GT_TOTAL_ACTIONS" == "null" ]] || [[ -z "$GT_TOTAL_ACTIONS" ]]; then
+    GT_TOTAL_ACTIONS=0
+fi
+
+if jq -e '.' "$GROUND_TRUTH_FILE" >/dev/null 2>&1 && [[ "$GT_TOTAL_ACTIONS" -gt 0 ]]; then
+    pass_check "json_validity_ground_truth" "attack_ground_truth.json: valid JSON, $GT_TOTAL_ACTIONS objects"
+else
+    fail_check "json_validity_ground_truth" "attack_ground_truth.json: invalid JSON or 0 objects"
+fi
+
+# ==========================================
+# 3. Required Fields
+# ==========================================
+echo "=== Required Fields ==="
+
+REQUIRED_FIELDS="timestamp hostname source_type event_category"
+
+# Check Windows required fields
+WIN_FIELDS_OK=true
+for field in $REQUIRED_FIELDS; do
+    WIN_MISSING=$(jq --arg f "$field" '[if type == "array" then .[] else (.events // [])[] end | select(has($f) | not)] | length' "$WINDOWS_FILE" 2>/dev/null || echo "999")
+    if [[ "$WIN_MISSING" != "0" ]]; then
+        WIN_FIELDS_OK=false
+        FIELD_NAME="$field"
+        break
     fi
 done
 
-# ============================== 3. Required fields ===========================
-echo "=== Required Fields ==="
-reqmiss=$(jq -n --slurpfile w "$(pf "$WIN")" --slurpfile l "$(pf "$LIN")" '
-    def arr($x): ($x[0] | if type=="array" then . elif type=="object" then (.events // []) else [] end);
-    (arr($w) + arr($l)) as $ev
-    | [ $ev[] | select(
-          (((.timestamp? // "")     | tostring) != "") and
-          (((.hostname? // "")      | tostring) != "") and
-          (((.source_type? // "")   | tostring) != "") and
-          (((.event_category? // "")| tostring) != "") | not
-      ) ] | length' 2>/dev/null || echo -1)
-if [ "$reqmiss" = "0" ]; then
-    add_result "required_fields" "PASS" "All events have timestamp, hostname, source_type, event_category"
+# Check Linux required fields
+LIN_FIELDS_OK=true
+for field in $REQUIRED_FIELDS; do
+    LIN_MISSING=$(jq --arg f "$field" '[if type == "array" then .[] else (.events // [])[] end | select(has($f) | not)] | length' "$LINUX_FILE" 2>/dev/null || echo "999")
+    if [[ "$LIN_MISSING" != "0" ]]; then
+        LIN_FIELDS_OK=false
+        FIELD_NAME="$field"
+        break
+    fi
+done
+
+if [[ "$WIN_FIELDS_OK" == "true" && "$LIN_FIELDS_OK" == "true" ]]; then
+    pass_check "required_fields" "All events have timestamp, hostname, source_type, event_category"
 else
-    add_result "required_fields" "FAIL" "$reqmiss event(s) missing required fields"
+    if [[ "$WIN_FIELDS_OK" != "true" ]]; then
+        fail_check "required_fields" "Windows events missing required field: $FIELD_NAME"
+    elif [[ "$LIN_FIELDS_OK" != "true" ]]; then
+        fail_check "required_fields" "Linux events missing required field: $FIELD_NAME"
+    fi
 fi
 
-# ============================== 4. Minimum counts ============================
+# ==========================================
+# 4. Minimum Event Counts
+# ==========================================
 echo "=== Minimum Event Counts ==="
-WC=$(json_count "$WIN"); LC=$(json_count "$LIN"); GC=$(json_count "$GT")
-WC=${WC:-0}; LC=${LC:-0}; GC=${GC:-0}
 
-if [ "$WC" -ge 1000 ]; then
-    add_result "min_counts" "PASS" "Windows: $(commafy "$WC") >= 1,000"
+if [[ $WINDOWS_OBJ_COUNT -ge $MIN_WINDOWS_EVENTS ]]; then
+    pass_check "min_events_windows" "Windows: $WINDOWS_OBJ_COUNT >= $MIN_WINDOWS_EVENTS"
 else
-    add_result "min_counts" "FAIL" "Windows: $(commafy "$WC") < 1,000"
-fi
-if [ "$LC" -ge 500 ]; then
-    add_result "min_counts" "PASS" "Linux: $(commafy "$LC") >= 500"
-else
-    add_result "min_counts" "FAIL" "Linux: $(commafy "$LC") < 500"
-fi
-if [ "$GC" -ge 10 ]; then
-    add_result "min_counts" "PASS" "Ground truth: $GC >= 10"
-else
-    add_result "min_counts" "FAIL" "Ground truth: $GC < 10"
+    fail_check "min_events_windows" "Windows: $WINDOWS_OBJ_COUNT < $MIN_WINDOWS_EVENTS (need $MIN_WINDOWS_EVENTS)"
 fi
 
-# ============================== 5. Timestamp consistency =====================
+if [[ $LINUX_OBJ_COUNT -ge $MIN_LINUX_EVENTS ]]; then
+    pass_check "min_events_linux" "Linux: $LINUX_OBJ_COUNT >= $MIN_LINUX_EVENTS"
+else
+    fail_check "min_events_linux" "Linux: $LINUX_OBJ_COUNT < $MIN_LINUX_EVENTS (need $MIN_LINUX_EVENTS)"
+fi
+
+if [[ $GT_TOTAL_ACTIONS -ge $MIN_GROUND_TRUTH ]]; then
+    pass_check "min_events_ground_truth" "Ground truth: $GT_TOTAL_ACTIONS >= $MIN_GROUND_TRUTH"
+else
+    fail_check "min_events_ground_truth" "Ground truth: $GT_TOTAL_ACTIONS < $MIN_GROUND_TRUTH (need $MIN_GROUND_TRUTH)"
+fi
+
+# ==========================================
+# 5. Timestamp Consistency
+# ==========================================
 echo "=== Timestamp Consistency ==="
-NOW=$(date -u +%s)
-tsinfo=$(jq -n --slurpfile w "$(pf "$WIN")" --slurpfile l "$(pf "$LIN")" --argjson now "$NOW" '
-    def arr($x): ($x[0] | if type=="array" then . elif type=="object" then (.events // []) else [] end);
-    def isoRE: "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([.][0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$";
-    def norm: sub("[+]00:00$";"Z") | sub("[.][0-9]+";"");
-    def ep: (norm | try fromdateiso8601 catch null);
-    arr($w) as $wv | arr($l) as $lv
-    | ([ $wv[].timestamp // "" | tostring ]) as $wts
-    | ([ $lv[].timestamp // "" | tostring ]) as $lts
-    | ($wts + $lts) as $all
-    | ([ $all[] | ep | select(. != null) ]) as $alle
-    | ([ $wts[] | ep | select(. != null) ]) as $we
-    | ([ $lts[] | ep | select(. != null) ]) as $le
-    | {
-        total:   ($all | length),
-        invalid: ([ $all[] | select((test(isoRE)) | not) ] | length),
-        future:  ([ $alle[] | select(. > $now) ] | length),
-        min:  ($alle | min), max:  ($alle | max),
-        wmin: ($we | min),   wmax: ($we | max),
-        lmin: ($le | min),   lmax: ($le | max)
-    }' 2>/dev/null || echo '{}')
 
-invalid=$(jq -r '.invalid // -1' <<<"$tsinfo")
-future=$(jq -r '.future // -1' <<<"$tsinfo")
-minE=$(jq -r '.min // empty' <<<"$tsinfo")
-maxE=$(jq -r '.max // empty' <<<"$tsinfo")
-wmin=$(jq -r '.wmin // empty' <<<"$tsinfo"); wmax=$(jq -r '.wmax // empty' <<<"$tsinfo")
-lmin=$(jq -r '.lmin // empty' <<<"$tsinfo"); lmax=$(jq -r '.lmax // empty' <<<"$tsinfo")
+# Check all timestamps are valid ISO 8601 in Windows using jq
+WIN_TS_INVALID=$(jq '
+    def is_valid_ts:
+        type == "string" and (test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$") or
+                              test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[+-][0-9]{2}:[0-9]{2}$"));
+    [if type == "array" then .[] else (.events // [])[] end | .timestamp | select(. != null and (is_valid_ts | not))] | length
+' "$WINDOWS_FILE" 2>/dev/null || echo "0")
 
-if [ "$invalid" = "0" ]; then
-    add_result "timestamps" "PASS" "All timestamps valid ISO 8601"
-else
-    add_result "timestamps" "FAIL" "$invalid timestamp(s) not valid ISO 8601"
+# Check all timestamps are valid ISO 8601 in Linux using jq
+LIN_TS_INVALID=$(jq '
+    def is_valid_ts:
+        type == "string" and (test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$") or
+                              test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[+-][0-9]{2}:[0-9]{2}$"));
+    [if type == "array" then .[] else (.events // [])[] end | .timestamp | select(. != null and (is_valid_ts | not))] | length
+' "$LINUX_FILE" 2>/dev/null || echo "0")
+
+if [[ "$WIN_TS_INVALID" == "null" ]] || [[ -z "$WIN_TS_INVALID" ]]; then
+    WIN_TS_INVALID=0
 fi
-if [ "$future" = "0" ]; then
-    add_result "timestamps" "PASS" "No future timestamps"
-else
-    add_result "timestamps" "FAIL" "$future future timestamp(s) detected"
-fi
-# Informational range line (not a counted gate)
-if [ -n "$minE" ] && [ -n "$maxE" ]; then
-    rmin=$(date -u -d "@$minE" +%Y-%m-%dT%H:%M:%SZ)
-    rmax=$(date -u -d "@$maxE" +%Y-%m-%dT%H:%M:%SZ)
-    echo "[PASS] Range: $rmin to $rmax"
-else
-    rmin=""; rmax=""
-    echo "[INFO] Range: unavailable"
+if [[ "$LIN_TS_INVALID" == "null" ]] || [[ -z "$LIN_TS_INVALID" ]]; then
+    LIN_TS_INVALID=0
 fi
 
-# ============================== 6. Cross-platform alignment ==================
+TOTAL_TS_INVALID=$((WIN_TS_INVALID + LIN_TS_INVALID))
+
+if [[ $TOTAL_TS_INVALID -eq 0 ]]; then
+    pass_check "timestamp_format" "All timestamps valid ISO 8601"
+else
+    fail_check "timestamp_format" "Found $TOTAL_TS_INVALID invalid timestamps"
+fi
+
+# Check for future timestamps
+NOW_EPOCH=$(date -u +%s)
+
+# Count future timestamps in Windows
+WIN_FUTURE=$(jq --argjson now "$NOW_EPOCH" '
+    def is_future:
+        if type != "string" then false
+        else
+            (.[:-1] // .) | gsub("Z$"; "") | gsub("[+-][0-9]{2}:[0-9]{2}$"; "") |
+            try (fromdateiso8601) catch 0 > $now
+        end;
+    [if type == "array" then .[] else (.events // [])[] end | .timestamp | select(is_future)] | length
+' "$WINDOWS_FILE" 2>/dev/null || echo "0")
+
+# Count future timestamps in Linux
+LIN_FUTURE=$(jq --argjson now "$NOW_EPOCH" '
+    def is_future:
+        if type != "string" then false
+        else
+            (.[:-1] // .) | gsub("Z$"; "") | gsub("[+-][0-9]{2}:[0-9]{2}$"; "") |
+            try (fromdateiso8601) catch 0 > $now
+        end;
+    [if type == "array" then .[] else (.events // [])[] end | .timestamp | select(is_future)] | length
+' "$LINUX_FILE" 2>/dev/null || echo "0")
+
+if [[ "$WIN_FUTURE" == "null" ]] || [[ -z "$WIN_FUTURE" ]]; then
+    WIN_FUTURE=0
+fi
+if [[ "$LIN_FUTURE" == "null" ]] || [[ -z "$LIN_FUTURE" ]]; then
+    LIN_FUTURE=0
+fi
+
+TOTAL_FUTURE=$((WIN_FUTURE + LIN_FUTURE))
+
+if [[ $TOTAL_FUTURE -eq 0 ]]; then
+    pass_check "no_future_timestamps" "No future timestamps"
+else
+    fail_check "no_future_timestamps" "Found $TOTAL_FUTURE future timestamps"
+fi
+
+# Get timestamp ranges for Windows
+WINDOWS_MIN_TS=$(jq -r '
+    [if type == "array" then .[] else (.events // [])[] end | .timestamp | select(type == "string")] | sort | .[0] // "N/A"
+' "$WINDOWS_FILE" 2>/dev/null || echo "N/A")
+
+WINDOWS_MAX_TS=$(jq -r '
+    [if type == "array" then .[] else (.events // [])[] end | .timestamp | select(type == "string")] | sort | .[-1] // "N/A"
+' "$WINDOWS_FILE" 2>/dev/null || echo "N/A")
+
+# Get timestamp ranges for Linux
+LINUX_MIN_TS=$(jq -r '
+    [if type == "array" then .[] else (.events // [])[] end | .timestamp | select(type == "string")] | sort | .[0] // "N/A"
+' "$LINUX_FILE" 2>/dev/null || echo "N/A")
+
+LINUX_MAX_TS=$(jq -r '
+    [if type == "array" then .[] else (.events // [])[] end | .timestamp | select(type == "string")] | sort | .[-1] // "N/A"
+' "$LINUX_FILE" 2>/dev/null || echo "N/A")
+
+# Report range
+if [[ "$WINDOWS_MIN_TS" != "N/A" ]] && [[ "$WINDOWS_MAX_TS" != "N/A" ]]; then
+    pass_check "timestamp_range" "Range: $WINDOWS_MIN_TS to $WINDOWS_MAX_TS"
+else
+    fail_check "timestamp_range" "Could not determine timestamp range"
+fi
+
+# ==========================================
+# 6. Cross-Platform Alignment
+# ==========================================
 echo "=== Cross-Platform Alignment ==="
-read -r ov_ok ov_hours < <(awk -v a="$wmin" -v b="$wmax" -v c="$lmin" -v d="$lmax" 'BEGIN{
-    if (a=="" || b=="" || c=="" || d==""){ print "0 0"; exit }
-    lo=(a>c?a:c); hi=(b<d?b:d); ov=hi-lo;
-    if (ov>0) printf "1 %.1f", ov/3600; else print "0 0";
-}')
-if [ "$ov_ok" = "1" ]; then
-    add_result "alignment" "PASS" "Windows and Linux time ranges overlap (${ov_hours} hours shared)"
+
+if [[ "$WINDOWS_MIN_TS" != "N/A" && "$WINDOWS_MAX_TS" != "N/A" && "$LINUX_MIN_TS" != "N/A" && "$LINUX_MAX_TS" != "N/A" ]]; then
+    # Convert to epochs for comparison
+    WIN_MIN_EPOCH=$(date -u -d "${WINDOWS_MIN_TS%Z}" +%s 2>/dev/null || echo "0")
+    WIN_MAX_EPOCH=$(date -u -d "${WINDOWS_MAX_TS%Z}" +%s 2>/dev/null || echo "0")
+    LIN_MIN_EPOCH=$(date -u -d "${LINUX_MIN_TS%Z}" +%s 2>/dev/null || echo "0")
+    LIN_MAX_EPOCH=$(date -u -d "${LINUX_MAX_TS%Z}" +%s 2>/dev/null || echo "0")
+
+    # Check for overlap: max(start1, start2) < min(end1, end2)
+    if [[ $WIN_MIN_EPOCH -gt $LIN_MIN_EPOCH ]]; then
+        OVERLAP_START=$WIN_MIN_EPOCH
+    else
+        OVERLAP_START=$LIN_MIN_EPOCH
+    fi
+
+    if [[ $WIN_MAX_EPOCH -lt $LIN_MAX_EPOCH ]]; then
+        OVERLAP_END=$WIN_MAX_EPOCH
+    else
+        OVERLAP_END=$LIN_MAX_EPOCH
+    fi
+
+    if [[ $OVERLAP_START -lt $OVERLAP_END ]]; then
+        OVERLAP_HOURS=$(( (OVERLAP_END - OVERLAP_START) / 3600 ))
+        pass_check "cross_platform_alignment" "Windows and Linux time ranges overlap ($OVERLAP_HOURS hours shared)"
+    else
+        fail_check "cross_platform_alignment" "Windows and Linux time ranges do not overlap"
+    fi
 else
-    add_result "alignment" "FAIL" "Windows and Linux time ranges do not overlap"
+    fail_check "cross_platform_alignment" "Insufficient data to determine time ranges"
 fi
 
-# ============================== 7. Ground truth completeness =================
+# ==========================================
+# 7. Ground Truth Completeness
+# ==========================================
 echo "=== Ground Truth Completeness ==="
-gtc=$(jq -n --slurpfile gt "$(pf "$GT")" --slurpfile wdm "$(pf "$WIN_DM")" --slurpfile ldm "$(pf "$LIN_DM")" '
-    (($gt[0].actions) // []) as $A
-    | ([ (($wdm[0].matrix) // [])[] | {p:"windows", n:.action_number} ]
-      + [ (($ldm[0].matrix) // [])[] | {p:"linux",   n:.action_number} ]) as $M
-    | { matched: ([ $A[] | . as $a
-                    | select( any($M[]; .p == ($a.platform // "windows") and .n == $a.action_number) )
-                  ] | length),
-        total: ($A | length) }' 2>/dev/null || echo '{"matched":0,"total":0}')
-matched=$(jq -r '.matched' <<<"$gtc"); gtotal=$(jq -r '.total' <<<"$gtc")
-if [ "$gtotal" -gt 0 ] && [ "$matched" = "$gtotal" ]; then
-    add_result "ground_truth" "PASS" "$matched/$gtotal actions have detection matrix entries"
-else
-    add_result "ground_truth" "FAIL" "$matched/$gtotal actions have detection matrix entries"
+
+GT_MATCHED=0
+GT_TOTAL=0
+
+# Get all ground truth action descriptions
+ALL_GT_ACTIONS=$(jq -r '
+    ([.windows_actions[], .linux_actions[]] | .[] | .description // empty)
+' "$GROUND_TRUTH_FILE" 2>/dev/null || echo "")
+
+if [[ -z "$ALL_GT_ACTIONS" ]]; then
+    # Try alternate structure
+    ALL_GT_ACTIONS=$(jq -r '.actions[] | .description // empty' "$GROUND_TRUTH_FILE" 2>/dev/null || echo "")
 fi
 
-# ============================== Verdict ======================================
-if [ "$PASSED" -eq "$TOTAL" ]; then verdict="PASS"; else verdict="FAIL"; fi
-echo "VERDICT: $verdict ($PASSED/$TOTAL checks)"
-if [ "$verdict" = "PASS" ]; then
+if [[ -n "$ALL_GT_ACTIONS" ]]; then
+    GT_TOTAL=$(echo "$ALL_GT_ACTIONS" | grep -c . || echo "0")
+    GT_MATCHED=0
+
+    # Check each ground truth action against detection matrices
+    while IFS= read -r action_desc; do
+        [[ -z "$action_desc" ]] && continue
+        # Check if this action appears in either detection matrix
+        WIN_MATCH=$(jq --arg a "$action_desc" '[.detection_matrix[] | select(.action == $a)] | length' "$WINDOWS_MATRIX" 2>/dev/null || echo "0")
+        LIN_MATCH=$(jq --arg a "$action_desc" '[.detection_matrix[] | select(.action == $a)] | length' "$LINUX_MATRIX" 2>/dev/null || echo "0")
+
+        if [[ "$WIN_MATCH" -gt 0 ]] || [[ "$LIN_MATCH" -gt 0 ]]; then
+            GT_MATCHED=$((GT_MATCHED + 1))
+        fi
+    done <<< "$ALL_GT_ACTIONS"
+fi
+
+if [[ $GT_TOTAL -gt 0 ]] && [[ $GT_MATCHED -eq $GT_TOTAL ]]; then
+    pass_check "ground_truth_completeness" "$GT_MATCHED/$GT_TOTAL actions have detection matrix entries"
+else
+    fail_check "ground_truth_completeness" "$GT_MATCHED/$GT_TOTAL actions have detection matrix entries"
+fi
+
+# ==========================================
+# Final Verdict
+# ==========================================
+TOTAL_CHECKS=$((PASS_COUNT + FAIL_COUNT))
+
+echo ""
+if [[ $FAIL_COUNT -eq 0 ]]; then
+    echo "VERDICT: PASS ($PASS_COUNT/$TOTAL_CHECKS checks)"
     echo "Handoff package is ready for Module 3."
+    FINAL_VERDICT="PASS"
 else
-    echo "Handoff package is NOT ready. Resolve the FAIL item(s) above."
+    echo "VERDICT: FAIL ($PASS_COUNT/$TOTAL_CHECKS checks)"
+    echo "Handoff package requires attention before proceeding."
+    FINAL_VERDICT="FAIL"
 fi
 
-# ============================== Save report ==================================
-results_json=$(printf '%s\n' "${RESULTS[@]}" | jq -s '.')
-jq -n \
-    --arg verdict "$verdict" \
-    --argjson passed "$PASSED" \
-    --argjson total "$TOTAL" \
-    --arg range_min "${rmin:-}" \
-    --arg range_max "${rmax:-}" \
-    --arg overlap_hours "${ov_hours:-0}" \
-    --argjson results "$results_json" \
-    '{
-        generated_at: (now | todateiso8601),
-        verdict: $verdict,
-        checks_passed: $passed,
-        checks_total: $total,
-        timestamp_range: { min: $range_min, max: $range_max },
-        cross_platform_overlap_hours: ($overlap_hours | tonumber),
-        results: $results
-    }' > "$OUT"
+# Save validation report
+NOW_TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-echo "Report saved to: $OUT"
+jq -n \
+    --arg ts "$NOW_TS" \
+    --arg verdict "$FINAL_VERDICT" \
+    --argjson pass "$PASS_COUNT" \
+    --argjson fail "$FAIL_COUNT" \
+    --argjson total "$TOTAL_CHECKS" \
+    --argjson checks "$CHECKS_JSON" \
+    '{
+        validation_timestamp: $ts,
+        verdict: $verdict,
+        checks_passed: $pass,
+        checks_failed: $fail,
+        total_checks: $total,
+        checks: $checks
+    }' > "$OUTPUT_FILE"
+
+echo "Report saved to: $OUTPUT_FILE"
