@@ -1,0 +1,109 @@
+{
+  "started_at": "2026-08-12T08:15:03Z",
+  "finished_at": "2026-08-12T08:15:46Z",
+  "hostname": "meddefense-web01",
+  "pipeline_status": "ok",
+  "stages": [
+    {
+      "name": "0-vuln_inventory.sh",
+      "command": "./0-vuln_inventory.sh",
+      "status": "ok",
+      "stdout": "Vulnerability inventory completed\n",
+      "stderr": "",
+      "exit_code": 0,
+      "duration_seconds": 2.103,
+      "artifact": "vulnerability_inventory.json"
+    },
+    {
+      "name": "1-service_deps.sh",
+      "command": "./1-service_deps.sh",
+      "status": "ok",
+      "stdout": "Service dependency map generated\n",
+      "stderr": "",
+      "exit_code": 0,
+      "duration_seconds": 3.421,
+      "artifact": "service_dependency_map.json"
+    },
+    {
+      "name": "2-pre_patch_snapshot.sh",
+      "command": "./2-pre_patch_snapshot.sh",
+      "status": "ok",
+      "stdout": "Pre-patch snapshot created\n",
+      "stderr": "",
+      "exit_code": 0,
+      "duration_seconds": 4.812,
+      "artifact": "pre_patch_state.json"
+    },
+    {
+      "name": "3-patch_plan.sh",
+      "command": "./3-patch_plan.sh",
+      "status": "ok",
+      "stdout": "Patch plan generated\n",
+      "stderr": "",
+      "exit_code": 0,
+      "duration_seconds": 0.315,
+      "artifact": "patch_plan.json"
+    },
+    {
+      "name": "11-maintenance_window.sh",
+      "command": "./11-maintenance_window.sh --check",
+      "status": "ok",
+      "stdout": "Standard maintenance window active\n",
+      "stderr": "",
+      "exit_code": 0,
+      "duration_seconds": 0.121,
+      "artifact": "maintenance_window.json"
+    },
+    {
+      "name": "4-patch_execute.sh",
+      "command": "./4-patch_execute.sh",
+      "status": "ok",
+      "stdout": "Applied 6 package upgrades\n",
+      "stderr": "",
+      "exit_code": 0,
+      "duration_seconds": 27.604,
+      "artifact": "patch_execution_log.json"
+    },
+    {
+      "name": "5-post_patch_validate.sh",
+      "command": "./5-post_patch_validate.sh",
+      "status": "ok",
+      "stdout": "38/38 validation checks passed\n",
+      "stderr": "",
+      "exit_code": 0,
+      "duration_seconds": 2.903,
+      "artifact": "post_patch_validation.json"
+    },
+    {
+      "name": "6-config_drift.sh",
+      "command": "./6-config_drift.sh",
+      "status": "ok",
+      "stdout": "No unexpected configuration drift detected\n",
+      "stderr": "",
+      "exit_code": 0,
+      "duration_seconds": 1.417,
+      "artifact": "config_drift.json"
+    },
+    {
+      "name": "12-change_log.sh",
+      "command": "./12-change_log.sh",
+      "status": "ok",
+      "stdout": "Change log updated\n",
+      "stderr": "",
+      "exit_code": 0,
+      "duration_seconds": 0.811,
+      "artifact": "patch_change_log.json"
+    }
+  ],
+  "artifacts": {
+    "0-vuln_inventory.sh": "vulnerability_inventory.json",
+    "1-service_deps.sh": "service_dependency_map.json",
+    "2-pre_patch_snapshot.sh": "pre_patch_state.json",
+    "3-patch_plan.sh": "patch_plan.json",
+    "11-maintenance_window.sh": "maintenance_window.json",
+    "4-patch_execute.sh": "patch_execution_log.json",
+    "5-post_patch_validate.sh": "post_patch_validation.json",
+    "6-config_drift.sh": "config_drift.json",
+    "12-change_log.sh": "patch_change_log.json"
+  }
+}
