@@ -29,7 +29,7 @@ ip -j addr show | jq '
     {
         name: .ifname,
         MAC: (.address // ""),
-        state: (.operstate // ""),
+        link state: (.operstate // ""),
         addresses: [
             .addr_info[]? |
             {
