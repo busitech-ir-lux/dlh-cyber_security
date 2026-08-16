@@ -28,7 +28,7 @@ ip -j addr show | jq '
     .[] |
     {
         name: .ifname,
-        mac: (.address // ""),
+        MAC: (.address // ""),
         state: (.operstate // ""),
         addresses: [
             .addr_info[]? |
@@ -60,7 +60,7 @@ ip -j neigh show | jq '
     .[] |
     {
         ip: .dst,
-        mac: (.lladdr // ""),
+        MAC: (.lladdr // ""),
         state: (.state // [])
     }
 ]
