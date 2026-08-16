@@ -1,0 +1,161 @@
+{
+  "timestamp": "2026-08-16T22:57:33+02:00",
+  "hostname": "billing-srv-01",
+  "interfaces": [
+    {
+      "name": "lo",
+      "mac": "00:00:00:00:00:00",
+      "state": "UNKNOWN",
+      "addresses": [
+        {
+          "family": "inet",
+          "address": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        }
+      ]
+    },
+    {
+      "name": "ens33",
+      "mac": "00:0c:29:e4:05:3c",
+      "state": "UP",
+      "addresses": [
+        {
+          "family": "inet",
+          "address": "192.168.178.175",
+          "prefixlen": 24,
+          "scope": "global"
+        },
+        {
+          "family": "inet6",
+          "address": "fd38:ef81:3997:0:20c:29ff:fee4:53c",
+          "prefixlen": 64,
+          "scope": "global"
+        },
+        {
+          "family": "inet6",
+          "address": "fe80::20c:29ff:fee4:53c",
+          "prefixlen": 64,
+          "scope": "link"
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "dst": "default",
+      "gateway": "192.168.178.1",
+      "dev": "ens33",
+      "protocol": "dhcp",
+      "prefsrc": "192.168.178.175",
+      "metric": 100,
+      "flags": []
+    },
+    {
+      "dst": "192.168.178.0/24",
+      "dev": "ens33",
+      "protocol": "kernel",
+      "scope": "link",
+      "prefsrc": "192.168.178.175",
+      "metric": 100,
+      "flags": []
+    },
+    {
+      "dst": "192.168.178.1",
+      "dev": "ens33",
+      "protocol": "dhcp",
+      "scope": "link",
+      "prefsrc": "192.168.178.175",
+      "metric": 100,
+      "flags": []
+    }
+  ],
+  "neighbors": [
+    {
+      "ip": "192.168.178.1",
+      "mac": "3c:37:12:24:3c:68",
+      "state": [
+        "STALE"
+      ]
+    },
+    {
+      "ip": "192.168.178.169",
+      "mac": "50:2e:91:d4:41:ae",
+      "state": [
+        "REACHABLE"
+      ]
+    },
+    {
+      "ip": "fe80::3e37:12ff:fe24:3c68",
+      "mac": "3c:37:12:24:3c:68",
+      "state": [
+        "STALE"
+      ]
+    },
+    {
+      "ip": "fd38:ef81:3997:0:3e37:12ff:fe24:3c68",
+      "mac": "3c:37:12:24:3c:68",
+      "state": [
+        "STALE"
+      ]
+    }
+  ],
+  "listening_sockets": [
+    {
+      "socket": "udp UNCONN 0      0                        127.0.0.53%lo:53    0.0.0.0:* users:((\"systemd-resolve\",pid=27227,fd=13))",
+      "process": "systemd-resolve",
+      "pid": "27227"
+    },
+    {
+      "socket": "udp UNCONN 0      0                192.168.178.175%ens33:68    0.0.0.0:* users:((\"systemd-network\",pid=27213,fd=18))",
+      "process": "systemd-network",
+      "pid": "27213"
+    },
+    {
+      "socket": "udp UNCONN 0      0      [fe80::20c:29ff:fee4:53c]%ens33:546      [::]:* users:((\"systemd-network\",pid=27213,fd=21))",
+      "process": "systemd-network",
+      "pid": "27213"
+    },
+    {
+      "socket": "tcp LISTEN 0      151                            0.0.0.0:3306  0.0.0.0:* users:((\"mysqld\",pid=864,fd=23))           ",
+      "process": "mysqld",
+      "pid": "864"
+    },
+    {
+      "socket": "tcp LISTEN 0      70                           127.0.0.1:33060 0.0.0.0:* users:((\"mysqld\",pid=864,fd=21))           ",
+      "process": "mysqld",
+      "pid": "864"
+    },
+    {
+      "socket": "tcp LISTEN 0      4096                     127.0.0.53%lo:53    0.0.0.0:* users:((\"systemd-resolve\",pid=27227,fd=14))",
+      "process": "systemd-resolve",
+      "pid": "27227"
+    },
+    {
+      "socket": "tcp LISTEN 0      128                            0.0.0.0:22    0.0.0.0:* users:((\"sshd\",pid=27196,fd=3))            ",
+      "process": "sshd",
+      "pid": "27196"
+    },
+    {
+      "socket": "tcp LISTEN 0      128                               [::]:22       [::]:* users:((\"sshd\",pid=27196,fd=4))            ",
+      "process": "sshd",
+      "pid": "27196"
+    },
+    {
+      "socket": "tcp LISTEN 0      511                                  *:80          *:* users:((\"apache2\",pid=27234,fd=4),(\"apache2\",pid=27233,fd=4),(\"apache2\",pid=27232,fd=4),(\"apache2\",pid=27225,fd=4),(\"apache2\",pid=27224,fd=4),(\"apache2\",pid=27223,fd=4))",
+      "process": "apache2",
+      "pid": "27223"
+    }
+  ],
+  "established_connections": [
+    {
+      "connection": "0      0      192.168.178.175:22 192.168.178.169:6986 users:((\"sshd\",pid=13274,fd=4),(\"sshd\",pid=13215,fd=4))",
+      "process": "sshd",
+      "pid": "13215"
+    }
+  ],
+  "dns_resolvers": {
+    "resolv_conf": "# This is /run/systemd/resolve/stub-resolv.conf managed by man:systemd-resolved(8).\n# Do not edit.\n#\n# This file might be symlinked as /etc/resolv.conf. If you're looking at\n# /etc/resolv.conf and seeing this text, you have followed the symlink.\n#\n# This is a dynamic resolv.conf file for connecting local clients to the\n# internal DNS stub resolver of systemd-resolved. This file lists all\n# configured search domains.\n#\n# Run \"resolvectl status\" to see details about the uplink DNS servers\n# currently in use.\n#\n# Third party programs should typically not access this file directly, but only\n# through the symlink at /etc/resolv.conf. To manage man:resolv.conf(5) in a\n# different way, replace this symlink by a static file or a different symlink.\n#\n# See man:systemd-resolved.service(8) for details about the supported modes of\n# operation for /etc/resolv.conf.\n\nnameserver 127.0.0.53\noptions edns0 trust-ad\nsearch fritz.box\n",
+    "resolvectl": "Global\n       Protocols: -LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\nresolv.conf mode: stub\n\nLink 2 (ens33)\n    Current Scopes: DNS\n         Protocols: +DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\nCurrent DNS Server: 192.168.178.1\n       DNS Servers: 192.168.178.1 fd38:ef81:3997:0:3e37:12ff:fe24:3c68\n        DNS Domain: fritz.box\n"
+  }
+}
