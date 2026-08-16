@@ -45,7 +45,7 @@ ip -j addr show | jq '
 
 
 # -------------------------------------------------
-# 2. Routing table
+# 2. Routing table - Also returns default route
 # -------------------------------------------------
 
 ip -j route show > "$TMP/routes.json"
