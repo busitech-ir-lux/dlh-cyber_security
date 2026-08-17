@@ -1,258 +1,296 @@
 #!/bin/bash
 
-OUTPUT="segmentation_rules.json"
+set -e
+
+OUTPUT_FILE="segmentation_rules.json"
+GENERATED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 
 # -------------------------------------------------
-# Create segmentation rules
+# Define MedDefense zones
 # -------------------------------------------------
-# Allow ALL zones to MGMT resolver on udp/53 and tcp/53
 
-cat > "$OUTPUT" << 'EOF'
-{
-  "zones": [
+ZONES=$(jq -n '[
     {
-      "name": "DMZ",
-      "cidr": "10.10.10.0/24",
-      "purpose": "Public-facing application services",
-      "default_inbound": "drop",
-      "default_outbound": "accept with specific restrictions"
+        name: "DMZ",
+        cidr: "10.10.2.0/24",
+        purpose: "Public-facing services",
+        default_inbound: "drop",
+        default_outbound: "accept"
     },
     {
-      "name": "INTERNAL",
-      "cidr": "10.20.0.0/16",
-      "purpose": "Clinical applications, workstations and databases",
-      "default_inbound": "drop",
-      "default_outbound": "accept with specific restrictions"
+        name: "INTERNAL",
+        cidr: "10.10.1.0/24",
+        purpose: "Clinical applications and databases",
+        default_inbound: "drop",
+        default_outbound: "accept"
     },
     {
-      "name": "MGMT",
-      "cidr": "10.30.30.0/24",
-      "purpose": "Administration and management services",
-      "default_inbound": "drop",
-      "default_outbound": "accept with specific restrictions"
+        name: "MGMT",
+        cidr: "192.168.10.0/24",
+        purpose: "Administration and management",
+        default_inbound: "drop",
+        default_outbound: "accept"
     },
     {
-      "name": "MEDDEV",
-      "cidr": "10.40.40.0/24",
-      "purpose": "Medical device VLAN",
-      "default_inbound": "drop",
-      "default_outbound": "accept with specific restrictions"
+        name: "MEDDEV",
+        cidr: "10.10.3.0/24",
+        purpose: "Medical device VLAN",
+        default_inbound: "drop",
+        default_outbound: "accept",
+        outbound_restrictions: [
+            "no_dmz_access",
+            "no_public_internet_access"
+        ]
     }
-  ],
-
-  "flows": [
-
-    {
-      "action": "allow",
-      "src_zone": "MGMT",
-      "dst_zone": "INTERNAL",
-      "proto": "tcp",
-      "dport": 22,
-      "justification": "SSH administration of internal servers"
-    },
-
-    {
-      "action": "allow",
-      "src_zone": "MGMT",
-      "dst_zone": "DMZ",
-      "proto": "tcp",
-      "dport": 22,
-      "justification": "SSH administration of DMZ servers"
-    },
-
-    {
-      "action": "allow",
-      "src_zone": "INTERNAL",
-      "dst_zone": "INTERNAL",
-      "src_role": "clinical_workstations",
-      "dst_role": "server_hosts",
-      "proto": "tcp",
-      "dport": 443,
-      "justification": "HTTPS access from clinical workstations to internal applications"
-    },
-
-    {
-      "action": "allow",
-      "src_zone": "INTERNAL",
-      "dst_zone": "INTERNAL",
-      "src_role": "clinical_workstations",
-      "dst_role": "server_hosts",
-      "proto": "tcp",
-      "dport": 3306,
-      "justification": "Database access from approved clinical workstations"
-    },
-
-    {
-      "action": "allow",
-      "src_zone": "DMZ",
-      "dst_zone": "INTERNAL",
-      "src_host": "dmz-app-01",
-      "dst_role": "database",
-      "proto": "tcp",
-      "dport": 3306,
-      "justification": "Database access from named DMZ application host"
-    },
-
-    {
-      "action": "allow",
-      "src_zone": "DMZ",
-      "dst_zone": "INTERNAL",
-      "src_host": "dmz-app-02",
-      "dst_role": "database",
-      "proto": "tcp",
-      "dport": 3306,
-      "justification": "Database access from named DMZ application host"
-    },
-
-    {
-      "action": "allow",
-      "src_zone": "MEDDEV",
-      "dst_zone": "INTERNAL",
-      "proto": "tcp",
-      "dport": 4242,
-      "justification": "DICOM imaging to PACS"
-    },
-
-    {
-      "action": "allow",
-      "src_zone": "MEDDEV",
-      "dst_zone": "INTERNAL",
-      "proto": "tcp",
-      "dport": 443,
-      "justification": "EHR web integration for device display"
-    },
-
-    {
-      "action": "allow",
-      "src_zone": "MGMT",
-      "dst_zone": "MEDDEV",
-      "proto": "tcp",
-      "dport": 22,
-      "justification": "SSH administration of medical devices"
-    },
-
-    {
-      "action": "allow",
-      "src_zone": "MGMT",
-      "dst_zone": "MEDDEV",
-      "proto": "tcp",
-      "dport": 4242,
-      "justification": "DICOM administration and testing"
-    },
-
-    {
-      "action": "allow",
-      "src_zone": "ALL",
-      "dst_zone": "MGMT",
-      "dst_role": "resolver",
-      "proto": "udp",
-      "dport": 53,
-      "justification": "DNS resolver access"
-    },
-
-    {
-      "action": "allow",
-      "src_zone": "ALL",
-      "dst_zone": "MGMT",
-      "dst_role": "resolver",
-      "proto": "tcp",
-      "dport": 53,
-      "justification": "DNS resolver access over TCP"
-    },
-
-
-    {
-      "action": "deny_all",
-      "src_zone": "DMZ",
-      "dst_zone": "MEDDEV",
-      "proto": "any",
-      "dport": "any",
-      "justification": "No DMZ access to medical device VLAN"
-    },
-
-    {
-      "action": "deny_all",
-      "src_zone": "INTERNAL",
-      "dst_zone": "MEDDEV",
-      "proto": "any",
-      "dport": "any",
-      "justification": "No INTERNAL access to MEDDEV except approved MGMT flows"
-    },
-
-    {
-      "action": "deny_all",
-      "src_zone": "MEDDEV",
-      "dst_zone": "DMZ",
-      "proto": "any",
-      "dport": "any",
-      "justification": "Medical devices must not access the DMZ"
-    },
-
-    {
-      "action": "deny_all",
-      "src_zone": "MEDDEV",
-      "dst_zone": "INTERNET",
-      "proto": "any",
-      "dport": "any",
-      "justification": "Medical devices must not access the public Internet"
-    },
-
-    {
-      "action": "deny_all",
-      "src_zone": "DMZ",
-      "dst_zone": "MGMT",
-      "proto": "any",
-      "dport": "any",
-      "justification": "No direct DMZ access to management systems"
-    }
-  ]
-}
-EOF
+]')
 
 
 # -------------------------------------------------
-# Add summary
+# Define allowed flows
+# -------------------------------------------------
+#
+# MGMT -> INTERNAL tcp/22
+# MGMT -> DMZ tcp/22
+# INTERNAL -> INTERNAL tcp/443 and tcp/3306
+# DMZ -> INTERNAL tcp/3306
+# MEDDEV -> INTERNAL tcp/4242 DICOM and tcp/443
+# ALL zones -> MGMT resolver on udp/53 and tcp/53
+#
+# No flows from MEDDEV to DMZ or public Internet.
+# No flows into MEDDEV except MGMT tcp/22 and tcp/4242.
+#
 # -------------------------------------------------
 
-FLOW_COUNT=$(jq '.flows | length' "$OUTPUT")
+FLOWS=$(jq -n '[
 
-ALLOW_COUNT=$(jq '
-    [.flows[] | select(.action == "allow")] | length
-' "$OUTPUT")
+    {
+        action: "allow",
+        src_zone: "MGMT",
+        dst_zone: "INTERNAL",
+        proto: "tcp",
+        dport: 22,
+        justification: "Administration access to INTERNAL servers"
+    },
 
-DENY_COUNT=$(jq '
-    [.flows[] | select(.action == "deny_all")] | length
-' "$OUTPUT")
+    {
+        action: "allow",
+        src_zone: "MGMT",
+        dst_zone: "DMZ",
+        proto: "tcp",
+        dport: 22,
+        justification: "Administration access to DMZ servers"
+    },
 
-PAIR_COUNT=$(jq '
-    [
-        .flows[] |
-        (.src_zone + "->" + .dst_zone)
-    ]
-    | unique
-    | length
-' "$OUTPUT")
+    {
+        action: "allow",
+        src_zone: "INTERNAL",
+        dst_zone: "INTERNAL",
+        proto: "tcp",
+        dport: 443,
+        justification: "Clinical workstations to INTERNAL server hosts"
+    },
+
+    {
+        action: "allow",
+        src_zone: "INTERNAL",
+        dst_zone: "INTERNAL",
+        proto: "tcp",
+        dport: 3306,
+        justification: "Clinical workstations to INTERNAL database servers"
+    },
+
+    {
+        action: "allow",
+        src_zone: "DMZ",
+        dst_zone: "INTERNAL",
+        proto: "tcp",
+        dport: 3306,
+        justification: "Named DMZ application hosts to INTERNAL databases",
+        exception_for: "dmz_app_hosts_only",
+        src_restriction: "named_dmz_application_hosts"
+    },
+
+    {
+        action: "allow",
+        src_zone: "MEDDEV",
+        dst_zone: "INTERNAL",
+        proto: "tcp",
+        dport: 4242,
+        justification: "DICOM imaging to PACS"
+    },
+
+    {
+        action: "allow",
+        src_zone: "MEDDEV",
+        dst_zone: "INTERNAL",
+        proto: "tcp",
+        dport: 443,
+        justification: "EHR web integration for device display"
+    },
+
+    {
+        action: "allow",
+        src_zone: "DMZ",
+        dst_zone: "MGMT",
+        proto: "udp",
+        dport: 53,
+        justification: "DNS resolution to MGMT resolver"
+    },
+
+    {
+        action: "allow",
+        src_zone: "DMZ",
+        dst_zone: "MGMT",
+        proto: "tcp",
+        dport: 53,
+        justification: "DNS resolution to MGMT resolver over tcp/53"
+    },
+
+    {
+        action: "allow",
+        src_zone: "INTERNAL",
+        dst_zone: "MGMT",
+        proto: "udp",
+        dport: 53,
+        justification: "DNS resolution to MGMT resolver"
+    },
+
+    {
+        action: "allow",
+        src_zone: "INTERNAL",
+        dst_zone: "MGMT",
+        proto: "tcp",
+        dport: 53,
+        justification: "DNS resolution to MGMT resolver over tcp/53"
+    },
+
+    {
+        action: "allow",
+        src_zone: "MEDDEV",
+        dst_zone: "MGMT",
+        proto: "udp",
+        dport: 53,
+        justification: "DNS resolution to MGMT resolver"
+    },
+
+    {
+        action: "allow",
+        src_zone: "MEDDEV",
+        dst_zone: "MGMT",
+        proto: "tcp",
+        dport: 53,
+        justification: "DNS resolution to MGMT resolver over tcp/53"
+    },
+
+    {
+        action: "allow",
+        src_zone: "MGMT",
+        dst_zone: "MEDDEV",
+        proto: "tcp",
+        dport: 22,
+        justification: "Administration access to medical devices"
+    },
+
+    {
+        action: "allow",
+        src_zone: "MGMT",
+        dst_zone: "MEDDEV",
+        proto: "tcp",
+        dport: 4242,
+        justification: "DICOM management to medical devices"
+    },
 
 
-# Create final file with summary
-jq \
-    --argjson flow_count "$FLOW_COUNT" \
-    --argjson allow_count "$ALLOW_COUNT" \
-    --argjson deny_count "$DENY_COUNT" \
-    --argjson pair_count "$PAIR_COUNT" \
-    '
-    . + {
-        summary: {
-            flow_count: $flow_count,
-            allow_count: $allow_count,
-            deny_count: $deny_count,
-            cross_zone_pairs: $pair_count
-        }
+    {
+        action: "deny_all",
+        src_zone: "DMZ",
+        dst_zone: "MEDDEV",
+        proto: "any",
+        dport: 0,
+        justification: "No flows from DMZ to MEDDEV"
+    },
+
+    {
+        action: "deny_all",
+        src_zone: "INTERNAL",
+        dst_zone: "DMZ",
+        proto: "any",
+        dport: 0,
+        justification: "No flows from INTERNAL to DMZ"
+    },
+
+    {
+        action: "deny_all",
+        src_zone: "INTERNAL",
+        dst_zone: "MEDDEV",
+        proto: "any",
+        dport: 0,
+        justification: "No flows from INTERNAL to MEDDEV"
+    },
+
+    {
+        action: "deny_all",
+        src_zone: "MEDDEV",
+        dst_zone: "DMZ",
+        proto: "any",
+        dport: 0,
+        justification: "No flows from MEDDEV to DMZ or public Internet"
     }
-    ' "$OUTPUT" > "${OUTPUT}.tmp"
 
-mv "${OUTPUT}.tmp" "$OUTPUT"
+]')
 
 
-echo "Segmentation rules saved to $OUTPUT"
+# -------------------------------------------------
+# Create summary
+# -------------------------------------------------
+
+SUMMARY=$(echo "$FLOWS" | jq '{
+    flow_count: length,
+
+    allow_count:
+        ([.[] | select(.action == "allow")] | length),
+
+    deny_count:
+        ([.[] | select(.action == "deny_all")] | length),
+
+    cross_zone_pairs:
+        (
+            [
+                .[]
+                | select(.src_zone != .dst_zone)
+                | (.src_zone + "->" + .dst_zone)
+            ]
+            | unique
+            | length
+        )
+}')
+
+
+# -------------------------------------------------
+# Create final JSON
+# -------------------------------------------------
+
+jq -n \
+    --arg generated_at "$GENERATED_AT" \
+    --argjson zones "$ZONES" \
+    --argjson flows "$FLOWS" \
+    --argjson summary "$SUMMARY" \
+    '{
+        generated_at: $generated_at,
+        zones: $zones,
+        flows: $flows,
+        summary: $summary
+    }' > "$OUTPUT_FILE"
+
+
+# -------------------------------------------------
+# Show result
+# -------------------------------------------------
+
+echo "Segmentation rules generated"
+echo "Output: $OUTPUT_FILE"
+echo "Zones: 4"
+echo "Flows: $(echo "$SUMMARY" | jq -r '.flow_count')"
+echo "Allows: $(echo "$SUMMARY" | jq -r '.allow_count')"
+echo "Denies: $(echo "$SUMMARY" | jq -r '.deny_count')"

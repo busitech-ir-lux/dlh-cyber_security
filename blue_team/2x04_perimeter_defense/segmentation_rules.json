@@ -1,32 +1,37 @@
 {
+  "generated_at": "2026-08-17T19:22:38Z",
   "zones": [
     {
       "name": "DMZ",
-      "cidr": "10.10.10.0/24",
-      "purpose": "Public-facing application services",
+      "cidr": "10.10.2.0/24",
+      "purpose": "Public-facing services",
       "default_inbound": "drop",
-      "default_outbound": "accept with specific restrictions"
+      "default_outbound": "accept"
     },
     {
       "name": "INTERNAL",
-      "cidr": "10.20.0.0/16",
-      "purpose": "Clinical applications, workstations and databases",
+      "cidr": "10.10.1.0/24",
+      "purpose": "Clinical applications and databases",
       "default_inbound": "drop",
-      "default_outbound": "accept with specific restrictions"
+      "default_outbound": "accept"
     },
     {
       "name": "MGMT",
-      "cidr": "10.30.30.0/24",
-      "purpose": "Administration and management services",
+      "cidr": "192.168.10.0/24",
+      "purpose": "Administration and management",
       "default_inbound": "drop",
-      "default_outbound": "accept with specific restrictions"
+      "default_outbound": "accept"
     },
     {
       "name": "MEDDEV",
-      "cidr": "10.40.40.0/24",
+      "cidr": "10.10.3.0/24",
       "purpose": "Medical device VLAN",
       "default_inbound": "drop",
-      "default_outbound": "accept with specific restrictions"
+      "default_outbound": "accept",
+      "outbound_restrictions": [
+        "no_dmz_access",
+        "no_public_internet_access"
+      ]
     }
   ],
   "flows": [
@@ -36,7 +41,7 @@
       "dst_zone": "INTERNAL",
       "proto": "tcp",
       "dport": 22,
-      "justification": "SSH administration of internal servers"
+      "justification": "Administration access to INTERNAL servers"
     },
     {
       "action": "allow",
@@ -44,47 +49,33 @@
       "dst_zone": "DMZ",
       "proto": "tcp",
       "dport": 22,
-      "justification": "SSH administration of DMZ servers"
+      "justification": "Administration access to DMZ servers"
     },
     {
       "action": "allow",
       "src_zone": "INTERNAL",
       "dst_zone": "INTERNAL",
-      "src_role": "clinical_workstations",
-      "dst_role": "server_hosts",
       "proto": "tcp",
       "dport": 443,
-      "justification": "HTTPS access from clinical workstations to internal applications"
+      "justification": "Clinical workstations to INTERNAL server hosts"
     },
     {
       "action": "allow",
       "src_zone": "INTERNAL",
       "dst_zone": "INTERNAL",
-      "src_role": "clinical_workstations",
-      "dst_role": "server_hosts",
       "proto": "tcp",
       "dport": 3306,
-      "justification": "Database access from approved clinical workstations"
+      "justification": "Clinical workstations to INTERNAL database servers"
     },
     {
       "action": "allow",
       "src_zone": "DMZ",
       "dst_zone": "INTERNAL",
-      "src_host": "dmz-app-01",
-      "dst_role": "database",
       "proto": "tcp",
       "dport": 3306,
-      "justification": "Database access from named DMZ application host"
-    },
-    {
-      "action": "allow",
-      "src_zone": "DMZ",
-      "dst_zone": "INTERNAL",
-      "src_host": "dmz-app-02",
-      "dst_role": "database",
-      "proto": "tcp",
-      "dport": 3306,
-      "justification": "Database access from named DMZ application host"
+      "justification": "Named DMZ application hosts to INTERNAL databases",
+      "exception_for": "dmz_app_hosts_only",
+      "src_restriction": "named_dmz_application_hosts"
     },
     {
       "action": "allow",
@@ -104,11 +95,59 @@
     },
     {
       "action": "allow",
+      "src_zone": "DMZ",
+      "dst_zone": "MGMT",
+      "proto": "udp",
+      "dport": 53,
+      "justification": "DNS resolution to MGMT resolver"
+    },
+    {
+      "action": "allow",
+      "src_zone": "DMZ",
+      "dst_zone": "MGMT",
+      "proto": "tcp",
+      "dport": 53,
+      "justification": "DNS resolution to MGMT resolver over tcp/53"
+    },
+    {
+      "action": "allow",
+      "src_zone": "INTERNAL",
+      "dst_zone": "MGMT",
+      "proto": "udp",
+      "dport": 53,
+      "justification": "DNS resolution to MGMT resolver"
+    },
+    {
+      "action": "allow",
+      "src_zone": "INTERNAL",
+      "dst_zone": "MGMT",
+      "proto": "tcp",
+      "dport": 53,
+      "justification": "DNS resolution to MGMT resolver over tcp/53"
+    },
+    {
+      "action": "allow",
+      "src_zone": "MEDDEV",
+      "dst_zone": "MGMT",
+      "proto": "udp",
+      "dport": 53,
+      "justification": "DNS resolution to MGMT resolver"
+    },
+    {
+      "action": "allow",
+      "src_zone": "MEDDEV",
+      "dst_zone": "MGMT",
+      "proto": "tcp",
+      "dport": 53,
+      "justification": "DNS resolution to MGMT resolver over tcp/53"
+    },
+    {
+      "action": "allow",
       "src_zone": "MGMT",
       "dst_zone": "MEDDEV",
       "proto": "tcp",
       "dport": 22,
-      "justification": "SSH administration of medical devices"
+      "justification": "Administration access to medical devices"
     },
     {
       "action": "allow",
@@ -116,71 +155,45 @@
       "dst_zone": "MEDDEV",
       "proto": "tcp",
       "dport": 4242,
-      "justification": "DICOM administration and testing"
-    },
-    {
-      "action": "allow",
-      "src_zone": "ALL",
-      "dst_zone": "MGMT",
-      "dst_role": "resolver",
-      "proto": "udp",
-      "dport": 53,
-      "justification": "DNS resolver access"
-    },
-    {
-      "action": "allow",
-      "src_zone": "ALL",
-      "dst_zone": "MGMT",
-      "dst_role": "resolver",
-      "proto": "tcp",
-      "dport": 53,
-      "justification": "DNS resolver access over TCP"
+      "justification": "DICOM management to medical devices"
     },
     {
       "action": "deny_all",
       "src_zone": "DMZ",
       "dst_zone": "MEDDEV",
       "proto": "any",
-      "dport": "any",
-      "justification": "No DMZ access to medical device VLAN"
+      "dport": 0,
+      "justification": "No flows from DMZ to MEDDEV"
+    },
+    {
+      "action": "deny_all",
+      "src_zone": "INTERNAL",
+      "dst_zone": "DMZ",
+      "proto": "any",
+      "dport": 0,
+      "justification": "No flows from INTERNAL to DMZ"
     },
     {
       "action": "deny_all",
       "src_zone": "INTERNAL",
       "dst_zone": "MEDDEV",
       "proto": "any",
-      "dport": "any",
-      "justification": "No INTERNAL access to MEDDEV except approved MGMT flows"
+      "dport": 0,
+      "justification": "No flows from INTERNAL to MEDDEV"
     },
     {
       "action": "deny_all",
       "src_zone": "MEDDEV",
       "dst_zone": "DMZ",
       "proto": "any",
-      "dport": "any",
-      "justification": "Medical devices must not access the DMZ"
-    },
-    {
-      "action": "deny_all",
-      "src_zone": "MEDDEV",
-      "dst_zone": "INTERNET",
-      "proto": "any",
-      "dport": "any",
-      "justification": "Medical devices must not access the public Internet"
-    },
-    {
-      "action": "deny_all",
-      "src_zone": "DMZ",
-      "dst_zone": "MGMT",
-      "proto": "any",
-      "dport": "any",
-      "justification": "No direct DMZ access to management systems"
+      "dport": 0,
+      "justification": "No flows from MEDDEV to DMZ or public Internet"
     }
   ],
   "summary": {
-    "flow_count": 17,
-    "allow_count": 12,
-    "deny_count": 5,
+    "flow_count": 19,
+    "allow_count": 15,
+    "deny_count": 4,
     "cross_zone_pairs": 12
   }
 }
