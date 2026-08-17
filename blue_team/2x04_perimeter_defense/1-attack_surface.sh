@@ -167,6 +167,14 @@ do
         end
 
         ' "$CATALOG")
+	# Validate function label
+case "$FUNCTION" in
+    database|web|ssh|dns|ntp|rpc|smb|print|telemetry|telnet|ftp|snmpv1|snmpv2c|rlogin|"nfs v2/v3"|unknown)
+        ;;
+    *)
+        FUNCTION="unknown"
+        ;;
+esac
 
 
     # -------------------------------------------------
