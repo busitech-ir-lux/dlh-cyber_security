@@ -1,0 +1,126 @@
+{
+  "generated_at": "2026-08-17T20:50:08+02:00",
+  "hostname": "billing-srv-01",
+  "sockets": [
+    {
+      "proto": "udp",
+      "port": 53,
+      "bind_addr": "127.0.0.53%lo",
+      "process": "systemd-resolve",
+      "binary": "/usr/lib/systemd/systemd-resolved",
+      "package": "unknown",
+      "service_unit": "systemd-resolved.service",
+      "function": "dns",
+      "criticality": "medium",
+      "exposure_flags": []
+    },
+    {
+      "proto": "udp",
+      "port": 68,
+      "bind_addr": "192.168.178.175%ens33",
+      "process": "systemd-network",
+      "binary": "/usr/lib/systemd/systemd-networkd",
+      "package": "unknown",
+      "service_unit": "systemd-networkd.service",
+      "function": "unknown",
+      "criticality": "low",
+      "exposure_flags": []
+    },
+    {
+      "proto": "udp",
+      "port": 546,
+      "bind_addr": "fe80::20c:29ff:fee4:53c]%ens33",
+      "process": "systemd-network",
+      "binary": "/usr/lib/systemd/systemd-networkd",
+      "package": "unknown",
+      "service_unit": "systemd-networkd.service",
+      "function": "unknown",
+      "criticality": "low",
+      "exposure_flags": []
+    },
+    {
+      "proto": "tcp",
+      "port": 3306,
+      "bind_addr": "0.0.0.0",
+      "process": "mysqld",
+      "binary": "/usr/sbin/mysqld",
+      "package": "mysql-server-core-8.0",
+      "service_unit": "mysql.service",
+      "function": "database",
+      "criticality": "critical",
+      "exposure_flags": [
+        "bound_0.0.0.0",
+        "database_exposed"
+      ]
+    },
+    {
+      "proto": "tcp",
+      "port": 33060,
+      "bind_addr": "127.0.0.1",
+      "process": "mysqld",
+      "binary": "/usr/sbin/mysqld",
+      "package": "mysql-server-core-8.0",
+      "service_unit": "mysql.service",
+      "function": "database",
+      "criticality": "critical",
+      "exposure_flags": []
+    },
+    {
+      "proto": "tcp",
+      "port": 53,
+      "bind_addr": "127.0.0.53%lo",
+      "process": "systemd-resolve",
+      "binary": "/usr/lib/systemd/systemd-resolved",
+      "package": "unknown",
+      "service_unit": "systemd-resolved.service",
+      "function": "dns",
+      "criticality": "medium",
+      "exposure_flags": []
+    },
+    {
+      "proto": "tcp",
+      "port": 22,
+      "bind_addr": "0.0.0.0",
+      "process": "sshd",
+      "binary": "/usr/sbin/sshd",
+      "package": "openssh-server",
+      "service_unit": "ssh.service",
+      "function": "ssh",
+      "criticality": "high",
+      "exposure_flags": []
+    },
+    {
+      "proto": "tcp",
+      "port": 22,
+      "bind_addr": "::",
+      "process": "sshd",
+      "binary": "/usr/sbin/sshd",
+      "package": "openssh-server",
+      "service_unit": "ssh.service",
+      "function": "ssh",
+      "criticality": "high",
+      "exposure_flags": []
+    },
+    {
+      "proto": "tcp",
+      "port": 80,
+      "bind_addr": "*",
+      "process": "apache2",
+      "binary": "/usr/sbin/apache2",
+      "package": "apache2-bin",
+      "service_unit": "apache2.service",
+      "function": "web",
+      "criticality": "medium",
+      "exposure_flags": []
+    }
+  ],
+  "summary": {
+    "total_sockets": 9,
+    "flagged_total": 1,
+    "flagged_critical": 1,
+    "flagged_high": 0,
+    "flagged_medium": 0,
+    "flagged_low": 0,
+    "unknown_functions": 2
+  }
+}

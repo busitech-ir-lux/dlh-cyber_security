@@ -73,30 +73,51 @@ ip -j neigh show | jq '
 
 ss -tulnpH > "$TMP/listening.txt"
 
-# Create an empty file for JSON objects
 > "$TMP/listening_objects.json"
 
 while IFS= read -r LINE
 do
-    # Try to get process name from ss output
+    # Get protocol (tcp or udp)
+    PROTO=$(echo "$LINE" | awk '{print $1}')
+
+    # Get local address and port
+    LOCAL=$(echo "$LINE" | awk '{print $5}')
+
+    LOCAL_ADDR="${LOCAL%:*}"
+    LOCAL_PORT="${LOCAL##*:}"
+
+    # Get process name
     PROCESS=$(echo "$LINE" | sed -n 's/.*users:(("\([^"]*\)".*/\1/p')
 
-    # Try to get PID from ss output
+    # Get PID
     PID=$(echo "$LINE" | sed -n 's/.*pid=\([0-9]*\).*/\1/p')
 
+    # If port is missing, use 0
+    if [ -z "$LOCAL_PORT" ]; then
+        LOCAL_PORT=0
+    fi
+
+    # If PID is missing, use 0
+    if [ -z "$PID" ]; then
+        PID=0
+    fi
+
     jq -n \
-        --arg socket "$LINE" \
+        --arg proto "$PROTO" \
+        --arg local_addr "$LOCAL_ADDR" \
+        --argjson local_port "$LOCAL_PORT" \
         --arg process "$PROCESS" \
-        --arg pid "$PID" \
+        --argjson pid "$PID" \
         '{
-            socket: $socket,
+            proto: $proto,
+            local_addr: $local_addr,
+            local_port: $local_port,
             process: $process,
             pid: $pid
         }' >> "$TMP/listening_objects.json"
 
 done < "$TMP/listening.txt"
 
-# Convert individual JSON objects into one JSON array
 jq -s '.' "$TMP/listening_objects.json" > "$TMP/listening.json"
 
 

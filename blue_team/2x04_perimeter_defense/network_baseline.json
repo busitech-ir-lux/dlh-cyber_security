@@ -1,42 +1,38 @@
 {
-  "timestamp": "2026-08-16T23:17:01+02:00",
+  "timestamp": "2026-08-17T20:46:05+02:00",
   "hostname": "billing-srv-01",
   "interfaces": [
     {
       "name": "lo",
       "mac": "00:00:00:00:00:00",
-      "state": "UNKNOWN",
+      "link_state": "UNKNOWN",
       "addresses": [
         {
           "family": "inet",
           "address": "127.0.0.1",
-          "prefixlen": 8,
-          "scope": "host"
+          "prefixlen": 8
         }
       ]
     },
     {
       "name": "ens33",
       "mac": "00:0c:29:e4:05:3c",
-      "state": "UP",
+      "link_state": "UP",
       "addresses": [
         {
           "family": "inet",
           "address": "192.168.178.175",
-          "prefixlen": 24,
-          "scope": "global"
+          "prefixlen": 24
         },
         {
           "family": "inet6",
           "address": "fd38:ef81:3997:0:20c:29ff:fee4:53c",
-          "prefixlen": 64,
-          "scope": "global"
+          "prefixlen": 64
         },
         {
           "family": "inet6",
           "address": "fe80::20c:29ff:fee4:53c",
-          "prefixlen": 64,
-          "scope": "link"
+          "prefixlen": 64
         }
       ]
     }
@@ -102,56 +98,78 @@
   ],
   "listening_sockets": [
     {
-      "socket": "udp UNCONN 0      0                        127.0.0.53%lo:53    0.0.0.0:* users:((\"systemd-resolve\",pid=27227,fd=13))",
+      "proto": "udp",
+      "local_addr": "127.0.0.53%lo",
+      "local_port": 53,
       "process": "systemd-resolve",
-      "pid": "27227"
+      "pid": 27227
     },
     {
-      "socket": "udp UNCONN 0      0                192.168.178.175%ens33:68    0.0.0.0:* users:((\"systemd-network\",pid=27213,fd=18))",
+      "proto": "udp",
+      "local_addr": "192.168.178.175%ens33",
+      "local_port": 68,
       "process": "systemd-network",
-      "pid": "27213"
+      "pid": 27213
     },
     {
-      "socket": "udp UNCONN 0      0      [fe80::20c:29ff:fee4:53c]%ens33:546      [::]:* users:((\"systemd-network\",pid=27213,fd=21))",
+      "proto": "udp",
+      "local_addr": "fe80::20c:29ff:fee4:53c]%ens33",
+      "local_port": 546,
       "process": "systemd-network",
-      "pid": "27213"
+      "pid": 27213
     },
     {
-      "socket": "tcp LISTEN 0      151                            0.0.0.0:3306  0.0.0.0:* users:((\"mysqld\",pid=864,fd=23))           ",
+      "proto": "tcp",
+      "local_addr": "0.0.0.0",
+      "local_port": 3306,
       "process": "mysqld",
-      "pid": "864"
+      "pid": 864
     },
     {
-      "socket": "tcp LISTEN 0      70                           127.0.0.1:33060 0.0.0.0:* users:((\"mysqld\",pid=864,fd=21))           ",
+      "proto": "tcp",
+      "local_addr": "127.0.0.1",
+      "local_port": 33060,
       "process": "mysqld",
-      "pid": "864"
+      "pid": 864
     },
     {
-      "socket": "tcp LISTEN 0      4096                     127.0.0.53%lo:53    0.0.0.0:* users:((\"systemd-resolve\",pid=27227,fd=14))",
+      "proto": "tcp",
+      "local_addr": "127.0.0.53%lo",
+      "local_port": 53,
       "process": "systemd-resolve",
-      "pid": "27227"
+      "pid": 27227
     },
     {
-      "socket": "tcp LISTEN 0      128                            0.0.0.0:22    0.0.0.0:* users:((\"sshd\",pid=27196,fd=3))            ",
+      "proto": "tcp",
+      "local_addr": "0.0.0.0",
+      "local_port": 22,
       "process": "sshd",
-      "pid": "27196"
+      "pid": 27196
     },
     {
-      "socket": "tcp LISTEN 0      128                               [::]:22       [::]:* users:((\"sshd\",pid=27196,fd=4))            ",
+      "proto": "tcp",
+      "local_addr": "::",
+      "local_port": 22,
       "process": "sshd",
-      "pid": "27196"
+      "pid": 27196
     },
     {
-      "socket": "tcp LISTEN 0      511                                  *:80          *:* users:((\"apache2\",pid=27234,fd=4),(\"apache2\",pid=27233,fd=4),(\"apache2\",pid=27232,fd=4),(\"apache2\",pid=27225,fd=4),(\"apache2\",pid=27224,fd=4),(\"apache2\",pid=27223,fd=4))",
+      "proto": "tcp",
+      "local_addr": "*",
+      "local_port": 80,
       "process": "apache2",
-      "pid": "27223"
+      "pid": 27223
     }
   ],
   "established_connections": [
     {
-      "connection": "0      0      192.168.178.175:22 192.168.178.169:6986 users:((\"sshd\",pid=13274,fd=4),(\"sshd\",pid=13215,fd=4))",
+      "proto": "tcp",
+      "local_addr": "192.168.178.175",
+      "local_port": 22,
+      "remote_addr": "192.168.178.169",
+      "remote_port": 2929,
       "process": "sshd",
-      "pid": "13215"
+      "pid": 68641
     }
   ],
   "dns_resolvers": {
