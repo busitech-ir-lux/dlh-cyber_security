@@ -523,8 +523,8 @@ ACTUAL_RULES=$(nft -j list table inet meddefense |
 echo ""
 echo "nftables verification"
 echo "====================="
-echo "Expected rules: $EXPECTED_RULES"
-echo "Loaded rules:   $ACTUAL_RULES"
+echo "expected rules: $EXPECTED_RULES"
+echo "loaded rules:   $ACTUAL_RULES"
 
 
 if [ "$ACTUAL_RULES" -ne "$EXPECTED_RULES" ]; then
