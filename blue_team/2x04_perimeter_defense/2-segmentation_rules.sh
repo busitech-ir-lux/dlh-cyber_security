@@ -6,6 +6,7 @@ OUTPUT="segmentation_rules.json"
 # -------------------------------------------------
 # Create segmentation rules
 # -------------------------------------------------
+# Allow ALL zones to MGMT resolver on udp/53 and tcp/53
 
 cat > "$OUTPUT" << 'EOF'
 {
