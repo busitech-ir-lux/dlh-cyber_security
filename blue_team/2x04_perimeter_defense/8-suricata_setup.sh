@@ -44,7 +44,7 @@ if [ "$NEED_INSTALL" -eq 1 ]; then
 fi
 
 # This project uses offline replay only.
-# Do not start suricata.service.
+# do not start suricata.service.
 systemctl stop suricata.service 2>/dev/null || true
 
 INSTALLED_VERSION=$(suricata --version 2>&1 |
