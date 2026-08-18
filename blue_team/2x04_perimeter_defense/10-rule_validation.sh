@@ -186,6 +186,34 @@ echo "Rules:  $RULE_COUNT"
 echo "Passed: $PASSED"
 echo "Failed: $FAILED"
 
+echo "Rules:  $RULE_COUNT"
+echo "Passed: $PASSED"
+echo "Failed: $FAILED"
+
+
+# Create rule_validation.json
+OUTPUT_JSON="./rule_validation.json"
+
+jq -n \
+    --argjson rules "$RULE_COUNT" \
+    --argjson passed "$PASSED" \
+    --argjson failed "$FAILED" \
+    '{
+        rules: $rules,
+        passed: $passed,
+        failed: $failed,
+        status: (if $failed == 0 then "pass" else "fail" end)
+    }' > "$OUTPUT_JSON"
+
+echo "Validation report: $OUTPUT_JSON"
+
+
+# Exit non-zero if any rule failed
+if [ "$FAILED" -gt 0 ]; then
+    exit 1
+fi
+
+exit 0
 
 # Exit non-zero if any rule failed
 if [ "$FAILED" -gt 0 ]; then
