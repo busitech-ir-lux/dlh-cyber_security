@@ -1,0 +1,15 @@
+{
+  "dnsmasq_version": "Dnsmasq version 2.90  Copyright (c) 2000-2024 Simon Kelley",
+  "blocked_domains": 814,
+  "config_files": {
+    "blocklist": "/etc/dnsmasq.d/meddefense-blocklist.conf",
+    "upstream": "/etc/dnsmasq.d/meddefense-upstream.conf"
+  },
+  "service_status": "active",
+  "validation": {
+    "allowed_domain_pass": 1,
+    "blocked_domain_pass": 1,
+    "upstream_domain_pass": 1
+  },
+  "generated_at": "2026-08-18T16:42:13Z"
+}

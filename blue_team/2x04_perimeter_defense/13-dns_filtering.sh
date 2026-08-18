@@ -282,6 +282,49 @@ fi
 
 
 # -------------------------------------------------
+# Output summary as JSON for audit trail
+# -------------------------------------------------
+
+echo ""
+echo "[*] Generating audit summary..."
+
+if ! command -v jq >/dev/null 2>&1; then
+    apt-get update
+    apt-get install -y jq
+fi
+
+SERVICE_STATUS=$(systemctl is-active dnsmasq 2>/dev/null || echo "inactive")
+
+jq -n \
+    --arg version "$DNSMASQ_VERSION" \
+    --argjson domains "$BLOCK_COUNT" \
+    --arg blocklist "$BLOCK_CONF" \
+    --arg upstream "$UPSTREAM_CONF" \
+    --arg service_status "$SERVICE_STATUS" \
+    --argjson allow_pass "$ALLOW_PASS" \
+    --argjson block_pass "$BLOCK_PASS" \
+    --argjson unknown_pass "$UNKNOWN_PASS" \
+    --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    '{
+        dnsmasq_version: $version,
+        blocked_domains: $domains,
+        config_files: {
+            blocklist: $blocklist,
+            upstream: $upstream
+        },
+        service_status: $service_status,
+        validation: {
+            allowed_domain_pass: $allow_pass,
+            blocked_domain_pass: $block_pass,
+            upstream_domain_pass: $unknown_pass
+        },
+        generated_at: $timestamp
+    }' > dns_filter_report.json
+
+echo "DNS filter report written to dns_filter_report.json"
+
+
+# -------------------------------------------------
 # Final result
 # -------------------------------------------------
 
@@ -289,11 +332,9 @@ if [ "$ALLOW_PASS" -eq 1 ] &&
    [ "$BLOCK_PASS" -eq 1 ] &&
    [ "$UNKNOWN_PASS" -eq 1 ]
 then
-    echo ""
     echo "DNS filtering validation passed."
     exit 0
 else
-    echo ""
     echo "DNS filtering validation failed."
     exit 1
 fi
