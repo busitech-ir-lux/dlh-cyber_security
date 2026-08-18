@@ -24,6 +24,8 @@ fi
 
 # -------------------------------------------------
 # 1. Install dnsmasq if not present
+# Install dnsmasq idempotently
+# This step is idempotent because dnsmasq is installed only if missing
 # -------------------------------------------------
 
 echo -n "[*] Ensuring dnsmasq is installed... "
