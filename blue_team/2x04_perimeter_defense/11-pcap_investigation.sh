@@ -3,7 +3,7 @@
 set -e
 
 DEFAULT_PCAP="/home/analyst/MedDefense_Lab/PCAPs/suspicious_session.pcap"
-OUTPUT="pcap_findings.json"
+OUTPUT="pcap_investigation.json"
 TMPDIR="/tmp/pcap-investigation-$$"
 
 # Accept PCAP path as $1, otherwise use default
