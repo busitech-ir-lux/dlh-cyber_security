@@ -3,7 +3,7 @@
 set -e
 
 DEFAULT_PCAP="/home/analyst/MedDefense_Lab/PCAPs/suspicious_session.pcap"
-OUTPUT="pcap_investigation.json"
+OUTPUT="pcap_findings.json"
 TMPDIR="/tmp/pcap-investigation-$$"
 
 # Accept PCAP path as $1, otherwise use default
@@ -75,6 +75,7 @@ TCP_COUNT=$(awk '
     END { print count + 0 }
 ' "$TMPDIR/tcp_raw.txt")
 
+# Parse top 10 TCP conversations
 awk '
     $2 == "<->" {
         print $1 "\t" $3 "\t" $8 "\t" $9 "\t" $10 "\t" $11
@@ -119,6 +120,7 @@ UDP_COUNT=$(awk '
     END { print count + 0 }
 ' "$TMPDIR/udp_raw.txt")
 
+# Parse top 10 UDP conversations
 awk '
     $2 == "<->" {
         print $1 "\t" $3 "\t" $8 "\t" $9 "\t" $10 "\t" $11
