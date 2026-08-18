@@ -299,7 +299,7 @@ echo "($FILE_COUNT)"
 
 
 # -------------------------------------------------
-# 7. Protocol distribution
+# 7. protocol distribution
 # tshark -q -z io,phs
 # -------------------------------------------------
 
