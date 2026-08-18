@@ -3,7 +3,11 @@
 set -e
 
 DEFAULT_PCAP="/home/analyst/MedDefense_Lab/PCAPs/mixed_traffic.pcap"
-PCAP="${1:-$DEFAULT_PCAP}"
+if [ -n "$1" ]; then
+    PCAP="$1"
+else
+    PCAP="$DEFAULT_PCAP"
+fi
 
 CONFIG="./suricata.yaml"
 CATEGORY_FILE="./signature_categories.json"
