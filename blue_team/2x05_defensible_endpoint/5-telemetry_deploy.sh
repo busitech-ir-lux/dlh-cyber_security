@@ -246,6 +246,14 @@ with open(output, "w") as f:
 
 PY
 
+# Configuration/deployment failure
+if [[ ! -f "$RULES_FILE" ]]; then
+    echo "ERROR: missing audit rules: $RULES_FILE" >&2
+    exit 2
+fi
+
+# Deplpoyment
+
 if [[ "$OVERALL_RC" -ne 0 ]]; then
     echo "ERROR: telemetry coverage verification failed"
     cat "$COVERAGE_JSON"
