@@ -96,17 +96,27 @@ $RecordBasename = 'windows_harden.json'
 $TargetStateRelPath = 'capstone/target_state.json'
 $BaselineRelPath = 'capstone/baseline/baseline_windows.json'
 
-# Deterministic step order. The control IDs are checked against
-# target_state.json at preflight, so a rename in the contract surfaces here
-# instead of silently mislabelling evidence.
+# Deterministic step order, exactly as the capstone brief specifies it:
+#   1. account policy
+#   2. audit policy
+#   3. Windows Firewall baseline
+#   4. Sysmon installation with the MedDefense config
+#   5. PowerShell Script Block Logging enable
+#   6. AppLocker or Defender Application Control baseline
+#   7. service minimization
+#
+# The description carries the brief's own wording so the log, the evidence
+# record and the specification all use one vocabulary. The control IDs are
+# checked against target_state.json at preflight, so a rename in the contract
+# surfaces here instead of silently mislabelling evidence.
 $StepSpec = @(
-    [ordered]@{ name = 'account_policy'; file = 'Set-AccountPolicy.ps1'; controls = @() }
-    [ordered]@{ name = 'audit_policy'; file = 'Set-AuditPolicy.ps1'; controls = @('WIN-AUD-01', 'WIN-AUD-02', 'WIN-AUD-03', 'WIN-AUD-04') }
-    [ordered]@{ name = 'firewall_baseline'; file = 'Set-FirewallBaseline.ps1'; controls = @('WIN-FW-01') }
-    [ordered]@{ name = 'sysmon_install'; file = 'Install-Sysmon.ps1'; controls = @('WIN-SYS-01', 'WIN-SYS-02', 'WIN-TEL-01') }
-    [ordered]@{ name = 'scriptblock_logging'; file = 'Enable-ScriptBlockLogging.ps1'; controls = @('WIN-PSL-01', 'WIN-PSL-02') }
-    [ordered]@{ name = 'app_control_baseline'; file = 'Set-AppControlBaseline.ps1'; controls = @() }
-    [ordered]@{ name = 'service_minimization'; file = 'Set-ServiceMinimization.ps1'; controls = @() }
+    [ordered]@{ name = 'account_policy'; description = 'account policy'; file = 'Set-AccountPolicy.ps1'; controls = @() }
+    [ordered]@{ name = 'audit_policy'; description = 'audit policy'; file = 'Set-AuditPolicy.ps1'; controls = @('WIN-AUD-01', 'WIN-AUD-02', 'WIN-AUD-03', 'WIN-AUD-04') }
+    [ordered]@{ name = 'firewall_baseline'; description = 'windows firewall baseline'; file = 'Set-FirewallBaseline.ps1'; controls = @('WIN-FW-01') }
+    [ordered]@{ name = 'sysmon_install'; description = 'sysmon installation with the meddefense config'; file = 'Install-Sysmon.ps1'; controls = @('WIN-SYS-01', 'WIN-SYS-02', 'WIN-TEL-01') }
+    [ordered]@{ name = 'scriptblock_logging'; description = 'powershell script block logging enable'; file = 'Enable-ScriptBlockLogging.ps1'; controls = @('WIN-PSL-01', 'WIN-PSL-02') }
+    [ordered]@{ name = 'app_control_baseline'; description = 'applocker or defender application control baseline'; file = 'Set-AppControlBaseline.ps1'; controls = @() }
+    [ordered]@{ name = 'service_minimization'; description = 'service minimization'; file = 'Set-ServiceMinimization.ps1'; controls = @() }
 )
 
 $script:ExecutionError = New-Object -TypeName 'System.Collections.Generic.List[string]'
@@ -389,6 +399,9 @@ function Invoke-HardeningStep {
         [string]$ScriptPath,
 
         [Parameter(Mandatory = $true)]
+        [string]$Description,
+
+        [Parameter(Mandatory = $true)]
         [AllowEmptyCollection()]
         [string[]]$ControlsTouched,
 
@@ -403,6 +416,7 @@ function Invoke-HardeningStep {
 
     $header = @(
         "===== STEP BEGIN $StepName ====="
+        "description: $Description"
         "script: $ScriptPath"
         "started_at: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'))"
         "controls_touched: $(if ($ControlsTouched.Count -gt 0) { $ControlsTouched -join ',' } else { 'none' })"
@@ -447,6 +461,7 @@ function Invoke-HardeningStep {
 
     return [ordered]@{
         name                     = $StepName
+        description              = $Description
         script_path              = $ScriptPath
         exit_code                = $exitCode
         duration_seconds         = $duration
@@ -490,17 +505,17 @@ if (-not $PSBoundParameters.ContainsKey('StepDir')) {
 $plannedStep = @(
     foreach ($spec in $StepSpec) {
         [ordered]@{
-            name     = $spec.name
-            path     = Get-ResolvedStepPath -StepName $spec.name -DefaultFile $spec.file -Directory $StepDir
-            controls = [string[]]@($spec.controls)
+            name        = $spec.name
+            description = $spec.description
+            path        = Get-ResolvedStepPath -StepName $spec.name -DefaultFile $spec.file -Directory $StepDir
+            controls    = [string[]]@($spec.controls)
         }
     }
 )
 
 if ($ListSteps.IsPresent) {
     foreach ($step in $plannedStep) {
-        $controlText = if ($step.controls.Count -gt 0) { $step.controls -join ',' } else { 'none' }
-        Write-Output ('{0,-24} {1,-40} {2}' -f $step.name, $controlText, $step.path)
+        Write-Output ('{0,-22} {1,-52} {2}' -f $step.name, $step.description, $step.path)
     }
     exit 0
 }
@@ -639,7 +654,7 @@ Write-Verbose "Applying $($plannedStep.Count) hardening steps on $hostName"
 
 $stepRecord = @(
     foreach ($step in $plannedStep) {
-        Invoke-HardeningStep -StepName $step.name -ScriptPath $step.path -ControlsTouched $step.controls -LogFile $logFile -EnginePath $enginePath
+        Invoke-HardeningStep -StepName $step.name -ScriptPath $step.path -Description $step.description -ControlsTouched $step.controls -LogFile $logFile -EnginePath $enginePath
     }
 )
 
