@@ -55,8 +55,7 @@
       2  environment error - not Windows, not elevated, missing sub-step
          script, missing audit helper, missing or corrupt target_state.json,
          missing baseline
-.Checker Satisfation
-	account policy /
+
 .EXAMPLE
     .\4-windows_harden.ps1 -CapstoneRoot 'C:\handoff' -Verbose
 #>
