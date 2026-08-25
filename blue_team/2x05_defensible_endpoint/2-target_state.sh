@@ -127,7 +127,8 @@ write_contract() {
     "json_field_gte": "check_target is \"<path>#<dot.path>\"; expected_value is the numeric floor",
     "command_exit_zero": "check_target is a command; expected_value is 0; bash for linux/network, PowerShell for windows",
     "grep_match": "check_target is a path; expected_value is an extended regular expression",
-    "path_base": "All relative paths resolve against the capstone root."
+    "path_base": "All relative paths resolve against the capstone root.",
+    "tags": "Lowercase keywords for filtering and grouping in the T10 compliance report."
   },
   "controls": [
     {
@@ -139,7 +140,14 @@ write_contract() {
       "check_target": "/etc/ssh/sshd_config",
       "expected_value": "^[[:space:]]*PermitRootLogin[[:space:]]+no[[:space:]]*$",
       "source_project": "2x00",
-      "severity": "critical"
+      "severity": "critical",
+      "tags": [
+        "ssh",
+        "sshd",
+        "sshd_config",
+        "hardening",
+        "linux"
+      ]
     },
     {
       "id": "LNX-SSH-02",
@@ -150,7 +158,14 @@ write_contract() {
       "check_target": "/etc/ssh/sshd_config",
       "expected_value": "^[[:space:]]*PasswordAuthentication[[:space:]]+no[[:space:]]*$",
       "source_project": "2x00",
-      "severity": "critical"
+      "severity": "critical",
+      "tags": [
+        "ssh",
+        "sshd",
+        "sshd_config",
+        "hardening",
+        "linux"
+      ]
     },
     {
       "id": "LNX-SYS-01",
@@ -161,7 +176,14 @@ write_contract() {
       "check_target": "test \"$(sysctl -n net.ipv4.ip_forward)\" = \"0\"",
       "expected_value": 0,
       "source_project": "2x00",
-      "severity": "high"
+      "severity": "high",
+      "tags": [
+        "sysctl",
+        "kernel",
+        "routing",
+        "hardening",
+        "linux"
+      ]
     },
     {
       "id": "LNX-SYS-02",
@@ -172,7 +194,14 @@ write_contract() {
       "check_target": "test \"$(sysctl -n kernel.randomize_va_space)\" = \"2\"",
       "expected_value": 0,
       "source_project": "2x00",
-      "severity": "high"
+      "severity": "high",
+      "tags": [
+        "sysctl",
+        "kernel",
+        "aslr",
+        "hardening",
+        "linux"
+      ]
     },
     {
       "id": "LNX-APP-01",
@@ -180,10 +209,17 @@ write_contract() {
       "family": "hardening",
       "description": "AppArmor must be loaded with at least one profile in enforce mode",
       "check_type": "command_exit_zero",
-      "check_target": "test \"$(aa-status --enforced)\" -gt 0",
+      "check_target": "grep -qx Y /sys/module/apparmor/parameters/enabled && test \"$(apparmor_status --enforced 2>/dev/null || aa-status --enforced)\" -gt 0",
       "expected_value": 0,
       "source_project": "2x00",
-      "severity": "high"
+      "severity": "high",
+      "tags": [
+        "apparmor",
+        "mac",
+        "enforce",
+        "hardening",
+        "linux"
+      ]
     },
     {
       "id": "LNX-LYN-01",
@@ -194,7 +230,13 @@ write_contract() {
       "check_target": "capstone/verify/verify_linux.json#hardening_index",
       "expected_value": 80,
       "source_project": "2x00",
-      "severity": "critical"
+      "severity": "critical",
+      "tags": [
+        "lynis",
+        "hardening_index",
+        "baseline",
+        "linux"
+      ]
     },
     {
       "id": "LNX-AUD-01",
@@ -205,7 +247,13 @@ write_contract() {
       "check_target": "systemctl is-active --quiet auditd",
       "expected_value": 0,
       "source_project": "2x02",
-      "severity": "critical"
+      "severity": "critical",
+      "tags": [
+        "auditd",
+        "service",
+        "telemetry",
+        "linux"
+      ]
     },
     {
       "id": "LNX-AUD-02",
@@ -216,7 +264,13 @@ write_contract() {
       "check_target": "/etc/audit/rules.d/hardening.rules",
       "expected_value": "true",
       "source_project": "2x02",
-      "severity": "high"
+      "severity": "high",
+      "tags": [
+        "auditd",
+        "rules",
+        "telemetry",
+        "linux"
+      ]
     },
     {
       "id": "LNX-AUD-03",
@@ -227,7 +281,14 @@ write_contract() {
       "check_target": "test \"$(auditctl -l | grep -cv '^No rules$')\" -gt 0",
       "expected_value": 0,
       "source_project": "2x02",
-      "severity": "high"
+      "severity": "high",
+      "tags": [
+        "auditd",
+        "auditctl",
+        "rules",
+        "telemetry",
+        "linux"
+      ]
     },
     {
       "id": "LNX-TEL-01",
@@ -238,7 +299,13 @@ write_contract() {
       "check_target": "capstone/telemetry/linux/telemetry_export.json",
       "expected_value": "true",
       "source_project": "2x02",
-      "severity": "high"
+      "severity": "high",
+      "tags": [
+        "telemetry",
+        "export",
+        "json",
+        "linux"
+      ]
     },
     {
       "id": "WIN-FW-01",
@@ -249,7 +316,15 @@ write_contract() {
       "check_target": "if ((Get-NetFirewallProfile -PolicyStore ActiveStore | Where-Object { $_.DefaultInboundAction -ne 'Block' -or -not $_.Enabled }).Count -eq 0) { exit 0 } else { exit 1 }",
       "expected_value": 0,
       "source_project": "2x01",
-      "severity": "critical"
+      "severity": "critical",
+      "tags": [
+        "firewall",
+        "windows-firewall",
+        "default-deny",
+        "inbound",
+        "hardening",
+        "windows"
+      ]
     },
     {
       "id": "WIN-CIS-01",
@@ -260,7 +335,14 @@ write_contract() {
       "check_target": "capstone/verify/verify_windows.json#pass_rate_percent",
       "expected_value": 85,
       "source_project": "2x01",
-      "severity": "critical"
+      "severity": "critical",
+      "tags": [
+        "cis",
+        "level1",
+        "pass_rate",
+        "hardening",
+        "windows"
+      ]
     },
     {
       "id": "WIN-PSL-01",
@@ -271,7 +353,14 @@ write_contract() {
       "check_target": "if ((Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\PowerShell\\ScriptBlockLogging' -Name EnableScriptBlockLogging).EnableScriptBlockLogging -eq 1) { exit 0 } else { exit 1 }",
       "expected_value": 0,
       "source_project": "2x02",
-      "severity": "high"
+      "severity": "high",
+      "tags": [
+        "powershell",
+        "scriptblocklogging",
+        "script-block-logging",
+        "telemetry",
+        "windows"
+      ]
     },
     {
       "id": "WIN-PSL-02",
@@ -282,7 +371,14 @@ write_contract() {
       "check_target": "if ((Get-WinEvent -ListLog 'Microsoft-Windows-PowerShell/Operational').MaximumSizeInBytes -gt 0) { exit 0 } else { exit 1 }",
       "expected_value": 0,
       "source_project": "2x02",
-      "severity": "medium"
+      "severity": "medium",
+      "tags": [
+        "powershell",
+        "scriptblocklogging",
+        "event-channel",
+        "telemetry",
+        "windows"
+      ]
     },
     {
       "id": "WIN-SYS-01",
@@ -293,7 +389,13 @@ write_contract() {
       "check_target": "if ((Get-Service -Name 'Sysmon','Sysmon64' -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq 'Running' }).Count -gt 0) { exit 0 } else { exit 1 }",
       "expected_value": 0,
       "source_project": "2x02",
-      "severity": "critical"
+      "severity": "critical",
+      "tags": [
+        "sysmon",
+        "service",
+        "telemetry",
+        "windows"
+      ]
     },
     {
       "id": "WIN-SYS-02",
@@ -304,7 +406,32 @@ write_contract() {
       "check_target": "if (@(Get-WinEvent -FilterHashtable @{ LogName='Microsoft-Windows-Sysmon/Operational'; StartTime=(Get-Date).AddMinutes(-10) } -ErrorAction SilentlyContinue).Count -gt 0) { exit 0 } else { exit 1 }",
       "expected_value": 0,
       "source_project": "2x02",
-      "severity": "high"
+      "severity": "high",
+      "tags": [
+        "sysmon",
+        "events",
+        "freshness",
+        "telemetry",
+        "windows"
+      ]
+    },
+    {
+      "id": "WIN-TEL-01",
+      "platform": "windows",
+      "family": "telemetry",
+      "description": "The structured Windows sysmon telemetry export must exist at the agreed path",
+      "check_type": "file_exists",
+      "check_target": "capstone/telemetry/windows/sysmon_export.json",
+      "expected_value": "true",
+      "source_project": "2x02",
+      "severity": "high",
+      "tags": [
+        "sysmon",
+        "telemetry",
+        "export",
+        "json",
+        "windows"
+      ]
     },
     {
       "id": "WIN-AUD-01",
@@ -315,7 +442,14 @@ write_contract() {
       "check_target": "if ((auditpol /get /category:'Account Logon' /r | ConvertFrom-Csv | Where-Object { $_.'Inclusion Setting' -eq 'No Auditing' }).Count -eq 0) { exit 0 } else { exit 1 }",
       "expected_value": 0,
       "source_project": "2x02",
-      "severity": "high"
+      "severity": "high",
+      "tags": [
+        "auditpol",
+        "audit-policy",
+        "account-logon",
+        "telemetry",
+        "windows"
+      ]
     },
     {
       "id": "WIN-AUD-02",
@@ -326,7 +460,14 @@ write_contract() {
       "check_target": "if ((auditpol /get /category:'Logon/Logoff' /r | ConvertFrom-Csv | Where-Object { $_.'Inclusion Setting' -eq 'No Auditing' }).Count -eq 0) { exit 0 } else { exit 1 }",
       "expected_value": 0,
       "source_project": "2x02",
-      "severity": "high"
+      "severity": "high",
+      "tags": [
+        "auditpol",
+        "audit-policy",
+        "logon",
+        "telemetry",
+        "windows"
+      ]
     },
     {
       "id": "WIN-AUD-03",
@@ -337,7 +478,14 @@ write_contract() {
       "check_target": "if ((auditpol /get /category:'Object Access' /r | ConvertFrom-Csv | Where-Object { $_.'Inclusion Setting' -eq 'No Auditing' }).Count -eq 0) { exit 0 } else { exit 1 }",
       "expected_value": 0,
       "source_project": "2x02",
-      "severity": "medium"
+      "severity": "medium",
+      "tags": [
+        "auditpol",
+        "audit-policy",
+        "object-access",
+        "telemetry",
+        "windows"
+      ]
     },
     {
       "id": "WIN-AUD-04",
@@ -348,7 +496,14 @@ write_contract() {
       "check_target": "if ((auditpol /get /category:'Privilege Use' /r | ConvertFrom-Csv | Where-Object { $_.'Inclusion Setting' -eq 'No Auditing' }).Count -eq 0) { exit 0 } else { exit 1 }",
       "expected_value": 0,
       "source_project": "2x02",
-      "severity": "medium"
+      "severity": "medium",
+      "tags": [
+        "auditpol",
+        "audit-policy",
+        "privilege-use",
+        "telemetry",
+        "windows"
+      ]
     },
     {
       "id": "PCH-INV-01",
@@ -359,7 +514,13 @@ write_contract() {
       "check_target": "capstone/patching/vulnerability_inventory.json",
       "expected_value": "true",
       "source_project": "2x03",
-      "severity": "high"
+      "severity": "high",
+      "tags": [
+        "patching",
+        "vulnerability",
+        "inventory",
+        "artifact"
+      ]
     },
     {
       "id": "PCH-PLN-01",
@@ -370,7 +531,12 @@ write_contract() {
       "check_target": "capstone/patching/patch_plan.json",
       "expected_value": "true",
       "source_project": "2x03",
-      "severity": "high"
+      "severity": "high",
+      "tags": [
+        "patching",
+        "plan",
+        "artifact"
+      ]
     },
     {
       "id": "PCH-EXE-01",
@@ -381,7 +547,13 @@ write_contract() {
       "check_target": "capstone/patching/patch_execution_log.json",
       "expected_value": "true",
       "source_project": "2x03",
-      "severity": "high"
+      "severity": "high",
+      "tags": [
+        "patching",
+        "execution",
+        "log",
+        "artifact"
+      ]
     },
     {
       "id": "PCH-EXE-02",
@@ -392,7 +564,13 @@ write_contract() {
       "check_target": "capstone/patching/patch_execution_log.json#summary.failed_count",
       "expected_value": 0,
       "source_project": "2x03",
-      "severity": "critical"
+      "severity": "critical",
+      "tags": [
+        "patching",
+        "execution",
+        "failed",
+        "artifact"
+      ]
     },
     {
       "id": "PCH-UNA-01",
@@ -403,7 +581,14 @@ write_contract() {
       "check_target": "/etc/apt/apt.conf.d/50unattended-upgrades",
       "expected_value": "^[[:space:]]*Unattended-Upgrade::Package-Blacklist",
       "source_project": "2x03",
-      "severity": "high"
+      "severity": "high",
+      "tags": [
+        "patching",
+        "unattended-upgrades",
+        "apt",
+        "blacklist",
+        "linux"
+      ]
     },
     {
       "id": "NET-NFT-01",
@@ -414,7 +599,14 @@ write_contract() {
       "check_target": "nft list ruleset | grep -qE 'hook input .*policy drop'",
       "expected_value": 0,
       "source_project": "2x04",
-      "severity": "critical"
+      "severity": "critical",
+      "tags": [
+        "nftables",
+        "firewall",
+        "default-deny",
+        "inbound",
+        "network"
+      ]
     },
     {
       "id": "NET-NFT-02",
@@ -425,7 +617,12 @@ write_contract() {
       "check_target": "/etc/nftables.conf",
       "expected_value": "true",
       "source_project": "2x04",
-      "severity": "medium"
+      "severity": "medium",
+      "tags": [
+        "nftables",
+        "persistence",
+        "network"
+      ]
     },
     {
       "id": "NET-SEG-01",
@@ -436,7 +633,12 @@ write_contract() {
       "check_target": "capstone/network/segmentation_rules.json",
       "expected_value": "true",
       "source_project": "2x04",
-      "severity": "high"
+      "severity": "high",
+      "tags": [
+        "segmentation",
+        "network",
+        "artifact"
+      ]
     },
     {
       "id": "NET-IDS-01",
@@ -447,7 +649,13 @@ write_contract() {
       "check_target": "capstone/network/suricata_rule_report.json#rules_loaded",
       "expected_value": 6,
       "source_project": "2x04",
-      "severity": "high"
+      "severity": "high",
+      "tags": [
+        "suricata",
+        "ids",
+        "rules",
+        "network"
+      ]
     },
     {
       "id": "NET-IDS-02",
@@ -458,7 +666,14 @@ write_contract() {
       "check_target": "capstone/network/suricata_rule_report.json#rules_not_fired_count",
       "expected_value": 0,
       "source_project": "2x04",
-      "severity": "high"
+      "severity": "high",
+      "tags": [
+        "suricata",
+        "ids",
+        "pcap",
+        "validation",
+        "network"
+      ]
     },
     {
       "id": "NET-DNS-01",
@@ -469,7 +684,12 @@ write_contract() {
       "check_target": "capstone/network/dns_filter_status.json#active",
       "expected_value": true,
       "source_project": "2x04",
-      "severity": "medium"
+      "severity": "medium",
+      "tags": [
+        "dns",
+        "filter",
+        "network"
+      ]
     },
     {
       "id": "HND-CMP-01",
@@ -480,7 +700,12 @@ write_contract() {
       "check_target": "capstone/compliance.json",
       "expected_value": "true",
       "source_project": "capstone",
-      "severity": "critical"
+      "severity": "critical",
+      "tags": [
+        "handoff",
+        "compliance",
+        "artifact"
+      ]
     },
     {
       "id": "HND-MAN-01",
@@ -491,7 +716,12 @@ write_contract() {
       "check_target": "capstone/manifest.json",
       "expected_value": "true",
       "source_project": "capstone",
-      "severity": "critical"
+      "severity": "critical",
+      "tags": [
+        "handoff",
+        "manifest",
+        "artifact"
+      ]
     },
     {
       "id": "HND-MAN-02",
@@ -502,7 +732,13 @@ write_contract() {
       "check_target": "capstone/manifest.json#summary.missing_digest_count",
       "expected_value": 0,
       "source_project": "capstone",
-      "severity": "critical"
+      "severity": "critical",
+      "tags": [
+        "handoff",
+        "manifest",
+        "sha256",
+        "integrity"
+      ]
     },
     {
       "id": "HND-TEL-01",
@@ -513,7 +749,13 @@ write_contract() {
       "check_target": "capstone/telemetry/telemetry_export.tar.gz",
       "expected_value": "true",
       "source_project": "capstone",
-      "severity": "high"
+      "severity": "high",
+      "tags": [
+        "handoff",
+        "telemetry",
+        "tarball",
+        "export"
+      ]
     },
     {
       "id": "HND-RUN-01",
@@ -524,7 +766,12 @@ write_contract() {
       "check_target": "test -x capstone/runbook.sh",
       "expected_value": 0,
       "source_project": "capstone",
-      "severity": "high"
+      "severity": "high",
+      "tags": [
+        "handoff",
+        "runbook",
+        "operator"
+      ]
     }
   ]
 }
@@ -605,7 +852,7 @@ main() {
 
     # Idempotency gate: the contract must not drift to match what was shipped.
     if [[ -f "$contract_file" && "$FORCE" -eq 0 ]]; then
-        log "INFO  contract already present at $contract_file; not rewriting (use --force)"
+        log "INFO  refusing to overwrite existing target_state.json at ${contract_file}; pass --force to overwrite"
         printf '%s\n' "$contract_file"
         exit 0
     fi
