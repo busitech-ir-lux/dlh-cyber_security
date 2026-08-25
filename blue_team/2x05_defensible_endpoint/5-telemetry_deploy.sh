@@ -93,7 +93,7 @@ verify_key() {
     rc=$?
     set -e
 
-    # ausearch returns 0 when matching records exist.
+    # ausearch returns 0 when matching records exist. Show expected record
     if [[ $rc -eq 0 && -n "$output" ]]; then
         add_result "$action" "$key" 0 "$output"
         return 0
