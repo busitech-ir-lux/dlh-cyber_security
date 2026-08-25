@@ -5,6 +5,7 @@ RULES_FILE="/etc/audit/rules.d/meddefense.rules"
 OUT_DIR="${OUT_DIR:-capstone/telemetry}"
 EVENTS_JSON="${OUT_DIR}/linux_events.json"
 COVERAGE_JSON="${OUT_DIR}/linux_coverage.json"
+# final file path capstone/telemetry/linux_events.json
 
 mkdir -p "$OUT_DIR"
 
