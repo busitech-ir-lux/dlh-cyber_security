@@ -40,10 +40,6 @@ readonly SCHEMA_VERSION="1.0"
 readonly RECORD_TYPE="environment_intake"
 readonly PHASE="pre_hardening"
 
-readonly EXIT_OK=0
-readonly EXIT_FAIL=1
-readonly EXIT_ENV=2
-
 # Module 3 handoff layout. Keep these two constants aligned with the telemetry
 # handoff from 2x02 and the network artifact package from 2x04 - they are the
 # only place the layout is defined.
@@ -264,6 +260,7 @@ collect_sockets() {
 }
 
 collect_services() {
+    # Active systemd services, via systemctl list-units.
     local raw line first=1 unit load active sub running_count enabled_count
     raw=$(systemctl list-units --type=service --state=active \
         --no-legend --no-pager --plain 2>/dev/null || true)
@@ -472,6 +469,7 @@ emit_telemetry_agent() {
 }
 
 collect_telemetry() {
+    # auditd running, rsyslog running, Sysmon-for-Linux present (if installed).
     local sysmon_present="false" sysmon_version="" sysmon_config=""
 
     if dpkg-query -W -f='${Version}' sysmonforlinux >/dev/null 2>&1; then
@@ -532,26 +530,26 @@ main() {
             u) ALLOW_UNPRIVILEGED=1 ;;
             h)
                 usage
-                exit "$EXIT_OK"
+                exit 0
                 ;;
             \?)
                 log "ERROR unknown option: -$OPTARG"
                 usage >&2
-                exit "$EXIT_ENV"
+                exit 2
                 ;;
             :)
                 log "ERROR option -$OPTARG requires an argument"
-                exit "$EXIT_ENV"
+                exit 2
                 ;;
             *)
-                exit "$EXIT_ENV"
+                exit 2
                 ;;
         esac
     done
 
     if ! require_cmd uname date find awk sed grep tr wc dpkg-query ss systemctl; then
         log "ERROR environment does not meet the minimum dependency set"
-        exit "$EXIT_ENV"
+        exit 2
     fi
 
     if [[ "$(id -u)" -eq 0 ]]; then
@@ -560,7 +558,7 @@ main() {
         record_error "run is unprivileged, record is a lower bound only"
     else
         log "ERROR must run as root; re-run with sudo, or pass -u to accept a degraded record"
-        exit "$EXIT_ENV"
+        exit 2
     fi
 
     hn=$(get_hostname)
@@ -569,16 +567,16 @@ main() {
 
     if ! mkdir -p "$out_dir" 2>/dev/null; then
         log "ERROR cannot create output directory: $out_dir"
-        exit "$EXIT_ENV"
+        exit 2
     fi
     if [[ ! -w "$out_dir" ]]; then
         log "ERROR output directory is not writable: $out_dir"
-        exit "$EXIT_ENV"
+        exit 2
     fi
 
     TMP_JSON=$(mktemp "${out_dir}/.intake.XXXXXX") || {
         log "ERROR cannot create temporary file in $out_dir"
-        exit "$EXIT_ENV"
+        exit 2
     }
 
     collected_at=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
@@ -624,9 +622,9 @@ main() {
 
     if [[ "${#COLLECTION_ERRORS[@]}" -gt 0 ]]; then
         log "WARN  ${#COLLECTION_ERRORS[@]} collector(s) degraded; see .collection_errors"
-        exit "$EXIT_FAIL"
+        exit 1
     fi
-    exit "$EXIT_OK"
+    exit 0
 }
 
 main "$@"
