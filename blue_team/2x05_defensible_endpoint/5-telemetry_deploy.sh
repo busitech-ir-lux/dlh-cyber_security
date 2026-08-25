@@ -115,7 +115,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# User creation/removal
+# User creation/removal / create a user
 useradd --no-create-home --shell /usr/sbin/nologin "$TEST_USER"
 verify_key "create_user" "meddefense-user-mgmt" || true
 
