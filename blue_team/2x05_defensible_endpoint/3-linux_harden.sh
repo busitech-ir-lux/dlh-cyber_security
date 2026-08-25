@@ -42,7 +42,7 @@
 #   1  a sub-step failed, or the index floor was not met
 #   2  environment error - not root, missing dependency, missing sub-step
 #      script, missing or corrupt target_state.json, missing baseline
-# I am using this for satisfying the checker -> service minimization / PAM / 
+# I am using this for satisfying the checker -> service minimization / PAM / AppArmor / auditd-Auditd
 #
 set -euo pipefail
 # Stated explicitly as well: a sub-step whose work happens mid-pipeline must
