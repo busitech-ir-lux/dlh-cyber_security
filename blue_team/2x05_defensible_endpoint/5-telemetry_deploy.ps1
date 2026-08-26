@@ -84,7 +84,7 @@ function Verify-Event {
             }
         }
         catch {
-            # Ignore malformed/unparseable event records and continue. (expected event)
+            # Ignore malformed/unparseable event records and continue. (expected record)
         }
     }
 
