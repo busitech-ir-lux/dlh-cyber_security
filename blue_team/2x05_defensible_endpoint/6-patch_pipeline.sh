@@ -25,7 +25,7 @@
 #
 #   -o CAPSTONE_ROOT  Root containing capstone/ (default: .).
 #   -p PIPELINE       Pipeline script from 2x03. Default:
-#                     /home/analyst/MedDefense_Lab/2x03/patch_pipeline.sh
+#                     /home/analyst/MedDefense_Lab/2x03/13-patch_pipeline.sh
 #                     (overridable with PATCH_PIPELINE).
 #   -f CVE_FEED       Capstone CVE feed. Default:
 #                     /home/analyst/MedDefense_Lab/capstone/cve_feed.json
@@ -85,7 +85,7 @@ readonly BLOCK_BEGIN="// BEGIN meddefense-capstone managed block"
 readonly BLOCK_END="// END meddefense-capstone managed block"
 
 CAPSTONE_ROOT="${CAPSTONE_ROOT:-.}"
-PIPELINE="${PATCH_PIPELINE:-/home/analyst/MedDefense_Lab/2x03/patch_pipeline.sh}"
+PIPELINE="${PATCH_PIPELINE:-/home/analyst/MedDefense_Lab/2x03/13-patch_pipeline.sh}"
 CVE_FEED="/home/analyst/MedDefense_Lab/capstone/cve_feed.json"
 BLACKLIST="/home/analyst/MedDefense_Lab/capstone/blacklist.json"
 SKIP_BLACKLIST=0
