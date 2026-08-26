@@ -52,6 +52,7 @@
 #   firewall_validation.json    per-test firewall validation results
 #   suricata_alerts.json        parsed alerts from the offline replay
 #   suricata_rule_report.json   custom rule validation against labeled PCAPs
+#   rule_validation.json        alias of the rule_validation report above
 #   dns_filter_status.json      dnsmasq filter state
 #   network_summary.json        normalised wrapper summary
 #
@@ -519,7 +520,7 @@ not_fired = [r for r in rule_rows if not r["fired_against_target"]]
 with open(report_out + ".tmp", "w") as fh:
     json.dump({
         "schema_version": "1.0",
-        "record_type": "suricata_rule_report",
+        "record_type": "rule_validation",
         "generated_at": now,
         "rules_file": rules_path,
         "labels_source": "labels file" if any(
@@ -822,7 +823,9 @@ main() {
     ALERT_COUNT=$(printf '%s' "$parse_result" | awk '{print $1}')
     RULES_LOADED=$(printf '%s' "$parse_result" | awk '{print $2}')
     RULES_NOT_FIRED=$(printf '%s' "$parse_result" | awk '{print $3}')
-    log "INFO  ${ALERT_COUNT} alert(s), ${RULES_LOADED} custom rule(s), ${RULES_NOT_FIRED} did not fire"
+    # rule_validation: every custom rule must have fired against its target PCAP.
+    cp -f "$report_out" "${net_dir}/rule_validation.json"
+    log "INFO  rule_validation: ${ALERT_COUNT} alert(s), ${RULES_LOADED} custom rule(s), ${RULES_NOT_FIRED} did not fire"
     if [[ "$RULES_NOT_FIRED" -ne 0 ]]; then
         record_error "${RULES_NOT_FIRED} custom rule(s) did not fire against their target PCAP"
     fi
@@ -899,7 +902,9 @@ write_summary() {
     emit "    $(jstr "rules_loaded"): $(jnum "$RULES_LOADED"),"
     emit "    $(jstr "rules_not_fired_count"): $(jnum "$RULES_NOT_FIRED"),"
     emit "    $(jstr "alerts_path"): $(jstr "${NETWORK_SUBDIR}/suricata_alerts.json"),"
-    emit "    $(jstr "rule_report_path"): $(jstr "${NETWORK_SUBDIR}/suricata_rule_report.json")"
+    emit "    $(jstr "rule_report_path"): $(jstr "${NETWORK_SUBDIR}/suricata_rule_report.json"),"
+    emit "    $(jstr "rule_validation_path"): $(jstr "${NETWORK_SUBDIR}/rule_validation.json"),"
+    emit "    $(jstr "rule_validation_passed"): $([[ "$RULES_NOT_FIRED" -eq 0 && "$RULES_LOADED" -gt 0 ]] && printf 'true' || printf 'false')"
     emit '  },'
     emit '  "dns_filter": {'
     emit "    $(jstr "provider"): $(jstr "dnsmasq"),"
