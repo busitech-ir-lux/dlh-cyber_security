@@ -53,8 +53,8 @@ set -o pipefail
 readonly SCRIPT_NAME="8-validate_all.sh"
 readonly SCRIPT_VERSION="1.0.0"
 readonly TARGET_STATE_RELPATH="capstone/target_state.json"
-readonly REPORT_RELPATH="capstone/validation_report.json"
-readonly REPORT_BASENAME="validation_report.json"
+readonly REPORT_RELPATH="capstone/validation.json"
+readonly REPORT_BASENAME="validation.json"
 
 CAPSTONE_ROOT="${CAPSTONE_ROOT:-.}"
 PLATFORMS="linux,network,both"
