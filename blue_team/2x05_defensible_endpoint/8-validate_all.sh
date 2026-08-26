@@ -44,7 +44,7 @@
 #   1  any control failed or errored (or, with --strict, was skipped)
 #   2  environment error - missing or corrupt target_state.json, missing
 #      dependency, unwritable output tree
-# I should have total controls / pass percentage .... I have them but in different forms
+# I should have total controls / pass percentage / totals .... I have them but in different forms
 #
 #
 set -euo pipefail
