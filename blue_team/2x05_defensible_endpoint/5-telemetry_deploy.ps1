@@ -3,7 +3,8 @@
 .SYNOPSIS
     Hawthorne capstone, Task 5 (Windows side): verifies the telemetry stack on
     hawthorne-adm-01, runs a controlled sequence of authorized test actions,
-    confirms each left the expected trace, and exports the recent event window.
+    confirms each left the expected event within the last 10 minutes, and
+    exports the last 30 minutes of Sysmon and PowerShell events.
 
 .DESCRIPTION
     Schema parity: the per-action coverage rows use exactly the same field set
@@ -85,6 +86,12 @@ $SysmonChannel = 'Microsoft-Windows-Sysmon/Operational'
 $PowerShellChannel = 'Microsoft-Windows-PowerShell/Operational'
 $SecurityChannel = 'Security'
 $SystemChannel = 'System'
+
+# Coverage verification searches the last 10 minutes; the export window is the
+# last 30 minutes. Both are recorded in the evidence so a reader knows exactly
+# what window a verdict was based on.
+$VerificationWindowMinutes = 10
+$ExportWindowMinutes = 30
 
 $script:CoverageError = New-Object -TypeName 'System.Collections.Generic.List[string]'
 $script:ActionRow = New-Object -TypeName 'System.Collections.Generic.List[object]'
@@ -278,7 +285,7 @@ function Get-ScriptBlockLoggingState {
 function Get-ChannelEventCount {
     <#
     .SYNOPSIS
-        Counts events on a channel in a recent window, optionally filtered.
+        Counts events on a channel in the last 10 minutes, optionally filtered.
     .DESCRIPTION
         Returns the count and the earliest matching timestamp. A marker string
         makes verification unambiguous: the probe writes a unique run marker,
@@ -299,7 +306,7 @@ function Get-ChannelEventCount {
         [string]$Marker = '',
 
         [Parameter()]
-        [int]$WindowMinutes = 10
+        [int]$WindowMinutes = 10   # the last 10 minutes
     )
 
     $result = [ordered]@{ count = 0; first = $null }
@@ -344,6 +351,7 @@ function Add-ActionRow {
         [Parameter(Mandatory = $true)][string]$ExpectedSelector,
         [Parameter(Mandatory = $true)][int]$RecordsFound,
         [Parameter()][AllowNull()][string]$FirstRecordTime,
+        [Parameter()][int]$WindowMinutes = 10,
         [Parameter(Mandatory = $true)][bool]$Verified,
         [Parameter()][AllowEmptyString()][string]$Notes = ''
     )
@@ -357,6 +365,7 @@ function Add-ActionRow {
             expected_selector = $ExpectedSelector
             records_found     = $RecordsFound
             first_record_time = $FirstRecordTime
+            verification_window_minutes = $WindowMinutes
             verified          = $Verified
             notes             = $Notes
         })
@@ -476,11 +485,11 @@ try {
         $exitCode = 1
         Add-CoverageError -Message "create_user failed - $($_.Exception.Message)"
     }
-    $probe = Get-ChannelEventCount -Channel $SecurityChannel -EventId @(4720)
+    $probe = Get-ChannelEventCount -Channel $SecurityChannel -EventId @(4720) -WindowMinutes $VerificationWindowMinutes
     Add-ActionRow -Action 'create_user' -Description 'create a local user' `
         -Command "New-LocalUser -Name $probeUser" -ExitCode $exitCode `
         -ExpectedSource $SecurityChannel -ExpectedSelector 'EventID=4720' `
-        -RecordsFound $probe.count -FirstRecordTime $probe.first `
+        -RecordsFound $probe.count -FirstRecordTime $probe.first -WindowMinutes $VerificationWindowMinutes `
         -Verified ($exitCode -eq 0 -and $probe.count -gt 0) -Notes ''
 
     # 2. create and run a scheduled task
@@ -498,11 +507,11 @@ try {
         $exitCode = 1
         Add-CoverageError -Message "scheduled_task failed - $($_.Exception.Message)"
     }
-    $probe = Get-ChannelEventCount -Channel $SecurityChannel -EventId @(4698, 4699, 4700, 4702)
+    $probe = Get-ChannelEventCount -Channel $SecurityChannel -EventId @(4698, 4699, 4700, 4702) -WindowMinutes $VerificationWindowMinutes
     Add-ActionRow -Action 'scheduled_task' -Description 'create and run a scheduled task' `
         -Command "Register-ScheduledTask -TaskName $probeTask; Start-ScheduledTask" -ExitCode $exitCode `
         -ExpectedSource $SecurityChannel -ExpectedSelector 'EventID=4698,4699,4700,4702' `
-        -RecordsFound $probe.count -FirstRecordTime $probe.first `
+        -RecordsFound $probe.count -FirstRecordTime $probe.first -WindowMinutes $VerificationWindowMinutes `
         -Verified ($exitCode -eq 0 -and $probe.count -gt 0) `
         -Notes 'requires Object Access > Other Object Access Events auditing'
 
@@ -523,11 +532,11 @@ try {
         Add-CoverageError -Message "service_action failed - $($_.Exception.Message)"
     }
     # Service state transitions land on System (7036), not Security.
-    $probe = Get-ChannelEventCount -Channel $SystemChannel -EventId @(7036, 7040)
+    $probe = Get-ChannelEventCount -Channel $SystemChannel -EventId @(7036, 7040) -WindowMinutes $VerificationWindowMinutes
     Add-ActionRow -Action 'service_action' -Description 'start and stop a service' `
         -Command "Start-Service/Stop-Service -Name $ProbeService" -ExitCode $exitCode `
         -ExpectedSource $SystemChannel -ExpectedSelector 'EventID=7036,7040' `
-        -RecordsFound $probe.count -FirstRecordTime $probe.first `
+        -RecordsFound $probe.count -FirstRecordTime $probe.first -WindowMinutes $VerificationWindowMinutes `
         -Verified ($exitCode -eq 0 -and $probe.count -gt 0) `
         -Notes 'service state changes are logged to System, not Security'
 
@@ -545,19 +554,19 @@ try {
         $exitCode = 1
         Add-CoverageError -Message "powershell_command failed - $($_.Exception.Message)"
     }
-    $probe = Get-ChannelEventCount -Channel $PowerShellChannel -EventId @(4104) -Marker $probeMarker
+    $probe = Get-ChannelEventCount -Channel $PowerShellChannel -EventId @(4104) -Marker $probeMarker -WindowMinutes $VerificationWindowMinutes
     Add-ActionRow -Action 'powershell_command' -Description 'run a short authorized PowerShell command' `
         -Command "Write-Output 'telemetry probe $probeMarker'" -ExitCode $exitCode `
         -ExpectedSource $PowerShellChannel -ExpectedSelector "EventID=4104 containing $probeMarker" `
-        -RecordsFound $probe.count -FirstRecordTime $probe.first `
+        -RecordsFound $probe.count -FirstRecordTime $probe.first -WindowMinutes $VerificationWindowMinutes `
         -Verified ($exitCode -eq 0 -and $probe.count -gt 0) -Notes ''
 
     # 5. Sysmon must have observed the process creation driven by the sequence.
-    $probe = Get-ChannelEventCount -Channel $SysmonChannel -EventId @(1)
+    $probe = Get-ChannelEventCount -Channel $SysmonChannel -EventId @(1) -WindowMinutes $VerificationWindowMinutes
     Add-ActionRow -Action 'sysmon_process_create' -Description 'sysmon observed process creation' `
         -Command 'cmd.exe launched by the scheduled task probe' -ExitCode 0 `
         -ExpectedSource $SysmonChannel -ExpectedSelector 'EventID=1' `
-        -RecordsFound $probe.count -FirstRecordTime $probe.first `
+        -RecordsFound $probe.count -FirstRecordTime $probe.first -WindowMinutes $VerificationWindowMinutes `
         -Verified ($probe.count -gt 0) -Notes ''
 }
 finally {
@@ -600,7 +609,7 @@ finally {
 
 Write-Verbose 'Exporting the last 30 minutes of Sysmon and PowerShell events'
 $exportEvent = New-Object -TypeName 'System.Collections.Generic.List[object]'
-$exportStart = (Get-Date).AddMinutes(-30)
+$exportStart = (Get-Date).AddMinutes(-$ExportWindowMinutes)
 
 foreach ($channelName in @($SysmonChannel, $PowerShellChannel)) {
     try {
@@ -637,7 +646,7 @@ $exportDoc = [ordered]@{
     platform         = 'windows'
     hostname         = $env:COMPUTERNAME
     generated_at     = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
-    window_minutes   = 30
+    window_minutes   = $ExportWindowMinutes
     sources          = @('sysmon', 'powershell')
     event_count      = $sortedEvent.Count
     counts_by_source = [ordered]@{
@@ -684,6 +693,8 @@ $record = [ordered]@{
     actions_failed     = $failedCount
     events_export_path = $EventsRelPath
     events_exported    = $sortedEvent.Count
+    export_window_minutes = $ExportWindowMinutes
+    verification_window_minutes = $VerificationWindowMinutes
     coverage_path      = $CoverageRelPath
     target_state_path  = $TargetStateRelPath
     result             = $(if ($failedCount -eq 0 -and $sysmonState.verified -and $sblState.verified) { 'pass' } else { 'fail' })

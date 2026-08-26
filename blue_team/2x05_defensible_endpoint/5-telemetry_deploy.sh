@@ -3,8 +3,9 @@
 # 5-telemetry_deploy.sh - Hawthorne capstone, Task 5 (Linux side)
 #
 # Deploys the auditd rule set on hawthorne-app-01, runs a controlled sequence
-# of authorized test actions, verifies that each one left the expected trace,
-# and exports the recent event window as structured JSON.
+# of authorized test actions, verifies that each one left the expected trace
+# within the last 10 minutes, and exports the last 30 minutes of records as
+# structured JSON.
 #
 # Safety: every test action uses a run-scoped probe identity (mdprobe<run-id>)
 # that cannot collide with a real account, and every action is undone by an
@@ -55,6 +56,11 @@ readonly COVERAGE_RELPATH="capstone/telemetry/linux_coverage.json"
 readonly RECORD_BASENAME="linux_coverage.json"
 readonly TARGET_STATE_RELPATH="capstone/target_state.json"
 readonly AUDIT_RULES_TARGET="/etc/audit/rules.d/meddefense.rules"
+# Coverage verification searches the last 10 minutes; the export window is the
+# last 30 minutes. Both are recorded in the evidence so a reader knows exactly
+# what window a verdict was based on.
+readonly VERIFY_WINDOW_MINUTES=10
+readonly EXPORT_WINDOW_MINUTES=30
 
 CAPSTONE_ROOT="${CAPSTONE_ROOT:-.}"
 RULES_SOURCE="${RULES_SOURCE:-/home/analyst/MedDefense_Lab/2x02/meddefense.rules}"
@@ -299,11 +305,12 @@ run_test_sequence() {
 verify_actions() {
     local i key count first raw start_date start_time
 
-    log "INFO  waiting for auditd to flush before verification"
+    log "INFO  waiting for auditd to flush, then searching the last 10 minutes"
     sleep 3
 
-    start_date=$(date -d '10 minutes ago' '+%m/%d/%Y' 2>/dev/null || date '+%m/%d/%Y')
-    start_time=$(date -d '10 minutes ago' '+%H:%M:%S' 2>/dev/null || echo "00:00:00")
+    # Verification window: the last 10 minutes.
+    start_date=$(date -d "${VERIFY_WINDOW_MINUTES} minutes ago" '+%m/%d/%Y' 2>/dev/null || date '+%m/%d/%Y')
+    start_time=$(date -d "${VERIFY_WINDOW_MINUTES} minutes ago" '+%H:%M:%S' 2>/dev/null || echo "00:00:00")
 
     for i in "${!ACT_NAME[@]}"; do
         key="${ACT_KEY[$i]}"
@@ -338,8 +345,9 @@ verify_actions() {
 
 export_events() {
     local out="$1" hn="$2" since_date since_time audit_raw="" syslog_raw=""
-    since_date=$(date -d '30 minutes ago' '+%m/%d/%Y' 2>/dev/null || date '+%m/%d/%Y')
-    since_time=$(date -d '30 minutes ago' '+%H:%M:%S' 2>/dev/null || echo "00:00:00")
+    # Export window: the last 30 minutes.
+    since_date=$(date -d "${EXPORT_WINDOW_MINUTES} minutes ago" '+%m/%d/%Y' 2>/dev/null || date '+%m/%d/%Y')
+    since_time=$(date -d "${EXPORT_WINDOW_MINUTES} minutes ago" '+%H:%M:%S' 2>/dev/null || echo "00:00:00")
 
     audit_raw=$(ausearch -ts "$since_date" "$since_time" --raw 2>/dev/null || true)
 
@@ -584,6 +592,7 @@ main() {
         emit "      $(jstr "expected_selector"): $(jstr "key=${ACT_KEY[$i]}"),"
         emit "      $(jstr "records_found"): $(jnum "${ACT_COUNT[$i]}"),"
         emit "      $(jstr "first_record_time"): $(jstr "${ACT_FIRST[$i]}"),"
+        emit "      $(jstr "verification_window_minutes"): $(jnum "$VERIFY_WINDOW_MINUTES"),"
         emit "      $(jstr "verified"): ${ACT_VERIFIED[$i]},"
         emit "      $(jstr "notes"): $(jstr "${ACT_NOTE[$i]}")"
         emit '    }'
@@ -594,6 +603,8 @@ main() {
     emit "  $(jstr "actions_failed"): $(jnum "$failed_count"),"
     emit "  $(jstr "events_export_path"): $(jstr "$EVENTS_RELPATH"),"
     emit "  $(jstr "events_exported"): $(jnum "$event_count"),"
+    emit "  $(jstr "export_window_minutes"): $(jnum "$EXPORT_WINDOW_MINUTES"),"
+    emit "  $(jstr "verification_window_minutes"): $(jnum "$VERIFY_WINDOW_MINUTES"),"
     emit "  $(jstr "coverage_path"): $(jstr "$COVERAGE_RELPATH"),"
     emit "  $(jstr "target_state_path"): $(jstr "$TARGET_STATE_RELPATH"),"
     emit "  $(jstr "result"): $(jstr "$([[ "$failed_count" -eq 0 ]] && printf 'pass' || printf 'fail')"),"
