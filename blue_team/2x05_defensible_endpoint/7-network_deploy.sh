@@ -36,9 +36,12 @@
 #                      /home/analyst/MedDefense_Lab/capstone/meddefense.rules
 #   -B BLOCKLIST       DNS blocklist. Default:
 #                      /home/analyst/MedDefense_Lab/capstone/dns_blocklist.txt
-#   -V VALIDATION_SUITE  External firewall validation script. When omitted the
-#                      built-in suite runs, which checks the live nftables
-#                      ruleset against the segmentation contract.
+#   -V VALIDATION_SUITE  Firewall validation suite from 2x04. Default:
+#                      /home/analyst/MedDefense_Lab/2x04/5-firewall_test.sh
+#                      (overridable with FIREWALL_TEST_SUITE). If it is not
+#                      present, the built-in suite runs instead, checking the
+#                      live nftables ruleset against the segmentation contract.
+#                      Both are gating: any failure stops the run.
 #   -a "ARGS"          Argument list passed verbatim to the pipeline.
 #   --skip-dns         Do not touch dnsmasq configuration.
 #   --skip-pipeline    Validate and replay only; do not invoke the pipeline.
@@ -86,7 +89,7 @@ SEG_FILE="/home/analyst/MedDefense_Lab/capstone/segmentation_rules.json"
 PCAP_DIR="/home/analyst/MedDefense_Lab/capstone/PCAPs/"
 RULES_FILE="/home/analyst/MedDefense_Lab/capstone/meddefense.rules"
 BLOCKLIST="/home/analyst/MedDefense_Lab/capstone/dns_blocklist.txt"
-VALIDATION_SUITE=""
+VALIDATION_SUITE="${FIREWALL_TEST_SUITE:-/home/analyst/MedDefense_Lab/2x04/5-firewall_test.sh}"
 PIPELINE_ARGS=()
 PIPELINE_ARGS_SET=0
 SKIP_DNS=0
@@ -95,6 +98,7 @@ TMP_JSON=""
 COLLECTION_ERRORS=()
 
 PIPELINE_RC=0
+EXTERNAL_SUITE_FAILED=0
 FW_TOTAL=0
 FW_PASSED=0
 FW_FAILED=0
@@ -180,15 +184,18 @@ file_digest() {
 run_firewall_validation() {
     local out="$1" ruleset=""
 
-    if [[ -n "$VALIDATION_SUITE" ]]; then
-        log "INFO  running external firewall validation suite: $VALIDATION_SUITE"
+    if [[ -n "$VALIDATION_SUITE" && -x "$VALIDATION_SUITE" ]]; then
+        log "INFO  running the 2x04 firewall validation suite: $VALIDATION_SUITE"
         set +e
         "$VALIDATION_SUITE" >>"$LOG_FILE" 2>&1
         local ext_rc=$?
         set -e
         if [[ "$ext_rc" -ne 0 ]]; then
-            record_error "external firewall validation suite exited ${ext_rc}"
+            record_error "firewall validation suite ${VALIDATION_SUITE} exited ${ext_rc}"
+            EXTERNAL_SUITE_FAILED=1
         fi
+    elif [[ -n "$VALIDATION_SUITE" ]]; then
+        log "INFO  ${VALIDATION_SUITE} not present; using the built-in validation suite"
     fi
 
     ruleset=$(nft list ruleset 2>/dev/null || true)
@@ -796,7 +803,7 @@ main() {
     FW_FAILED=$(printf '%s' "$fw_result" | awk '{print $3}')
     log "INFO  firewall validation: ${FW_PASSED}/${FW_TOTAL} passed"
 
-    if [[ "$FW_FAILED" -ne 0 ]]; then
+    if [[ "$FW_FAILED" -ne 0 || "$EXTERNAL_SUITE_FAILED" -ne 0 ]]; then
         record_error "firewall validation failed ${FW_FAILED} test(s); refusing to proceed"
         log "ERROR refusing to deploy IDS and DNS on an unverified perimeter"
         write_summary "$out_file" "fail"
