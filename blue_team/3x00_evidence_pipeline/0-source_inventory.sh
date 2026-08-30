@@ -1,182 +1,52 @@
 #!/bin/bash
-
-# ============================================================
-# TASK 0 - EVIDENCE PACK INVENTORY
-#
-# Purpose:
-# Inventory every evidence source file under:
-#
-#   windows/
-#   linux/
-#   network/
-#
-# The script creates:
-#
-#   source_inventory.json
-#
-# For every source file it records:
-#
-#   - relative path
-#   - source type
-#   - size in bytes
-#   - SHA256 hash
-#   - line count or record count
-#   - first event time
-#   - last event time
-#
-# Python is used for parsing because it handles JSON arrays,
-# NDJSON, CSV and timestamp conversion more clearly than a
-# large Bash-only solution.
-# ============================================================
-
 set -euo pipefail
 
+EVIDENCE_PACK="${EVIDENCE_PACK:-$HOME/evidence_pack_primary}"
+OUTPUT_FILE="${OUTPUT_FILE:-$(pwd)/source_inventory.json}"
+EVIDENCE_YEAR="${EVIDENCE_YEAR:-2026}"
 
-# ============================================================
-# CONFIGURATION
-#
-# Usage:
-#
-#   ./0-source_inventory.sh
-#
-# Or with another evidence pack:
-#
-#   ./0-source_inventory.sh ~/evidence_pack_secondary
-#
-# The output directory can also be controlled through WORKDIR.
-# ============================================================
-
-WORKDIR="${WORKDIR:-$(pwd)}"
-
-EVIDENCE_PACK="${1:-${EVIDENCE_PACK:-$HOME/evidence_pack_primary}}"
-
-OUTPUT_FILE="${2:-${WORKDIR}/source_inventory.json}"
-
-
-# ============================================================
-# INPUT VALIDATION
-# ============================================================
-
-if [[ ! -d "$EVIDENCE_PACK" ]]; then
-    echo "ERROR: Evidence pack not found: $EVIDENCE_PACK" >&2
-    exit 1
-fi
-
-
-# ============================================================
-# RUN THE INVENTORY
-#
-# Bash passes the evidence-pack path and output path to Python.
-#
-# All parsing and manifest creation happens inside this single
-# Python process.
-# ============================================================
-
-python3 - "$EVIDENCE_PACK" "$OUTPUT_FILE" <<'PYTHON_EOF'
-
+python3 - "$EVIDENCE_PACK" "$OUTPUT_FILE" "$EVIDENCE_YEAR" <<'PYTHON'
 import csv
 import hashlib
 import json
 import os
 import re
 import sys
-
 from datetime import datetime, timezone
 
 
-# ============================================================
-# COMMAND-LINE VALUES
-# ============================================================
-
-evidence_pack = sys.argv[1]
+root = sys.argv[1]
 output_file = sys.argv[2]
+evidence_year = int(sys.argv[3])
+
+categories = ["windows", "linux", "network"]
 
 
-# ============================================================
-# REQUIRED SOURCE DIRECTORIES
-#
-# Task 0 only inventories these three source categories.
-#
-# context/ and student_telemetry/ are not included here.
-# ============================================================
+# ------------------------------------------------------------
+# SHA256
+# ------------------------------------------------------------
 
-SOURCE_DIRS = [
-    "windows",
-    "linux",
-    "network",
-]
+def sha256_file(path):
+    digest = hashlib.sha256()
 
+    with open(path, "rb") as f:
+        for block in iter(lambda: f.read(65536), b""):
+            digest.update(block)
 
-# ============================================================
-# COMMON TIMESTAMP FIELD NAMES
-#
-# Different security products use different timestamp names.
-#
-# Examples in this project include:
-#
-#   timestamp_raw
-#   timestamp
-#   time
-# ============================================================
-
-TIMESTAMP_KEYS = [
-    "timestamp_raw",
-    "timestamp",
-    "@timestamp",
-    "event_time",
-    "eventtime",
-    "systemtime",
-    "timecreated",
-    "utc_time",
-    "utctime",
-    "datetime",
-    "time",
-]
+    return digest.hexdigest()
 
 
-# ============================================================
-# CALCULATE SHA256
-#
-# Read the file in blocks instead of loading the whole file
-# into memory only for hashing.
-# ============================================================
+# ------------------------------------------------------------
+# Timestamp conversion
+# ------------------------------------------------------------
 
-def calculate_sha256(filepath):
-    sha256 = hashlib.sha256()
-
-    with open(filepath, "rb") as handle:
-
-        while True:
-            block = handle.read(65536)
-
-            if not block:
-                break
-
-            sha256.update(block)
-
-    return sha256.hexdigest()
+def iso_utc(dt):
+    return dt.astimezone(timezone.utc).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
 
 
-# ============================================================
-# NORMALIZE TIMESTAMP
-#
-# Convert different timestamp formats into:
-#
-#   YYYY-MM-DDTHH:MM:SSZ
-#
-# Supported examples include:
-#
-#   1773792002
-#   2026-03-18T00:00:13Z
-#   2026-03-18T00:00:31.026524+0000
-#   03/20/2026 11:16:56 PM
-#   Mar 18 00:00:38
-#
-# If a value cannot be understood, return None.
-# ============================================================
-
-def normalize_timestamp(value, default_year=None):
-
+def parse_timestamp(value):
     if value is None:
         return None
 
@@ -185,219 +55,89 @@ def normalize_timestamp(value, default_year=None):
     if not value:
         return None
 
-
-    # --------------------------------------------------------
-    # UNIX EPOCH
-    #
-    # Example:
-    #   1773792002
-    #
-    # Millisecond epochs are also supported.
-    # --------------------------------------------------------
-
-    if re.fullmatch(r"\d+(?:\.\d+)?", value):
-
-        try:
-            epoch = float(value)
-
-            # Large epoch values are probably milliseconds.
-            if epoch > 100000000000:
-                epoch = epoch / 1000
-
-            dt = datetime.fromtimestamp(epoch, timezone.utc)
-
-            return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-        except (ValueError, OverflowError):
-            return None
-
-
-    # --------------------------------------------------------
-    # ISO 8601
-    #
-    # Convert trailing Z into an explicit UTC offset so
-    # datetime.fromisoformat() can parse it consistently.
-    # --------------------------------------------------------
-
-    iso_value = value
-
-    if iso_value.endswith("Z"):
-        iso_value = iso_value[:-1] + "+00:00"
-
-    # Convert timezone such as +0000 into +00:00.
-    iso_value = re.sub(
-        r"([+-]\d{2})(\d{2})$",
-        r"\1:\2",
-        iso_value,
-    )
-
+    # Unix epoch
     try:
-        dt = datetime.fromisoformat(iso_value)
+        if re.fullmatch(r"\d+(?:\.\d+)?", value):
+            return iso_utc(
+                datetime.fromtimestamp(
+                    float(value),
+                    tz=timezone.utc
+                )
+            )
+    except (ValueError, OverflowError):
+        pass
+
+    # ISO 8601
+    try:
+        text = value
+
+        if text.endswith("Z"):
+            text = text[:-1] + "+00:00"
+
+        # +0000 -> +00:00
+        text = re.sub(
+            r"([+-]\d{2})(\d{2})$",
+            r"\1:\2",
+            text
+        )
+
+        dt = datetime.fromisoformat(text)
 
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
 
-        dt = dt.astimezone(timezone.utc)
-
-        return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+        return iso_utc(dt)
 
     except ValueError:
         pass
 
-
-    # --------------------------------------------------------
-    # US DATE FORMAT
-    #
-    # Example:
-    #   03/20/2026 11:16:56 PM
-    # --------------------------------------------------------
-
+    # PCAP timestamp
     try:
         dt = datetime.strptime(
             value,
-            "%m/%d/%Y %I:%M:%S %p",
+            "%m/%d/%Y %I:%M:%S %p"
         )
 
-        dt = dt.replace(tzinfo=timezone.utc)
-
-        return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+        return iso_utc(
+            dt.replace(tzinfo=timezone.utc)
+        )
 
     except ValueError:
         pass
 
+    # Linux syslog timestamp
+    try:
+        dt = datetime.strptime(
+            f"{evidence_year} {value}",
+            "%Y %b %d %H:%M:%S"
+        )
 
-    # --------------------------------------------------------
-    # TRADITIONAL LINUX SYSLOG
-    #
-    # Example:
-    #   Mar 18 00:00:38
-    #
-    # Traditional syslog does not include a year, so use the
-    # year provided by the caller.
-    # --------------------------------------------------------
+        return iso_utc(
+            dt.replace(tzinfo=timezone.utc)
+        )
 
-    if default_year is not None:
-
-        try:
-            dt = datetime.strptime(
-                f"{default_year} {value}",
-                "%Y %b %d %H:%M:%S",
-            )
-
-            dt = dt.replace(tzinfo=timezone.utc)
-
-            return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-        except ValueError:
-            pass
-
-
-    return None
-
-
-# ============================================================
-# FIND A TIMESTAMP INSIDE A JSON OBJECT
-#
-# First check common fields at the top level.
-#
-# If none exist, search nested dictionaries.
-#
-# We return the first useful timestamp field found.
-# ============================================================
-
-def find_json_timestamp(record):
-
-    if not isinstance(record, dict):
+    except ValueError:
         return None
 
 
-    # --------------------------------------------------------
-    # Check common top-level fields first.
-    # --------------------------------------------------------
+# ------------------------------------------------------------
+# Read JSON array, single object, or NDJSON
+# ------------------------------------------------------------
 
-    for key in TIMESTAMP_KEYS:
-
-        if key in record:
-            return record[key]
-
-
-    # --------------------------------------------------------
-    # Check keys case-insensitively.
-    # --------------------------------------------------------
-
-    for key, value in record.items():
-
-        if str(key).lower() in TIMESTAMP_KEYS:
-            return value
-
-
-    # --------------------------------------------------------
-    # Search nested dictionaries if needed.
-    # --------------------------------------------------------
-
-    for value in record.values():
-
-        if isinstance(value, dict):
-
-            result = find_json_timestamp(value)
-
-            if result is not None:
-                return result
-
-
-    return None
-
-
-# ============================================================
-# PARSE JSON OR NDJSON
-#
-# The evidence may be:
-#
-# 1. JSON array
-#
-#    [
-#      {...},
-#      {...}
-#    ]
-#
-# 2. Single JSON object
-#
-#    {...}
-#
-# 3. NDJSON
-#
-#    {...}
-#    {...}
-#
-# First try to parse the complete file.
-#
-# If that fails, parse it line by line as NDJSON.
-# ============================================================
-
-def parse_json_file(filepath):
-
+def read_json_records(path):
     with open(
-        filepath,
+        path,
         "r",
         encoding="utf-8",
-        errors="replace",
-    ) as handle:
-        content = handle.read()
-
-
-    # --------------------------------------------------------
-    # Try normal JSON first.
-    # --------------------------------------------------------
+        errors="replace"
+    ) as f:
+        content = f.read()
 
     try:
         data = json.loads(content)
 
         if isinstance(data, list):
-            return [
-                record
-                for record in data
-                if isinstance(record, dict)
-            ]
+            return data
 
         if isinstance(data, dict):
             return [data]
@@ -405,602 +145,307 @@ def parse_json_file(filepath):
     except json.JSONDecodeError:
         pass
 
-
-    # --------------------------------------------------------
-    # Fall back to NDJSON.
-    # --------------------------------------------------------
-
     records = []
 
-    for line_number, line in enumerate(
-        content.splitlines(),
-        start=1,
-    ):
-
+    for line in content.splitlines():
         line = line.strip()
 
         if not line:
             continue
 
         try:
-            record = json.loads(line)
-
-            if isinstance(record, dict):
-                records.append(record)
-
+            records.append(json.loads(line))
         except json.JSONDecodeError:
-
-            sys.stderr.write(
-                f"WARNING: malformed JSON line skipped: "
-                f"{filepath}:{line_number}\n"
-            )
-
+            continue
 
     return records
 
 
-# ============================================================
-# GET FIRST AND LAST JSON EVENT TIME
-#
-# Extract every recognizable timestamp, normalize it, then
-# report the earliest and latest event times.
-#
-# This also works when records are not perfectly ordered.
-# ============================================================
+# ------------------------------------------------------------
+# Windows JSON
+# ------------------------------------------------------------
 
-def json_time_range(records):
-
-    timestamps = []
+def inspect_windows(path):
+    records = read_json_records(path)
+    times = []
 
     for record in records:
+        if not isinstance(record, dict):
+            continue
 
-        raw_timestamp = find_json_timestamp(record)
+        timestamp = parse_timestamp(
+            record.get("timestamp_raw")
+        )
 
-        timestamp = normalize_timestamp(raw_timestamp)
+        if timestamp:
+            times.append(timestamp)
 
-        if timestamp is not None:
-            timestamps.append(timestamp)
-
-
-    if not timestamps:
-        return None, None
-
-
-    return min(timestamps), max(timestamps)
+    return {
+        "record_count": len(records),
+        "first_event_time": min(times) if times else None,
+        "last_event_time": max(times) if times else None
+    }
 
 
-# ============================================================
-# PARSE LINUX TEXT LOG
-#
-# Linux files use line_count rather than record_count.
-#
-# Supported timestamps include:
-#
-#   audit(1773792000.123:123)
-#   2026-03-18T00:00:20Z
-#   Mar 18 00:00:38
-# ============================================================
+# ------------------------------------------------------------
+# Linux text logs
+# ------------------------------------------------------------
 
-def parse_linux_file(filepath):
-
+def inspect_linux(path):
     line_count = 0
-    timestamps = []
-
-
-    # --------------------------------------------------------
-    # Traditional syslog does not contain a year.
-    #
-    # Use the file modification year as a reasonable
-    # best-effort value.
-    # --------------------------------------------------------
-
-    file_year = datetime.fromtimestamp(
-        os.path.getmtime(filepath),
-        timezone.utc,
-    ).year
-
+    times = []
 
     with open(
-        filepath,
+        path,
         "r",
         encoding="utf-8",
-        errors="replace",
-    ) as handle:
+        errors="replace"
+    ) as f:
 
-        for line in handle:
-
+        for line in f:
             line_count += 1
-
             line = line.rstrip("\n")
 
-
-            # ------------------------------------------------
-            # Linux audit timestamp.
-            # ------------------------------------------------
-
+            # audit.log
             audit_match = re.search(
-                r"audit\((\d+(?:\.\d+)?)",
-                line,
+                r'msg=audit\(([\d.]+):\d+\)',
+                line
             )
 
             if audit_match:
-
-                timestamp = normalize_timestamp(
+                timestamp = parse_timestamp(
                     audit_match.group(1)
                 )
 
                 if timestamp:
-                    timestamps.append(timestamp)
+                    times.append(timestamp)
 
                 continue
 
-
-            # ------------------------------------------------
-            # ISO timestamp at the beginning of a line.
-            # ------------------------------------------------
-
-            iso_match = re.match(
-                r"^(\d{4}-\d{2}-\d{2}T\S+)",
-                line,
+            # auth.log / syslog
+            syslog_match = re.match(
+                r'^([A-Z][a-z]{2}\s+\d{1,2}\s+'
+                r'\d{2}:\d{2}:\d{2})',
+                line
             )
 
-            if iso_match:
-
-                timestamp = normalize_timestamp(
-                    iso_match.group(1)
+            if syslog_match:
+                timestamp = parse_timestamp(
+                    syslog_match.group(1)
                 )
 
                 if timestamp:
-                    timestamps.append(timestamp)
-
-                continue
-
-
-            # ------------------------------------------------
-            # Traditional syslog:
-            #
-            #   Mar 18 00:00:38
-            # ------------------------------------------------
-
-            if len(line) >= 15:
-
-                possible_time = line[:15]
-
-                timestamp = normalize_timestamp(
-                    possible_time,
-                    default_year=file_year,
-                )
-
-                if timestamp:
-                    timestamps.append(timestamp)
-
-
-    if timestamps:
-
-        first_time = min(timestamps)
-        last_time = max(timestamps)
-
-    else:
-
-        first_time = None
-        last_time = None
-
-
-    return line_count, first_time, last_time
-
-
-# ============================================================
-# FIND TIMESTAMP COLUMN IN CSV
-#
-# First look for common timestamp column names.
-#
-# If no obvious header exists, inspect the first data row for
-# something that looks like a timestamp.
-# ============================================================
-
-def find_csv_time_column(header, rows):
-
-    # --------------------------------------------------------
-    # Search by header name.
-    # --------------------------------------------------------
-
-    for index, name in enumerate(header):
-
-        clean_name = name.strip().strip('"').lower()
-
-        if clean_name in TIMESTAMP_KEYS:
-            return index
-
-
-    # --------------------------------------------------------
-    # Best-effort fallback:
-    # inspect values in the first row.
-    # --------------------------------------------------------
-
-    if rows:
-
-        for index, value in enumerate(rows[0]):
-
-            if normalize_timestamp(value) is not None:
-                return index
-
-
-    return None
-
-
-# ============================================================
-# PARSE CSV FILE
-#
-# The first row is treated as the CSV header.
-#
-# record_count contains data rows only.
-# ============================================================
-
-def parse_csv_file(filepath):
-
-    with open(
-        filepath,
-        "r",
-        encoding="utf-8",
-        errors="replace",
-        newline="",
-    ) as handle:
-
-        reader = csv.reader(handle)
-
-        rows = list(reader)
-
-
-    if not rows:
-        return 0, None, None
-
-
-    header = rows[0]
-    data_rows = rows[1:]
-
-    record_count = len(data_rows)
-
-    column = find_csv_time_column(
-        header,
-        data_rows,
-    )
-
-
-    timestamps = []
-
-
-    # --------------------------------------------------------
-    # Extract timestamps from the selected column.
-    # --------------------------------------------------------
-
-    if column is not None:
-
-        for row in data_rows:
-
-            if column >= len(row):
-                continue
-
-            timestamp = normalize_timestamp(
-                row[column]
-            )
-
-            if timestamp:
-                timestamps.append(timestamp)
-
-
-    if timestamps:
-
-        first_time = min(timestamps)
-        last_time = max(timestamps)
-
-    else:
-
-        first_time = None
-        last_time = None
-
-
-    return record_count, first_time, last_time
-
-
-# ============================================================
-# DETERMINE SOURCE TYPE
-#
-# Source types allowed by the task:
-#
-#   windows_json
-#   linux_text
-#   network_csv
-#   network_json
-#
-# Every file in the three source directories is inventoried.
-# ============================================================
-
-def get_source_type(category, filepath):
-
-    if category == "windows":
-        return "windows_json"
-
-    if category == "linux":
-        return "linux_text"
-
-    if category == "network":
-
-        if filepath.lower().endswith(".csv"):
-            return "network_csv"
-
-        return "network_json"
-
-    raise ValueError(f"Unsupported category: {category}")
-
-
-# ============================================================
-# COLLECT ALL SOURCE FILES
-#
-# Walk every file recursively inside:
-#
-#   windows/
-#   linux/
-#   network/
-#
-# Sorting makes the output deterministic.
-# ============================================================
-
-source_files = []
-
-
-for category in SOURCE_DIRS:
-
-    directory = os.path.join(
-        evidence_pack,
-        category,
-    )
-
-
-    if not os.path.isdir(directory):
-
-        sys.stderr.write(
-            f"WARNING: source directory missing: "
-            f"{directory}\n"
-        )
-
-        continue
-
-
-    for root, _, filenames in os.walk(directory):
-
-        for filename in filenames:
-
-            filepath = os.path.join(
-                root,
-                filename,
-            )
-
-            source_files.append(
-                (
-                    category,
-                    filepath,
-                )
-            )
-
-
-source_files.sort(
-    key=lambda item: item[1]
-)
-
-
-# ============================================================
-# BUILD MANIFEST
-# ============================================================
-
-manifest = []
-
-
-# Summary values for stdout.
-summary = {
-    "windows": {
-        "files": 0,
-        "bytes": 0,
-    },
-    "linux": {
-        "files": 0,
-        "bytes": 0,
-    },
-    "network": {
-        "files": 0,
-        "bytes": 0,
-    },
-}
-
-
-for category, filepath in source_files:
-
-    relative_path = os.path.relpath(
-        filepath,
-        evidence_pack,
-    )
-
-    size_bytes = os.path.getsize(filepath)
-
-    source_type = get_source_type(
-        category,
-        filepath,
-    )
-
-
-    # --------------------------------------------------------
-    # Common manifest fields.
-    #
-    # line_count and record_count both exist so the manifest
-    # structure stays consistent.
-    #
-    # Only the relevant field receives a numeric value.
-    # --------------------------------------------------------
-
-    entry = {
-        "path": relative_path,
-        "source_type": source_type,
-        "size_bytes": size_bytes,
-        "sha256": calculate_sha256(filepath),
-        "first_event_time": None,
-        "last_event_time": None,
+                    times.append(timestamp)
+
+    return {
+        "line_count": line_count,
+        "first_event_time": min(times) if times else None,
+        "last_event_time": max(times) if times else None
     }
 
 
-    # --------------------------------------------------------
-    # WINDOWS JSON / NDJSON
-    # --------------------------------------------------------
+# ------------------------------------------------------------
+# Firewall CSV
+# ------------------------------------------------------------
 
-    if source_type == "windows_json":
+def inspect_csv(path):
+    record_count = 0
+    times = []
 
-        records = parse_json_file(filepath)
+    with open(
+        path,
+        "r",
+        encoding="utf-8",
+        errors="replace",
+        newline=""
+    ) as f:
 
-        first_time, last_time = json_time_range(
-            records
+        reader = csv.DictReader(f)
+
+        for row in reader:
+            record_count += 1
+
+            timestamp = parse_timestamp(
+                row.get("timestamp")
+            )
+
+            if timestamp:
+                times.append(timestamp)
+
+    return {
+        "record_count": record_count,
+        "first_event_time": min(times) if times else None,
+        "last_event_time": max(times) if times else None
+    }
+
+
+# ------------------------------------------------------------
+# Network JSON
+# ------------------------------------------------------------
+
+def inspect_network_json(path):
+    records = read_json_records(path)
+
+    first_times = []
+    last_times = []
+
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+
+        # Suricata
+        if "timestamp" in record:
+            timestamp = parse_timestamp(
+                record.get("timestamp")
+            )
+
+            if timestamp:
+                first_times.append(timestamp)
+                last_times.append(timestamp)
+
+        # PCAP summary
+        elif "start_time" in record:
+            start = parse_timestamp(
+                record.get("start_time")
+            )
+
+            end = parse_timestamp(
+                record.get("end_time")
+            )
+
+            if start:
+                first_times.append(start)
+
+            if end:
+                last_times.append(end)
+            elif start:
+                last_times.append(start)
+
+    return {
+        "record_count": len(records),
+        "first_event_time": (
+            min(first_times)
+            if first_times else None
+        ),
+        "last_event_time": (
+            max(last_times)
+            if last_times else None
         )
-
-        entry["record_count"] = len(records)
-
-        entry["first_event_time"] = first_time
-        entry["last_event_time"] = last_time
+    }
 
 
-    # --------------------------------------------------------
-    # LINUX TEXT
-    # --------------------------------------------------------
+# ------------------------------------------------------------
+# Build manifest
+# ------------------------------------------------------------
 
-    elif source_type == "linux_text":
+manifest = []
 
-        (
-            line_count,
-            first_time,
-            last_time,
-        ) = parse_linux_file(filepath)
-
-        entry["line_count"] = line_count
-
-        entry["first_event_time"] = first_time
-        entry["last_event_time"] = last_time
+summary = {
+    "windows": {"files": 0, "bytes": 0},
+    "linux": {"files": 0, "bytes": 0},
+    "network": {"files": 0, "bytes": 0}
+}
 
 
-    # --------------------------------------------------------
-    # NETWORK CSV
-    # --------------------------------------------------------
+for category in categories:
+    directory = os.path.join(root, category)
 
-    elif source_type == "network_csv":
+    if not os.path.isdir(directory):
+        continue
 
-        (
-            record_count,
-            first_time,
-            last_time,
-        ) = parse_csv_file(filepath)
+    for current, _, filenames in os.walk(directory):
 
-        entry["record_count"] = record_count
+        for filename in sorted(filenames):
+            path = os.path.join(current, filename)
 
-        entry["first_event_time"] = first_time
-        entry["last_event_time"] = last_time
+            relative_path = os.path.relpath(
+                path,
+                root
+            )
+
+            size = os.path.getsize(path)
+
+            if category == "windows":
+                source_type = "windows_json"
+                details = inspect_windows(path)
+
+            elif category == "linux":
+                source_type = "linux_text"
+                details = inspect_linux(path)
+
+            elif filename.lower().endswith(".csv"):
+                source_type = "network_csv"
+                details = inspect_csv(path)
+
+            else:
+                source_type = "network_json"
+                details = inspect_network_json(path)
+
+            entry = {
+                "path": relative_path,
+                "source_type": source_type,
+                "size_bytes": size,
+                "sha256": sha256_file(path)
+            }
+
+            # Add only line_count OR record_count.
+            entry.update(details)
+
+            manifest.append(entry)
+
+            summary[category]["files"] += 1
+            summary[category]["bytes"] += size
 
 
-    # --------------------------------------------------------
-    # NETWORK JSON / NDJSON
-    # --------------------------------------------------------
-
-    elif source_type == "network_json":
-
-        records = parse_json_file(filepath)
-
-        first_time, last_time = json_time_range(
-            records
-        )
-
-        entry["record_count"] = len(records)
-
-        entry["first_event_time"] = first_time
-        entry["last_event_time"] = last_time
+# Keep manifest order deterministic.
+manifest.sort(key=lambda x: x["path"])
 
 
-    manifest.append(entry)
-
-
-    # --------------------------------------------------------
-    # Update human-readable summary values.
-    # --------------------------------------------------------
-
-    summary[category]["files"] += 1
-    summary[category]["bytes"] += size_bytes
-
-
-# ============================================================
-# WRITE JSON MANIFEST
-#
-# indent=2 keeps the output readable.
-#
-# sort_keys=False preserves the field order above.
-# ============================================================
-
-output_dir = os.path.dirname(output_file) or "."
-
-os.makedirs(
-    output_dir,
-    exist_ok=True,
-)
-
+# ------------------------------------------------------------
+# Write source_inventory.json
+# ------------------------------------------------------------
 
 with open(
     output_file,
     "w",
-    encoding="utf-8",
-) as handle:
+    encoding="utf-8"
+) as f:
 
     json.dump(
         manifest,
-        handle,
-        indent=2,
+        f,
+        indent=2
     )
 
-    # Project requirement:
-    # every file should end with a newline.
-    handle.write("\n")
+    f.write("\n")
 
 
-# ============================================================
-# PRINT HUMAN-READABLE SUMMARY
-# ============================================================
+# ------------------------------------------------------------
+# Summary
+# ------------------------------------------------------------
 
 total_files = 0
 total_bytes = 0
 
+for category in categories:
+    files = summary[category]["files"]
+    size = summary[category]["bytes"]
 
-for category in SOURCE_DIRS:
-
-    file_count = summary[category]["files"]
-
-    byte_count = summary[category]["bytes"]
-
-    size_mb = byte_count / (1024 * 1024)
-
-    total_files += file_count
-    total_bytes += byte_count
-
+    total_files += files
+    total_bytes += size
 
     print(
         f"{category:<8}: "
-        f"{file_count} files  |  "
-        f"{size_mb:6.1f} MB"
+        f"{files} files  |  "
+        f"{size / (1024 * 1024):5.1f} MB"
     )
-
-
-total_mb = total_bytes / (1024 * 1024)
-
 
 print(
     f"{'total':<8}: "
     f"{total_files} files  |  "
-    f"{total_mb:6.1f} MB"
+    f"{total_bytes / (1024 * 1024):5.1f} MB"
 )
 
-print(
-    f"manifest written to "
-    f"{os.path.basename(output_file)}"
-)
+print("manifest written to source_inventory.json")
 
-PYTHON_EOF
+PYTHON
