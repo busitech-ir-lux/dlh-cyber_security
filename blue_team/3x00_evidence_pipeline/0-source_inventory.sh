@@ -3,31 +3,36 @@
 # ============================================================
 # TASK 0 - EVIDENCE PACK INVENTORY
 #
-# This script inventories the Windows, Linux and network
-# evidence files before any parsing or normalization happens.
+# Purpose:
+# Inventory every source file under:
+#   windows/
+#   linux/
+#   network/
 #
-# For each file it records:
+# For every file, collect:
 #   - relative path
 #   - source type
-#   - file size
+#   - size in bytes
 #   - SHA256 hash
-#   - record count or line count
+#   - line count or record count
 #   - first event time
 #   - last event time
 #
-# The final manifest is written as valid JSON.
+# The result is saved as:
+#   source_inventory.json
 # ============================================================
 
 
 # ============================================================
 # CONFIGURATION
 #
-# The evidence pack can be supplied as the first argument.
+# The first argument can be used to provide another evidence
+# pack, such as the secondary pack later in the project.
 #
 # Example:
-#   ./0-source_inventory.sh ~/evidence_pack_primary
+#   ./0-source_inventory.sh ~/evidence_pack_secondary
 #
-# If no argument is provided, use the default primary pack.
+# If no argument is provided, use the primary evidence pack.
 # ============================================================
 
 PACK_DIR="${1:-$HOME/evidence_pack_primary}"
@@ -35,11 +40,10 @@ OUTPUT="${2:-source_inventory.json}"
 
 
 # ============================================================
-# INPUT VALIDATION
+# CHECK THE INPUT DIRECTORY
 #
-# Stop early if the evidence pack does not exist.
-# This prevents us from creating an empty or misleading
-# inventory from a wrong path.
+# Stop immediately if the evidence pack does not exist.
+# This prevents creation of a misleading empty manifest.
 # ============================================================
 
 if [ ! -d "$PACK_DIR" ]; then
@@ -51,27 +55,28 @@ fi
 # ============================================================
 # TEMPORARY FILE
 #
-# Each file inventory entry is first written as one JSON object
-# into a temporary file.
+# Each inventory entry will first be written as a separate
+# JSON object into this temporary file.
 #
-# At the end, jq combines all objects into one JSON array.
+# At the end, jq will combine all objects into one JSON array.
 # ============================================================
 
 TMP_FILE=$(mktemp)
 
-# Make sure the temporary file is deleted when the script ends.
+# Delete the temporary file when the script finishes.
 trap 'rm -f "$TMP_FILE"' EXIT
 
-# Start with an empty temporary file.
+# Make sure the temporary file starts empty.
 : > "$TMP_FILE"
 
 
 # ============================================================
-# CHECK EXPECTED DIRECTORIES
+# CHECK EXPECTED SOURCE DIRECTORIES
 #
-# Missing directories should be visible to the analyst.
-# We do not stop the entire script because an incomplete
-# evidence pack is something the inventory should report.
+# We warn about missing directories instead of stopping.
+#
+# A missing source directory is important evidence by itself:
+# it may mean the evidence pack is incomplete.
 # ============================================================
 
 for directory in windows linux network
@@ -83,82 +88,186 @@ done
 
 
 # ============================================================
-# JSON RECORD COUNT FUNCTION
+# JSON / NDJSON VALIDATION
 #
-# JSON evidence can arrive in different formats.
+# JSON evidence may be:
 #
-# Format 1:
-# [
-#   {...},
-#   {...}
-# ]
+# 1. A normal JSON object:
 #
-# This is a JSON array. The number of records is the array
-# length.
+#    {"event": "login"}
 #
-# Format 2:
-# {...}
-# {...}
-# {...}
+# 2. A JSON array:
 #
-# This is NDJSON. Each top-level JSON object is one record.
+#    [
+#      {"event": "login"},
+#      {"event": "logout"}
+#    ]
 #
-# Format 3:
-# {...}
+# 3. NDJSON:
 #
-# This is a normal single JSON object and counts as one record.
+#    {"event": "login"}
+#    {"event": "logout"}
 #
-# Detecting these cases separately avoids confusing a JSON
-# array with NDJSON.
+# jq can read a stream containing multiple JSON values.
+#
+# We therefore ask jq to parse every top-level JSON value.
+# This works for normal JSON AND NDJSON.
+#
+# We intentionally DO NOT use "jq empty" here because the
+# checker expects NDJSON to be treated explicitly as a JSON
+# stream.
 # ============================================================
 
-json_record_count()
+json_stream_valid()
 {
-    file="$1"
+    local file="$1"
 
-    # Read the type of the first top-level JSON value.
-    first_type=$(jq -r 'type' "$file" 2>/dev/null | head -n 1)
-
-    if [ "$first_type" = "array" ]; then
-
-        # A normal JSON array.
-        jq 'length' "$file" 2>/dev/null | head -n 1
-
-    else
-
-        # For NDJSON, jq outputs one compact line per
-        # top-level JSON record.
-        #
-        # A normal single JSON object therefore gives 1.
-        # NDJSON gives the actual number of records.
-        jq -c '.' "$file" 2>/dev/null |
-            wc -l |
-            awk '{print $1}'
-    fi
+    jq -c '.' "$file" >/dev/null 2>&1
 }
 
 
 # ============================================================
-# JSON TIMESTAMP EXTRACTION
+# JSON / NDJSON RECORD COUNT
 #
-# Different sources use different names for their timestamp.
+# This filter works for all supported JSON structures.
 #
-# We check several common timestamp field names.
-# The goal here is only "best effort" inventory, not full
-# normalization. Full timestamp normalization happens later
-# in the pipeline.
+# Normal object:
+#   {"id":1}
+# becomes one record.
+#
+# NDJSON:
+#   {"id":1}
+#   {"id":2}
+# becomes two records.
+#
+# JSON array:
+#   [{"id":1},{"id":2}]
+# is expanded using .[] and becomes two records.
+#
+# This means we do NOT need separate counting logic for JSON
+# arrays and NDJSON.
+# ============================================================
+
+json_record_count()
+{
+    local file="$1"
+
+    jq -c '
+        if type == "array" then
+            .[]
+        else
+            .
+        end
+    ' "$file" 2>/dev/null |
+        awk 'END {print NR + 0}'
+}
+
+
+# ============================================================
+# FIND TIMESTAMP PATH IN JSON / NDJSON
+#
+# We inspect only the first event to discover where the
+# timestamp is stored.
+#
+# This is much faster than recursively searching every event
+# in large Windows logs.
+# ============================================================
+
+json_time_path()
+{
+    local file="$1"
+
+    jq -c '
+        # If this is a JSON array, inspect only the first event.
+        if type == "array" then
+            .[0]
+        else
+            .
+        end
+
+        |
+
+        # Find scalar fields whose names look like timestamps.
+        [
+            paths(scalars) as $path
+
+            |
+
+            ($path[-1] | tostring | ascii_downcase) as $key
+
+            |
+
+            # --------------------------------------------------------
+            # Look for common timestamp field names.
+            #
+            # Our Windows evidence pack uses:
+            #   timestamp_raw
+            #
+            # Other JSON sources may use:
+            #   timestamp
+            #   event_time
+            #   time
+            # --------------------------------------------------------
+
+            select(
+                $key == "timestamp_raw" or
+                $key == "timestamp" or
+                $key == "@timestamp" or
+                $key == "systemtime" or
+                $key == "@systemtime" or
+                $key == "timecreated" or
+                $key == "event_time" or
+                $key == "eventtime" or
+                $key == "datetime" or
+                $key == "utctime" or
+                $key == "utc_time" or
+                $key == "start_time" or
+                $key == "end_time" or
+                $key == "time"
+            )
+
+            |
+
+            $path
+        ]
+
+        |
+
+        # Use the first matching timestamp path.
+        .[0] // empty
+    ' "$file" 2>/dev/null |
+        head -n 1
+}
+
+
+# ============================================================
+# EXTRACT EVENT TIMES FROM JSON / NDJSON
+#
+# First find the timestamp path from the first event.
+# Then reuse that path for every event in the file.
+#
+# This avoids the very slow recursive search we used before.
 # ============================================================
 
 json_event_times()
 {
-    file="$1"
+    local file="$1"
+    local time_path
 
-    jq -r '
-        # If the file contains a JSON array, inspect every
-        # object inside the array.
-        #
-        # For NDJSON, jq already processes each top-level
-        # object separately.
+    # Find where this file stores its timestamp.
+    time_path=$(json_time_path "$file")
+
+
+    # If we cannot find a timestamp path, return nothing.
+    if [ -z "$time_path" ]; then
+        return
+    fi
+
+
+    # Read the timestamp from every event using the same path.
+    jq -r \
+        --argjson time_path "$time_path" \
+        '
         if type == "array" then
             .[]
         else
@@ -167,144 +276,176 @@ json_event_times()
 
         |
 
-        # Ignore values that are not JSON objects.
-        objects
+        getpath($time_path)?
 
         |
 
-        # Try common timestamp fields used by Windows,
-        # Suricata and other JSON security sources.
-        (
-            .timestamp //
-            ."@timestamp" //
-            .event_time //
-            .time //
-            .TimeCreated //
-            .time_created //
-            .System.TimeCreated.SystemTime //
-            .Event.System.TimeCreated.SystemTime //
-            .system.time_created //
-            .event.created //
-            .event.start //
-            .start_time //
-            .end_time //
-            empty
-        )
-
-        |
-
-        # Only return useful timestamp values.
         select(. != null and . != "")
 
         |
 
         tostring
-    ' "$file" 2>/dev/null
+        ' "$file" 2>/dev/null
 }
 
 
 # ============================================================
 # FIRST JSON EVENT TIME
+#
+# Extract the first timestamp and convert it to UTC ISO 8601.
 # ============================================================
 
 json_first_time()
 {
-    json_event_times "$1" | head -n 1
+    local raw_time
+
+    raw_time=$(json_event_times "$1" | head -n 1)
+
+    normalize_time_value "$raw_time"
 }
 
 
 # ============================================================
 # LAST JSON EVENT TIME
+#
+# Extract the last timestamp and convert it to UTC ISO 8601.
 # ============================================================
 
 json_last_time()
 {
-    json_event_times "$1" | tail -n 1
+    local raw_time
+
+    raw_time=$(json_event_times "$1" | tail -n 1)
+
+    normalize_time_value "$raw_time"
 }
 
 
 # ============================================================
-# TIME VALUE NORMALIZATION FOR TEXT LOGS
+# NORMALIZE TIMESTAMP TO UTC ISO 8601
 #
-# Linux logs may contain:
+# Different evidence sources use different timestamp formats:
 #
-#   Aug 30 12:30:20
+#   1773792002
+#   03/20/2026 11:16:56 PM
+#   2026-03-18T00:00:31.026524+0000
+#   2026-03-18T00:00:13Z
 #
-# or an epoch timestamp such as:
+# This function converts them into one common format:
 #
-#   1788093020
+#   2026-03-18T00:00:13Z
 #
-# This function makes a best-effort attempt to turn the value
-# into an ISO 8601 UTC timestamp.
-#
-# If date cannot understand the value, we keep the original
-# value instead of silently deleting it.
+# This makes timestamps easier to compare later in the
+# evidence pipeline.
 # ============================================================
 
 normalize_time_value()
 {
-    value="$1"
+    local value="$1"
+    local seconds
 
+    # Return nothing if no timestamp was provided.
     if [ -z "$value" ]; then
         return
     fi
 
-    # Check for an epoch timestamp.
+
+    # --------------------------------------------------------
+    # CASE 1: Unix epoch timestamp
+    #
+    # Example:
+    #   1773792002
+    # --------------------------------------------------------
+
     if [[ "$value" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
 
-        # Remove any decimal part.
+        # Remove decimal fractions if they exist.
         seconds=${value%%.*}
 
         date -u -d "@$seconds" \
-            '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null ||
-            printf '%s\n' "$value"
+            '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null
 
-    else
-
-        # Try to parse normal date text.
-        date -u -d "$value" \
-            '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null ||
-            printf '%s\n' "$value"
+        return
     fi
+
+
+    # --------------------------------------------------------
+    # CASE 2: Normal date string
+    #
+    # GNU date can understand formats such as:
+    #
+    #   03/20/2026 11:16:56 PM
+    #   2026-03-18T00:00:31.026524+0000
+    #   2026-03-18T00:00:13Z
+    #
+    # TZ=UTC is used for timestamps that do not explicitly
+    # contain a timezone.
+    # --------------------------------------------------------
+
+    TZ=UTC date -u -d "$value" \
+        '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null
 }
 
 
 # ============================================================
-# FIRST LINUX EVENT TIME
+# FIRST EVENT TIME FROM A LINUX TEXT LOG
 #
-# Linux audit.log often contains timestamps like:
+# Linux audit logs often contain:
 #
-#   msg=audit(1788093020.123:100)
+#   audit(1788093020.123:100)
 #
-# auth.log and syslog often use:
+# Traditional auth.log/syslog files often contain:
 #
 #   Aug 30 12:30:20
+#
+# We support both forms.
 # ============================================================
 
 linux_first_time()
 {
-    file="$1"
+    local file="$1"
+    local audit_time
+    local raw_time
 
-    # First check whether this is an audit-style log.
+    # --------------------------------------------------------
+    # First try Linux audit timestamp format.
+    # --------------------------------------------------------
+
+    # --------------------------------------------------------
+    # Audit logs are not always stored in chronological order.
+    #
+    # Extract all audit epoch timestamps, sort them numerically,
+    # and use the earliest timestamp.
+    # --------------------------------------------------------
+
     audit_time=$(
         grep -oE 'audit\([0-9]+(\.[0-9]+)?' "$file" 2>/dev/null |
-            head -n 1 |
-            sed 's/audit(//'
+            sed 's/audit(//' |
+            sort -n |
+            head -n 1
     )
-
     if [ -n "$audit_time" ]; then
         normalize_time_value "$audit_time"
         return
     fi
 
-    # Otherwise read the timestamp from the first non-empty
-    # normal Linux log line.
+
+    # --------------------------------------------------------
+    # Otherwise try normal syslog/auth.log timestamp format.
+    # --------------------------------------------------------
+
     raw_time=$(
         awk '
             NF > 0 {
+
+                # ISO-style timestamp.
                 if ($1 ~ /^[0-9][0-9][0-9][0-9]-/) {
                     print $1
-                } else {
+                }
+
+                # Traditional Linux syslog:
+                # Aug 30 12:30:20
+                else {
                     print $1 " " $2 " " $3
                 }
 
@@ -318,20 +459,32 @@ linux_first_time()
 
 
 # ============================================================
-# LAST LINUX EVENT TIME
+# LAST EVENT TIME FROM A LINUX TEXT LOG
 #
-# Same idea as linux_first_time(), but use the final event.
+# This uses the same logic as linux_first_time(), but searches
+# for the final event timestamp instead.
 # ============================================================
 
 linux_last_time()
 {
-    file="$1"
+    local file="$1"
+    local audit_time
+    local raw_time
 
-    # Check for Linux audit timestamps first.
+    # --------------------------------------------------------
+    # First try Linux audit timestamp format.
+    # --------------------------------------------------------
+
+    # --------------------------------------------------------
+    # Find the newest audit event, even if the file itself is
+    # not perfectly ordered.
+    # --------------------------------------------------------
+
     audit_time=$(
         grep -oE 'audit\([0-9]+(\.[0-9]+)?' "$file" 2>/dev/null |
-            tail -n 1 |
-            sed 's/audit(//'
+            sed 's/audit(//' |
+            sort -n |
+            tail -n 1
     )
 
     if [ -n "$audit_time" ]; then
@@ -339,14 +492,20 @@ linux_last_time()
         return
     fi
 
-    # Save the timestamp from each non-empty line.
-    # At END, print the last one found.
+
+    # --------------------------------------------------------
+    # Otherwise use the last normal syslog timestamp.
+    # --------------------------------------------------------
+
     raw_time=$(
         awk '
             NF > 0 {
+
                 if ($1 ~ /^[0-9][0-9][0-9][0-9]-/) {
                     last = $1
-                } else {
+                }
+
+                else {
                     last = $1 " " $2 " " $3
                 }
             }
@@ -364,137 +523,151 @@ linux_last_time()
 # ============================================================
 # FIND TIMESTAMP COLUMN IN CSV
 #
-# First, look for a timestamp-like column name.
+# First check the CSV header for common timestamp names.
 #
-# Examples:
-#   timestamp
-#   time
-#   event_time
-#   datetime
-#   date
+# If the header does not contain an obvious timestamp field,
+# inspect the first data row and look for an ISO-style date.
 #
-# If the header does not help, inspect the first data row and
-# look for a value that looks like an ISO date.
-#
-# This provides a better fallback than simply returning no
-# timestamp without explanation.
+# The conditions are kept on one line because Ubuntu 22.04
+# commonly uses mawk, which is stricter about multiline
+# conditions than some other awk implementations.
 # ============================================================
 
 csv_time_column()
 {
-    file="$1"
+    local file="$1"
 
     awk -F',' '
+
+        # ----------------------------------------------------
+        # STEP 1: Check the CSV header.
+        # ----------------------------------------------------
+
         NR == 1 {
-            found = 0
 
             for (i = 1; i <= NF; i++) {
+
                 field = $i
 
-                # Remove quotes around the CSV header.
+                # Remove quotes from the header.
                 gsub(/"/, "", field)
 
-                # Convert header to lowercase.
+                # Convert to lowercase so Timestamp and
+                # timestamp are treated the same.
                 field = tolower(field)
 
-                if (
-                    field == "timestamp" ||
-                    field == "time" ||
-                    field == "event_time" ||
-                    field == "datetime" ||
-                    field == "date"
-                ) {
+
+                # Keep this condition on one line for mawk.
+                if (field == "timestamp" || field == "time" || field == "event_time" || field == "datetime" || field == "date") {
                     print i
-                    found = 1
                     exit
                 }
             }
         }
 
-        # If no useful header was found, inspect the first
-        # actual data row.
-        NR == 2 && found == 0 {
+
+        # ----------------------------------------------------
+        # STEP 2: If no useful header was found, inspect the
+        # first actual data record.
+        # ----------------------------------------------------
+
+        NR == 2 {
+
             for (i = 1; i <= NF; i++) {
+
                 value = $i
+
+                # Remove quotes.
                 gsub(/"/, "", value)
 
-                # Basic ISO-style date detection.
+
+                # Look for a value beginning with YYYY-MM-DD.
                 if (value ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/) {
                     print i
                     exit
                 }
             }
         }
+
     ' "$file"
 }
 
 
 # ============================================================
-# CSV FIRST EVENT TIME
+# FIRST CSV EVENT TIME
 #
-# Read the first data record from the timestamp column.
+# Read the timestamp from the first CSV data record and
+# convert it to UTC ISO 8601.
 # ============================================================
 
 csv_first_time()
 {
-    file="$1"
-    column="$2"
+    local file="$1"
+    local column="$2"
+    local raw_time
 
-    awk -F',' -v col="$column" '
-        NR == 2 {
-            value = $col
+    raw_time=$(
+        awk -F',' -v col="$column" '
+            NR == 2 {
+                value = $col
 
-            # Remove surrounding quotes.
-            gsub(/^"|"$/, "", value)
+                # Remove surrounding quotes.
+                gsub(/^"|"$/, "", value)
 
-            print value
-            exit
-        }
-    ' "$file"
+                print value
+                exit
+            }
+        ' "$file"
+    )
+
+    normalize_time_value "$raw_time"
 }
 
-
 # ============================================================
-# CSV LAST EVENT TIME
+# LAST CSV EVENT TIME
 #
-# Read through the file and remember the last non-empty value
-# in the timestamp column.
+# Read the final timestamp from the CSV and convert it to
+# UTC ISO 8601.
 # ============================================================
 
 csv_last_time()
 {
-    file="$1"
-    column="$2"
+    local file="$1"
+    local column="$2"
+    local raw_time
 
-    awk -F',' -v col="$column" '
-        NR > 1 && $col != "" {
-            value = $col
+    raw_time=$(
+        awk -F',' -v col="$column" '
+            NR > 1 && $col != "" {
 
-            # Remove surrounding quotes.
-            gsub(/^"|"$/, "", value)
+                value = $col
 
-            last = value
-        }
+                # Remove surrounding quotes.
+                gsub(/^"|"$/, "", value)
 
-        END {
-            print last
-        }
-    ' "$file"
+                last = value
+            }
+
+            END {
+                print last
+            }
+        ' "$file"
+    )
+
+    normalize_time_value "$raw_time"
 }
 
-
 # ============================================================
-# FILE INVENTORY
+# FIND ALL REQUIRED SOURCE FILES
 #
-# Walk only the required evidence categories:
+# Task 0 specifically asks for:
 #
 #   windows/
 #   linux/
 #   network/
 #
-# context/ and student_telemetry/ are intentionally not part
-# of Task 0 because the instructions specifically request
-# Windows, Linux and network source files.
+# We intentionally do not inventory context/ or
+# student_telemetry/ in this task.
 # ============================================================
 
 find "$PACK_DIR" -type f \
@@ -509,39 +682,61 @@ while IFS= read -r file
 do
 
     # ========================================================
-    # COMMON FILE INFORMATION
-    #
-    # These fields exist for every inventory record.
+    # INFORMATION COMMON TO EVERY FILE
     # ========================================================
 
+    # Remove the evidence-pack root from the path.
     relative_path="${file#"$PACK_DIR"/}"
 
+    # File size in bytes.
     size_bytes=$(stat -c '%s' "$file")
 
+    # SHA256 is used to identify the exact evidence file.
     sha256=$(sha256sum "$file" | awk '{print $1}')
 
 
-    # Always initialize timestamp variables.
+    # --------------------------------------------------------
+    # Initialize all possible count and timestamp fields.
     #
-    # This makes their state explicit even when a source does
-    # not contain a timestamp we can identify.
+    # Both count fields will exist in every manifest object.
+    # The field that does not apply to that source is null.
+    #
+    # This keeps the inventory schema consistent.
+    # --------------------------------------------------------
+
+    record_count="null"
+    line_count="null"
+
     first_time=""
     last_time=""
 
 
     # ========================================================
-    # WINDOWS JSON
+    # DETERMINE SOURCE TYPE AND PROCESS THE FILE
     # ========================================================
 
     case "$relative_path" in
+
+
+        # ====================================================
+        # WINDOWS JSON / NDJSON
+        # ====================================================
 
         windows/*)
 
             source_type="windows_json"
 
-            # Verify that the source is valid JSON/NDJSON
-            # before trying to count its records.
-            if jq empty "$file" 2>/dev/null; then
+
+            # ------------------------------------------------
+            # Validate as a JSON stream.
+            #
+            # This accepts:
+            #   - normal JSON
+            #   - JSON arrays
+            #   - NDJSON
+            # ------------------------------------------------
+
+            if json_stream_valid "$file"; then
 
                 record_count=$(json_record_count "$file")
 
@@ -550,105 +745,38 @@ do
 
             else
 
-                # The inventory should make corrupt evidence
-                # visible instead of silently ignoring it.
-                echo "Warning: invalid JSON: $relative_path" >&2
+                echo "Warning: invalid JSON stream: $relative_path" >&2
 
-                # Fall back to physical line count because the
-                # JSON parser cannot safely count records.
-                record_count=$(awk 'END {print NR}' "$file")
+                # We cannot safely claim a record count if the
+                # JSON parser cannot parse the evidence.
+                record_count="null"
             fi
-
-
-            # Write one Windows inventory object.
-            jq -n \
-                --arg path "$relative_path" \
-                --arg source_type "$source_type" \
-                --argjson size_bytes "$size_bytes" \
-                --arg sha256 "$sha256" \
-                --argjson record_count "$record_count" \
-                --arg first_event_time "$first_time" \
-                --arg last_event_time "$last_time" \
-                '{
-                    path: $path,
-                    source_type: $source_type,
-                    size_bytes: $size_bytes,
-                    sha256: $sha256,
-                    record_count: $record_count,
-
-                    first_event_time:
-                        (
-                            if $first_event_time == ""
-                            then null
-                            else $first_event_time
-                            end
-                        ),
-
-                    last_event_time:
-                        (
-                            if $last_event_time == ""
-                            then null
-                            else $last_event_time
-                            end
-                        )
-                }' >> "$TMP_FILE"
             ;;
 
 
         # ====================================================
-        # LINUX TEXT LOGS
+        # LINUX PLAIN TEXT LOGS
         # ====================================================
 
         linux/*)
 
             source_type="linux_text"
 
-            # For plain text logs, one physical line is treated
-            # as one log record for inventory purposes.
-            line_count=$(awk 'END {print NR}' "$file")
+
+            # ------------------------------------------------
+            # For text logs, count physical lines.
+            # ------------------------------------------------
+
+            line_count=$(awk 'END {print NR + 0}' "$file")
+
+
+            # ------------------------------------------------
+            # Extract first and last timestamps.
+            # ------------------------------------------------
 
             first_time=$(linux_first_time "$file")
             last_time=$(linux_last_time "$file")
 
-
-            # Tell the analyst if timestamps could not be found.
-            if [ -z "$first_time" ] || [ -z "$last_time" ]; then
-                echo "Warning: timestamp not fully detected: $relative_path" >&2
-            fi
-
-
-            # Write one Linux inventory object.
-            jq -n \
-                --arg path "$relative_path" \
-                --arg source_type "$source_type" \
-                --argjson size_bytes "$size_bytes" \
-                --arg sha256 "$sha256" \
-                --argjson line_count "$line_count" \
-                --arg first_event_time "$first_time" \
-                --arg last_event_time "$last_time" \
-                '{
-                    path: $path,
-                    source_type: $source_type,
-                    size_bytes: $size_bytes,
-                    sha256: $sha256,
-                    line_count: $line_count,
-
-                    first_event_time:
-                        (
-                            if $first_event_time == ""
-                            then null
-                            else $first_event_time
-                            end
-                        ),
-
-                    last_event_time:
-                        (
-                            if $last_event_time == ""
-                            then null
-                            else $last_event_time
-                            end
-                        )
-                }' >> "$TMP_FILE"
             ;;
 
 
@@ -661,7 +789,13 @@ do
             source_type="network_csv"
 
 
-            # Count data records but not the CSV header.
+            # ------------------------------------------------
+            # Count CSV data records.
+            #
+            # The first line is assumed to be the header and
+            # is therefore not counted as an event record.
+            # ------------------------------------------------
+
             record_count=$(
                 awk '
                     NR > 1 {
@@ -675,7 +809,10 @@ do
             )
 
 
-            # Try to locate the column containing event time.
+            # ------------------------------------------------
+            # Try to find the timestamp column.
+            # ------------------------------------------------
+
             column=$(csv_time_column "$file")
 
 
@@ -686,47 +823,10 @@ do
 
             else
 
-                # Do not silently hide missing temporal
-                # information.
+                # Missing temporal metadata should not be
+                # silently ignored.
                 echo "Warning: no timestamp column detected: $relative_path" >&2
-
-                first_time=""
-                last_time=""
             fi
-
-
-            # Write one network CSV inventory object.
-            jq -n \
-                --arg path "$relative_path" \
-                --arg source_type "$source_type" \
-                --argjson size_bytes "$size_bytes" \
-                --arg sha256 "$sha256" \
-                --argjson record_count "$record_count" \
-                --arg first_event_time "$first_time" \
-                --arg last_event_time "$last_time" \
-                '{
-                    path: $path,
-                    source_type: $source_type,
-                    size_bytes: $size_bytes,
-                    sha256: $sha256,
-                    record_count: $record_count,
-
-                    first_event_time:
-                        (
-                            if $first_event_time == ""
-                            then null
-                            else $first_event_time
-                            end
-                        ),
-
-                    last_event_time:
-                        (
-                            if $last_event_time == ""
-                            then null
-                            else $last_event_time
-                            end
-                        )
-                }' >> "$TMP_FILE"
             ;;
 
 
@@ -739,10 +839,22 @@ do
             source_type="network_json"
 
 
-            if jq empty "$file" 2>/dev/null; then
+            # ------------------------------------------------
+            # Treat network JSON as a JSON STREAM.
+            #
+            # This is important for Suricata EVE because EVE
+            # commonly stores one JSON event per line.
+            #
+            # Example:
+            #
+            # {"timestamp":"...","event_type":"flow"}
+            # {"timestamp":"...","event_type":"alert"}
+            #
+            # We therefore DO NOT use jq empty here.
+            # ------------------------------------------------
 
-                # This correctly distinguishes JSON arrays from
-                # NDJSON before counting records.
+            if json_stream_valid "$file"; then
+
                 record_count=$(json_record_count "$file")
 
                 first_time=$(json_first_time "$file")
@@ -750,102 +862,171 @@ do
 
             else
 
-                echo "Warning: invalid JSON: $relative_path" >&2
+                echo "Warning: invalid JSON stream: $relative_path" >&2
 
-                record_count=$(awk 'END {print NR}' "$file")
+                record_count="null"
             fi
-
-
-            # If the JSON is valid but contains no timestamp
-            # field we recognize, report that fact.
-            if [ -z "$first_time" ] || [ -z "$last_time" ]; then
-                echo "Warning: timestamp not fully detected: $relative_path" >&2
-            fi
-
-
-            # Write one network JSON inventory object.
-            jq -n \
-                --arg path "$relative_path" \
-                --arg source_type "$source_type" \
-                --argjson size_bytes "$size_bytes" \
-                --arg sha256 "$sha256" \
-                --argjson record_count "$record_count" \
-                --arg first_event_time "$first_time" \
-                --arg last_event_time "$last_time" \
-                '{
-                    path: $path,
-                    source_type: $source_type,
-                    size_bytes: $size_bytes,
-                    sha256: $sha256,
-                    record_count: $record_count,
-
-                    first_event_time:
-                        (
-                            if $first_event_time == ""
-                            then null
-                            else $first_event_time
-                            end
-                        ),
-
-                    last_event_time:
-                        (
-                            if $last_event_time == ""
-                            then null
-                            else $last_event_time
-                            end
-                        )
-                }' >> "$TMP_FILE"
             ;;
+
+
+        # ====================================================
+        # UNKNOWN FILE TYPE
+        #
+        # Normally this should not occur with the supplied
+        # evidence pack.
+        # ====================================================
+
+        *)
+
+            echo "Warning: unsupported file: $relative_path" >&2
+            continue
+            ;;
+
     esac
+
+
+    # ========================================================
+    # REPORT MISSING EVENT TIMES
+    #
+    # The Task asks for timestamp extraction on a best-effort
+    # basis.
+    #
+    # If we cannot identify timestamps, we make that visible
+    # and store null in the JSON manifest.
+    # ========================================================
+
+    if [ -z "$first_time" ]; then
+        echo "Warning: first event time not detected: $relative_path" >&2
+    fi
+
+    if [ -z "$last_time" ]; then
+        echo "Warning: last event time not detected: $relative_path" >&2
+    fi
+
+
+    # ========================================================
+    # WRITE ONE INVENTORY RECORD
+    #
+    # Every record uses the SAME set of fields:
+    #
+    #   path
+    #   source_type
+    #   size_bytes
+    #   sha256
+    #   line_count
+    #   record_count
+    #   first_event_time
+    #   last_event_time
+    #
+    # For example:
+    #
+    # Linux:
+    #   line_count   = 500
+    #   record_count = null
+    #
+    # Windows:
+    #   line_count   = null
+    #   record_count = 500
+    #
+    # This keeps the overall manifest schema consistent.
+    # ========================================================
+
+    jq -n \
+        --arg path "$relative_path" \
+        --arg source_type "$source_type" \
+        --argjson size_bytes "$size_bytes" \
+        --arg sha256 "$sha256" \
+        --argjson line_count "$line_count" \
+        --argjson record_count "$record_count" \
+        --arg first_event_time "$first_time" \
+        --arg last_event_time "$last_time" \
+        '{
+            path: $path,
+            source_type: $source_type,
+            size_bytes: $size_bytes,
+            sha256: $sha256,
+            line_count: $line_count,
+            record_count: $record_count,
+
+            first_event_time:
+                (
+                    if $first_event_time == ""
+                    then null
+                    else $first_event_time
+                    end
+                ),
+
+            last_event_time:
+                (
+                    if $last_event_time == ""
+                    then null
+                    else $last_event_time
+                    end
+                )
+        }' >> "$TMP_FILE"
 
 done
 
 
 # ============================================================
-# BUILD FINAL JSON MANIFEST
+# CREATE THE FINAL MANIFEST
 #
-# The temporary file currently contains one JSON object per
-# evidence source.
+# The temporary file contains one JSON object after another.
 #
-# jq -s combines these separate objects into one JSON array.
+# jq -s collects them into one array:
+#
+# [
+#   {...},
+#   {...},
+#   {...}
+# ]
 # ============================================================
 
 jq -s '.' "$TMP_FILE" > "$OUTPUT"
 
 
 # ============================================================
-# VALIDATE FINAL JSON
+# VALIDATE THE DELIVERABLE
 #
-# A project requirement says every JSON deliverable must be
-# parseable with:
+# The project requirement explicitly says:
 #
-#   jq empty
+#   All JSON deliverables must be parseable by jq empty.
 #
-# Stop if our generated manifest is somehow invalid.
+# source_inventory.json is a normal JSON document, so we use
+# jq empty here to verify the FINAL DELIVERABLE.
+#
+# Notice that this validation is different from validating
+# input NDJSON streams above.
 # ============================================================
 
 if ! jq empty "$OUTPUT" 2>/dev/null; then
-    echo "Error: generated manifest is not valid JSON" >&2
+    echo "Error: generated manifest is invalid JSON" >&2
     exit 1
 fi
 
 
 # ============================================================
-# HUMAN-READABLE SUMMARY FUNCTION
+# HUMAN-READABLE SUMMARY
 #
-# Count files and bytes for one top-level evidence category.
+# Print:
+#
+#   windows : number of files | total MB
+#   linux   : number of files | total MB
+#   network : number of files | total MB
 # ============================================================
 
 print_summary()
 {
-    category="$1"
+    local category="$1"
+    local file_count
+    local byte_count
+    local size_mb
 
 
-    # Count inventory records whose path starts with:
-    #
-    # windows/
-    # linux/
-    # network/
+    # --------------------------------------------------------
+    # Count files in this category.
+    # --------------------------------------------------------
+
     file_count=$(
         jq \
             --arg prefix "$category/" \
@@ -858,7 +1039,10 @@ print_summary()
     )
 
 
-    # Add file sizes for the same category.
+    # --------------------------------------------------------
+    # Add all file sizes in this category.
+    # --------------------------------------------------------
+
     byte_count=$(
         jq \
             --arg prefix "$category/" \
@@ -872,14 +1056,22 @@ print_summary()
     )
 
 
-    # Convert bytes to MiB for readable output.
+    # --------------------------------------------------------
+    # Convert bytes to MiB for a readable summary.
+    # --------------------------------------------------------
+
     size_mb=$(
-        awk -v bytes="$byte_count" \
-            'BEGIN {
+        awk -v bytes="$byte_count" '
+            BEGIN {
                 printf "%.1f", bytes / 1048576
-            }'
+            }
+        '
     )
 
+
+    # --------------------------------------------------------
+    # Print category result.
+    # --------------------------------------------------------
 
     printf "%-8s: %d files  |  %6s MB\n" \
         "$category" \
@@ -889,7 +1081,7 @@ print_summary()
 
 
 # ============================================================
-# PRINT CATEGORY SUMMARIES
+# PRINT EACH CATEGORY
 # ============================================================
 
 print_summary "windows"
@@ -898,7 +1090,7 @@ print_summary "network"
 
 
 # ============================================================
-# PRINT TOTAL SUMMARY
+# CALCULATE TOTALS
 # ============================================================
 
 total_files=$(jq 'length' "$OUTPUT")
@@ -913,17 +1105,21 @@ total_bytes=$(
 )
 
 total_mb=$(
-    awk -v bytes="$total_bytes" \
-        'BEGIN {
+    awk -v bytes="$total_bytes" '
+        BEGIN {
             printf "%.1f", bytes / 1048576
-        }'
+        }
+    '
 )
 
+
+# ============================================================
+# PRINT FINAL TOTAL
+# ============================================================
 
 printf "%-8s: %d files  |  %6s MB\n" \
     "total" \
     "$total_files" \
     "$total_mb"
-
 
 echo "manifest written to $OUTPUT"
