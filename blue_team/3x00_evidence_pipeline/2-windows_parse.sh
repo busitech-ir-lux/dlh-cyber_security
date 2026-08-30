@@ -1,428 +1,129 @@
 #!/bin/bash
+#
+# Name: 2-windows_parse.sh
+# Purpose: Merge Windows event log JSON files (security, sysmon, powershell)
+#          and append student telemetry into a single windows_events.json file.
+# Author: MH
+# Date: 28 August 2026
+#
+set -euo pipefail
 
-# ============================================================
-# TASK 2 - WINDOWS EVENT PARSING
-#
-# Purpose:
-# Merge the three Windows NDJSON evidence files:
-#
-#   security.json
-#   sysmon.json
-#   powershell.json
-#
-# Then append:
-#
-#   student_telemetry/windows_events.json
-#
-# The final output is:
-#
-#   windows_events.json
-#
-# Each line in the output is one JSON object.
-# ============================================================
+WORKDIR="${WORKDIR:-$(pwd)}"
+EVIDENCE_PACK="${EVIDENCE_PACK:-$HOME/evidence_pack_primary}"
 
+WINDOWS_DIR="${EVIDENCE_PACK}/windows"
+STUDENT_DIR="${EVIDENCE_PACK}/student_telemetry"
 
-# ============================================================
-# CONFIGURATION
-#
-# The evidence pack can be supplied as the first argument.
-#
-# Example:
-#
-#   ./2-windows_parse.sh ~/evidence_pack_secondary
-#
-# If no argument is supplied, use the primary evidence pack.
-#
-# The second argument can optionally change the output file.
-# ============================================================
+OUTPUT_FILE="${WORKDIR}/windows_events.json"
 
-PACK_DIR="${1:-$HOME/evidence_pack_primary}"
-OUTPUT="${2:-windows_events.json}"
-
-WINDOWS_DIR="$PACK_DIR/windows"
-STUDENT_FILE="$PACK_DIR/student_telemetry/windows_events.json"
-
-
-# ============================================================
-# TEMPORARY OUTPUT
-#
-# We build the combined file in a temporary file first.
-#
-# Only after all processing succeeds do we replace the final
-# windows_events.json.
-#
-# This also makes the script idempotent: running it twice does
-# not append duplicate records to the old output.
-# ============================================================
-
-TMP_FILE=$(mktemp)
-
-trap 'rm -f "$TMP_FILE"' EXIT
-
-: > "$TMP_FILE"
-
-
-# ============================================================
-# CHECK REQUIRED DIRECTORIES AND FILES
-# ============================================================
-
-if [ ! -d "$PACK_DIR" ]; then
-    echo "Error: evidence pack not found: $PACK_DIR" >&2
+if [[ ! -d "$WINDOWS_DIR" ]]; then
+    echo "ERROR: Windows directory not found: $WINDOWS_DIR" >&2
     exit 1
 fi
 
-
-if [ ! -d "$WINDOWS_DIR" ]; then
-    echo "Error: Windows directory not found: $WINDOWS_DIR" >&2
+if [[ ! -d "$STUDENT_DIR" ]]; then
+    echo "ERROR: Student telemetry directory not found: $STUDENT_DIR" >&2
     exit 1
 fi
 
-
-
-
-# ============================================================
-# PROCESS ONE EVIDENCE-PACK WINDOWS FILE
-#
-# The three normal Windows files should have:
-#
-#   source_origin: "evidence_pack"
-#
-# We explicitly set that value while producing the intermediate
-# output.
-#
-# jq -c makes sure every output event is written on exactly
-# one line, which gives us NDJSON.
-# ============================================================
-
-process_windows_file()
-{
-    local file="$1"
-    local filename
-    local count
-
-    filename=$(basename "$file")
-
-
-    # --------------------------------------------------------
-    # Make sure the source file exists.
-    # --------------------------------------------------------
-
-    if [ ! -f "$file" ]; then
-        echo "Error: required file not found: $file" >&2
-        exit 1
-    fi
-
-
-    # --------------------------------------------------------
-    # Validate every event in the Windows NDJSON source.
-    #
-    # One jq process reads the whole file.
-    # If even one record is missing a required field, jq stops
-    # with an error.
-    # --------------------------------------------------------
-
-    if ! jq '
-        if (
-            has("timestamp_raw") and
-            has("hostname") and
-            has("event_id") and
-            has("channel") and
-            has("provider") and
-            has("raw_message") and
-            has("event_data")
-        )
-        then
-            empty
-        else
-            error("missing required Windows field")
-        end
-    ' "$file" >/dev/null 2>&1
-    then
-
-        echo "Error: missing required field in $filename" >&2
-        exit 1
-
-    fi
-
-
-    # --------------------------------------------------------
-    # Convert each record to compact JSON and ensure that its
-    # source origin is evidence_pack.
-    #
-    # Because the input is NDJSON, jq processes every record
-    # independently.
-    # --------------------------------------------------------
-
-    jq -c '
-        .source_origin = "evidence_pack"
-    ' "$file" >> "$TMP_FILE"
-
-
-    # --------------------------------------------------------
-    # Count the number of records in this source file.
-    #
-    # The files are NDJSON, so one non-empty line represents
-    # one Windows event.
-    # --------------------------------------------------------
-
-    count=$(
-        awk '
-            NF > 0 {
-                count++
-            }
-
-            END {
-                print count + 0
-            }
-        ' "$file"
-    )
-
-
-    printf "reading %-18s ... %6d records\n" \
-        "$filename" \
-        "$count"
-}
-
-
-# ============================================================
-# PROCESS STUDENT TELEMETRY
-#
-# Student telemetry uses a slightly different schema from the
-# main Windows evidence files.
-#
-# Example student fields:
-#
-#   timestamp
-#   hostname
-#   source_type
-#   event_category
-#   event_id
-#   user
-#   command_line
-#   raw_message
-#
-# We map these fields into the minimum Windows intermediate
-# schema without losing the useful student-specific data.
-# ============================================================
-
-process_student_telemetry()
-{
-    local count
-
-
-    # --------------------------------------------------------
-    # Make sure the student telemetry file exists.
-    # --------------------------------------------------------
-
-    if [ ! -f "$STUDENT_FILE" ]; then
-        echo "Error: student telemetry not found: $STUDENT_FILE" >&2
-        exit 1
-    fi
-
-
-    # --------------------------------------------------------
-    # Validate the fields expected in the original student
-    # telemetry schema.
-    # --------------------------------------------------------
-
-    if ! jq '
-        if (
-            has("timestamp") and
-            has("hostname") and
-            has("source_type") and
-            has("event_id") and
-            has("raw_message")
-        )
-        then
-            empty
-        else
-            error("missing required student telemetry field")
-        end
-    ' "$STUDENT_FILE" >/dev/null 2>&1
-    then
-
-        echo "Error: student telemetry is missing required source fields" >&2
-        exit 1
-
-    fi
-
-
-    # --------------------------------------------------------
-    # Convert student telemetry into the common Windows
-    # intermediate structure.
-    #
-    # Important mappings:
-    #
-    #   timestamp   -> timestamp_raw
-    #   source_type -> channel
-    #
-    # Student-specific information is preserved inside
-    # event_data instead of being discarded.
-    # --------------------------------------------------------
-
-    jq -c '
-        {
-            timestamp_raw: .timestamp,
-
-            hostname: .hostname,
-
-            event_id: .event_id,
-
-            channel: .source_type,
-
-            provider:
-                (
-                    if (
-                        has("provider") and
-                        .provider != null and
-                        .provider != ""
-                    )
-                    then
-                        .provider
-                    else
-                        "student_telemetry"
-                    end
-                ),
-
-            raw_message: .raw_message,
-
-            event_data: {
-                event_category: (.event_category // null),
-                user: (.user // null),
-                command_line: (.command_line // null)
-            },
-
-            source_origin:
-                (
-                    if (
-                        has("source_origin") and
-                        .source_origin != null and
-                        .source_origin != ""
-                    )
-                    then
-                        .source_origin
-                    else
-                        "student_telemetry"
-                    end
-                )
-        }
-    ' "$STUDENT_FILE" >> "$TMP_FILE"
-
-
-    # --------------------------------------------------------
-    # Count student telemetry records.
-    #
-    # The source is NDJSON, so each non-empty line is one
-    # event.
-    # --------------------------------------------------------
-
-    count=$(
-        awk '
-            NF > 0 {
-                count++
-            }
-
-            END {
-                print count + 0
-            }
-        ' "$STUDENT_FILE"
-    )
-
-
-    printf "appending student telemetry ... %6d records\n" \
-        "$count"
-}
-
-
-# ============================================================
-# PROCESS THE THREE WINDOWS SOURCES
-#
-# The order here also determines the order in the intermediate
-# output file.
-# ============================================================
-
-process_windows_file "$WINDOWS_DIR/security.json"
-
-process_windows_file "$WINDOWS_DIR/sysmon.json"
-
-process_windows_file "$WINDOWS_DIR/powershell.json"
-
-
-# ============================================================
-# APPEND STUDENT TELEMETRY
-# ============================================================
-
-process_student_telemetry
-
-
-# ============================================================
-# FINAL VALIDATION
-#
-# Validate the COMPLETE NDJSON output using one jq process.
-#
-# This is much faster than starting jq once for every record.
-#
-# Each record must contain all fields required by the task.
-#
-# If any record is missing a required field, jq raises an
-# error and the script stops before writing the final file.
-# ============================================================
-
-if ! jq '
-    if (
-        has("timestamp_raw") and
-        has("hostname") and
-        has("event_id") and
-        has("channel") and
-        has("provider") and
-        has("raw_message") and
-        has("event_data") and
-        has("source_origin")
-    )
-    then
-        empty
-    else
-        error("record is missing a required field")
-    end
-' "$TMP_FILE" >/dev/null 2>&1
-then
-
-    echo "Error: invalid record found in combined output" >&2
-    exit 1
-
-fi
-
-# ============================================================
-# WRITE FINAL OUTPUT
-#
-# mv replaces an old output instead of appending to it.
-#
-# This is important for idempotency.
-# ============================================================
-
-mv "$TMP_FILE" "$OUTPUT"
-
-# TMP_FILE no longer exists after mv, so disable the old trap.
-trap - EXIT
-
-
-# ============================================================
-# PRINT TOTAL RECORD COUNT
-# ============================================================
-
-total_count=$(
-    awk '
-        NF > 0 {
-            count++
-        }
-
-        END {
-            print count + 0
-        }
-    ' "$OUTPUT"
-)
-
-
-printf "%s: %d records\n" \
-    "$OUTPUT" \
-    "$total_count"
+python3 - "${WORKDIR}" "${WINDOWS_DIR}" "${STUDENT_DIR}" "${OUTPUT_FILE}" <<'PYTHON_EOF'
+import json
+import os
+import sys
+
+workdir = sys.argv[1]
+windows_dir = sys.argv[2]
+student_dir = sys.argv[3]
+output_file = sys.argv[4]
+
+output_dir = os.path.dirname(output_file) or "."
+if output_dir and not os.path.exists(output_dir):
+    os.makedirs(output_dir, exist_ok=True)
+
+REQUIRED_FIELDS = [
+    "timestamp_raw", "hostname", "event_id", "channel",
+    "provider", "raw_message", "event_data", "source_origin"
+]
+
+def parse_json_file(filepath):
+    """Parse a JSON file that may be NDJSON or a single JSON array."""
+    with open(filepath, "r", errors="replace") as f:
+        content = f.read()
+
+    try:
+        data = json.loads(content)
+        if isinstance(data, list):
+            return [obj for obj in data if isinstance(obj, dict)]
+        if isinstance(data, dict):
+            return [data]
+    except json.JSONDecodeError:
+        pass
+
+    records = []
+    for line in content.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        try:
+            obj = json.loads(stripped)
+            if isinstance(obj, dict):
+                records.append(obj)
+        except json.JSONDecodeError:
+            sys.stderr.write(f"WARNING: malformed line skipped in {filepath}\n")
+    return records
+
+def prepare_record(record, default_origin):
+    """Preserve original structure; set source_origin only if absent,
+    map timestamp -> timestamp_raw for compatibility."""
+    if "source_origin" not in record or record["source_origin"] is None:
+        record["source_origin"] = default_origin
+    if "timestamp_raw" not in record and "timestamp" in record:
+        record["timestamp_raw"] = record["timestamp"]
+    return record
+
+combined = []
+counts = {}
+
+# --- Process each Windows source file -----------------------------------------
+for fname in ["security.json", "sysmon.json", "powershell.json"]:
+    fpath = os.path.join(windows_dir, fname)
+
+    if not os.path.isfile(fpath):
+        counts[fname] = 0
+        continue
+
+    records = parse_json_file(fpath)
+    for rec in records:
+        prepare_record(rec, "evidence_pack")
+        combined.append(rec)
+    counts[fname] = len(records)
+
+# --- Process student telemetry ------------------------------------------------
+student_file = os.path.join(student_dir, "windows_events.json")
+student_records = 0
+
+if os.path.isfile(student_file):
+    records = parse_json_file(student_file)
+    for rec in records:
+        prepare_record(rec, "student_telemetry")
+        combined.append(rec)
+    student_records = len(records)
+
+counts["student_telemetry"] = student_records
+
+# --- Write merged output -------------------------------------------------------
+with open(output_file, "w") as f:
+    for rec in combined:
+        json.dump(rec, f, separators=(",", ":"))
+        f.write("\n")
+
+total_records = len(combined)
+
+# --- Print summary (exact format per spec) ------------------------------------
+print(f"reading security.json      ... {counts.get('security.json', 0):>6d} records")
+print(f"reading sysmon.json        ... {counts.get('sysmon.json', 0):>6d} records")
+print(f"reading powershell.json    ... {counts.get('powershell.json', 0):>6d} records")
+print(f"appending student telemetry ... {student_records:>6d} records")
+print(f"windows_events.json: {total_records} records")
+
+PYTHON_EOF
