@@ -841,8 +841,6 @@ for category, filepath in source_files:
         "source_type": source_type,
         "size_bytes": size_bytes,
         "sha256": calculate_sha256(filepath),
-        "line_count": None,
-        "record_count": None,
         "first_event_time": None,
         "last_event_time": None,
     }
