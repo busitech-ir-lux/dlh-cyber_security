@@ -1,17 +1,17 @@
 {
   "version": "1.0",
-  "author": "Student",
+  "author": "Mahdi Hamidi",
   "fields": [
     {
       "name": "timestamp",
       "type": "timestamp",
       "required": true,
-      "description": "UTC time when the security event occurred.",
-      "justification": "Needed to build a chronological incident timeline and correlate events from different sources.",
+      "description": "UTC timestamp representing when the event occurred.",
+      "justification": "This field is required to sort events chronologically and correlate activity across different sources.",
       "source_mapping": {
         "windows_json": "timestamp_raw",
         "linux_text": "timestamp_raw",
-        "network_csv": "timestamp field",
+        "network_csv": "timestamp",
         "network_json": "timestamp"
       }
     },
@@ -20,102 +20,102 @@
       "type": "string",
       "required": true,
       "description": "Hostname of the system associated with the event.",
-      "justification": "Needed to identify which asset generated or was affected by the event.",
+      "justification": "This field identifies the asset involved so analysts can correlate activity to a specific system.",
       "source_mapping": {
         "windows_json": "hostname",
         "linux_text": "hostname",
-        "network_csv": "hostname if present",
-        "network_json": "hostname if present"
+        "network_csv": null,
+        "network_json": null
       }
     },
     {
       "name": "source_type",
       "type": "string",
       "required": true,
-      "description": "Type of telemetry source that produced the event.",
-      "justification": "Needed to preserve source attribution and allow analysts to filter events by telemetry type.",
+      "description": "Normalized type of telemetry source that produced the event.",
+      "justification": "This field allows analysts and detection rules to filter events by their original telemetry class.",
       "source_mapping": {
-        "windows_json": "constant: windows",
-        "linux_text": "constant: linux",
-        "network_csv": "constant: network",
-        "network_json": "constant: network"
+        "windows_json": null,
+        "linux_text": null,
+        "network_csv": null,
+        "network_json": null
       }
     },
     {
       "name": "source_origin",
       "type": "string",
       "required": true,
-      "description": "Origin of the record such as evidence_pack or student_telemetry.",
-      "justification": "Needed to distinguish baseline evidence from telemetry added by the student.",
+      "description": "Origin of the event such as evidence_pack or student_telemetry.",
+      "justification": "This field distinguishes supplied evidence from telemetry added by the student.",
       "source_mapping": {
         "windows_json": "source_origin",
         "linux_text": "source_origin",
-        "network_csv": "constant: evidence_pack",
-        "network_json": "source_origin or constant: evidence_pack"
+        "network_csv": null,
+        "network_json": "source_origin"
       }
     },
     {
       "name": "event_category",
       "type": "string",
       "required": true,
-      "description": "High-level category such as authentication, process, network, file, or audit.",
-      "justification": "Needed by detection and triage workflows to group similar events independently of their original source.",
+      "description": "Normalized high-level category such as authentication, process, network, file, PowerShell, or audit.",
+      "justification": "This field lets downstream detections group semantically similar events without depending on vendor-specific identifiers.",
       "source_mapping": {
-        "windows_json": "channel and event_id mapping",
-        "linux_text": "program or audit_type mapping",
-        "network_csv": "action or protocol mapping",
-        "network_json": "event_type"
+        "windows_json": null,
+        "linux_text": null,
+        "network_csv": null,
+        "network_json": null
       }
     },
     {
       "name": "event_id",
       "type": "string",
       "required": false,
-      "description": "Source-specific identifier for the event when available.",
-      "justification": "Needed to identify important source-specific events such as Windows Event IDs without losing original meaning.",
+      "description": "Source-specific identifier associated with the event.",
+      "justification": "This field preserves identifiers such as Windows Event IDs and Suricata signature IDs for precise detection logic.",
       "source_mapping": {
         "windows_json": "event_id",
-        "linux_text": "audit_type if applicable",
+        "linux_text": "audit_type",
         "network_csv": null,
-        "network_json": "alert.signature_id if present"
+        "network_json": "alert.signature_id"
       }
     },
     {
       "name": "severity",
       "type": "string",
       "required": false,
-      "description": "Normalized severity level associated with the event.",
-      "justification": "Needed to prioritize events during detection and analyst triage.",
+      "description": "Normalized severity assigned to the event.",
+      "justification": "This field supports prioritization and filtering during detection and triage.",
       "source_mapping": {
-        "windows_json": "derived from event_id or event content",
-        "linux_text": "derived from program and message",
-        "network_csv": "severity if present",
-        "network_json": "alert.severity if present"
+        "windows_json": null,
+        "linux_text": null,
+        "network_csv": "severity",
+        "network_json": "alert.severity"
       }
     },
     {
       "name": "user",
       "type": "string",
       "required": false,
-      "description": "User account associated with the event.",
-      "justification": "Needed to investigate authentication activity and actions performed by specific accounts.",
+      "description": "User account associated with the event when available.",
+      "justification": "This field supports investigation of authentication activity and actions performed by specific accounts.",
       "source_mapping": {
-        "windows_json": "event_data user fields",
+        "windows_json": "event_data.TargetUserName",
         "linux_text": "user",
-        "network_csv": "user if present",
-        "network_json": "user if present"
+        "network_csv": "user",
+        "network_json": null
       }
     },
     {
       "name": "process_name",
       "type": "string",
       "required": false,
-      "description": "Name or path of the process associated with the event.",
-      "justification": "Needed to detect and investigate suspicious process execution.",
+      "description": "Name or executable path of the process associated with the event.",
+      "justification": "This field is needed to detect suspicious execution and correlate process-related activity.",
       "source_mapping": {
-        "windows_json": "event_data.Image or process field",
-        "linux_text": "program or parsed_fields executable",
-        "network_csv": "process if present",
+        "windows_json": "event_data.Image",
+        "linux_text": "program",
+        "network_csv": null,
         "network_json": null
       }
     },
@@ -123,12 +123,12 @@
       "name": "process_id",
       "type": "integer",
       "required": false,
-      "description": "Operating system process identifier associated with the event.",
-      "justification": "Needed to correlate multiple events generated by the same running process.",
+      "description": "Process identifier associated with the event.",
+      "justification": "This field allows events generated by the same running process to be correlated.",
       "source_mapping": {
-        "windows_json": "event_data.ProcessId if present",
+        "windows_json": "event_data.ProcessId",
         "linux_text": "pid",
-        "network_csv": "pid if present",
+        "network_csv": null,
         "network_json": null
       }
     },
@@ -136,12 +136,12 @@
       "name": "src_ip",
       "type": "string",
       "required": false,
-      "description": "Source IP address associated with a network-related event.",
-      "justification": "Needed to identify the system that initiated a connection or suspicious network activity.",
+      "description": "Source IP address associated with the event.",
+      "justification": "This field identifies the origin of network activity and supports connection and attacker tracing.",
       "source_mapping": {
-        "windows_json": "event_data.IpAddress or source IP field",
-        "linux_text": "parsed_fields source IP if present",
-        "network_csv": "source IP field",
+        "windows_json": "event_data.IpAddress",
+        "linux_text": "parsed_fields.src_ip",
+        "network_csv": "src_ip",
         "network_json": "src_ip"
       }
     },
@@ -149,12 +149,12 @@
       "name": "src_port",
       "type": "integer",
       "required": false,
-      "description": "Source network port associated with the event.",
-      "justification": "Needed to distinguish network sessions and support connection-level investigation.",
+      "description": "Source port associated with a network connection.",
+      "justification": "This field helps distinguish individual network sessions and connection endpoints.",
       "source_mapping": {
-        "windows_json": "event_data source port if present",
-        "linux_text": "parsed_fields source port if present",
-        "network_csv": "source port field",
+        "windows_json": "event_data.IpPort",
+        "linux_text": "parsed_fields.src_port",
+        "network_csv": "src_port",
         "network_json": "src_port"
       }
     },
@@ -162,12 +162,12 @@
       "name": "dst_ip",
       "type": "string",
       "required": false,
-      "description": "Destination IP address associated with a network-related event.",
-      "justification": "Needed to identify which system or service was contacted by the source.",
+      "description": "Destination IP address associated with the event.",
+      "justification": "This field identifies the destination system involved in network communication.",
       "source_mapping": {
-        "windows_json": "event_data destination IP if present",
-        "linux_text": "parsed_fields destination IP if present",
-        "network_csv": "destination IP field",
+        "windows_json": "event_data.DestinationIp",
+        "linux_text": "parsed_fields.dst_ip",
+        "network_csv": "dst_ip",
         "network_json": "dest_ip"
       }
     },
@@ -175,12 +175,12 @@
       "name": "dst_port",
       "type": "integer",
       "required": false,
-      "description": "Destination network port associated with the event.",
-      "justification": "Needed to identify the destination service involved in network activity.",
+      "description": "Destination port associated with the event.",
+      "justification": "This field identifies the destination service involved in network communication.",
       "source_mapping": {
-        "windows_json": "event_data destination port if present",
-        "linux_text": "parsed_fields destination port if present",
-        "network_csv": "destination port field",
+        "windows_json": "event_data.DestinationPort",
+        "linux_text": "parsed_fields.dst_port",
+        "network_csv": "dst_port",
         "network_json": "dest_port"
       }
     },
@@ -189,38 +189,38 @@
       "type": "string",
       "required": false,
       "description": "Network or application protocol associated with the event.",
-      "justification": "Needed to distinguish activities such as TCP, UDP, DNS, TLS, and HTTP during investigation.",
+      "justification": "This field allows analysts to distinguish traffic such as TCP, UDP, DNS, HTTP, and TLS.",
       "source_mapping": {
-        "windows_json": "event_data protocol if present",
-        "linux_text": "parsed_fields protocol if present",
-        "network_csv": "protocol field",
-        "network_json": "proto or app_proto"
+        "windows_json": "event_data.Protocol",
+        "linux_text": "parsed_fields.proto",
+        "network_csv": "protocol",
+        "network_json": "proto"
       }
     },
     {
       "name": "raw_message",
       "type": "string",
       "required": true,
-      "description": "Original human-readable event message preserved from the source.",
-      "justification": "Needed to retain source fidelity and allow analysts to inspect details not captured by normalized fields.",
+      "description": "Original event message retained from the source.",
+      "justification": "This field preserves evidence fidelity and allows analysts to inspect information not represented in normalized fields.",
       "source_mapping": {
         "windows_json": "raw_message",
         "linux_text": "raw_message",
-        "network_csv": "original row or message field",
-        "network_json": "original event serialized as text or message field"
+        "network_csv": null,
+        "network_json": null
       }
     },
     {
       "name": "source_fields",
       "type": "object",
       "required": false,
-      "description": "Source-specific fields preserved from the original event.",
-      "justification": "Needed to prevent useful source-specific evidence from being lost during normalization.",
+      "description": "Source-specific structured data retained from the original event.",
+      "justification": "This field prevents useful vendor-specific details from being lost during normalization.",
       "source_mapping": {
         "windows_json": "event_data",
         "linux_text": "parsed_fields",
-        "network_csv": "remaining CSV fields",
-        "network_json": "remaining JSON fields"
+        "network_csv": null,
+        "network_json": null
       }
     }
   ]
