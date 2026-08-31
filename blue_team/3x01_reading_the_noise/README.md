@@ -45,9 +45,11 @@ Last thing. The scripts you write become the MedDefense SOC reference toolkit. W
 -- James Chen
 
 
-#####################################################################
-#######                                              TASKS                                                                     ######
-#####################################################################
+---
+
+######### TASKS
+
+---
 
 - 0-
 - [1-]()
@@ -57,6 +59,7 @@ Last thing. The scripts you write become the MedDefense SOC reference toolkit. W
 - [5-Process Execution Baseline](#process-execution-baseline)
 - [9-Cross-Source Baseline Summary](#cross-source-baseline-summary)
 - [10-Authentication Anomalies](#authentication-anomalies)
+- [11-Process Anomalies](#process-anomalies)
 ## Reusable Query Toolkit
 
 **Goal:** _Build a reusable CLI query toolkit that filters, projects, and aggregates events from the handoff dataset without a SIEM._
@@ -307,3 +310,46 @@ anomalies_auth.json written
 ```
 
 [View the script](10-anomalies_auth.sh)
+
+---
+
+### Process Anomalies
+
+**Goal:** _Scan the evaluation window for process execution anomalies relative to the per-host process baseline._
+
+---
+
+**Context:** Process anomalies are the highest signal-to-noise category when the baseline is computed per host. A process that has never run on a specific host during the baseline and shows up on day 8 is, at minimum, a note in the analyst's notebook. If it is a process with a reputation for misuse (scripting interpreters, network tools, archivers), it is already a medium-severity item.
+
+---
+
+**Instructions:** Write a script `11-anomalies_process.sh` that reads `baseline_summary.json` and `labeled_events.json`, restricts to the evaluation window, and writes `anomalies_process.json` containing one entry per anomaly with `timestamp`, `host`, `user`, `process_name`, `parent_process_name`, `anomaly_type`, `severity`, `event_refs`.
+
+The script must detect at minimum:
+
+- `unknown_process_for_host`: a process name that never appeared on that host in the baseline
+    
+- `unknown_parent_child`: a parent-child pair that never appeared on that host in the baseline
+    
+- `rare_process_spike`: a process that ran fewer than five times in the whole baseline but runs more than ten times in the evaluation window on a single host
+    
+- `high_risk_process`: hits on a watchlist of interpreters and tooling (`powershell.exe`, `cmd.exe`, `wscript.exe`, `mshta.exe`, `nc`, `nmap`, `wget`, `curl`, `python3`, `bash`) running on a host where they did not run during the baseline
+    
+
+Severity is assigned from a rubric declared at the top of the script.
+
+**Expected Output:**
+
+```php-template
+$ ./11-anomalies_process.sh
+evaluation window : <start> -> <end>
+unknown_process_for_host : <N>
+unknown_parent_child     : <N>
+rare_process_spike       : <N>
+high_risk_process        : <N>
+total anomalies          : <N>
+anomalies_process.json written
+```
+
+
+[View the script](11-anomalies_process.sh)
