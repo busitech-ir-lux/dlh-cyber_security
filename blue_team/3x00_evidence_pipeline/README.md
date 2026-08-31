@@ -52,6 +52,7 @@ Get this right. Everything we do for the next four weeks runs on what you build 
 ## Tasks
 
 - [0-Evidence Pack Inventory](./0-source_inventory.sh)
+-   hfjdh
 - [1-Telemetry Import](1-telemetry_import.sh)
 - [2-Windows Event Parsing](2-windows_parse.sh)
 - [3-Linux Log Parsing](3-linux_parse.sh)
