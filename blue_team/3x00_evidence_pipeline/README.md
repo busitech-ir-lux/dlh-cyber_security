@@ -51,27 +51,762 @@ Get this right. Everything we do for the next four weeks runs on what you build 
 ---
 ## Tasks
 
-- [0-Evidence Pack Inventory](./0-source_inventory.sh)
--   hfjdh
-- [1-Telemetry Import](1-telemetry_import.sh)
-- [2-Windows Event Parsing](2-windows_parse.sh)
-- [3-Linux Log Parsing](3-linux_parse.sh)
-- [4-Unified Event Schema Design](event_schema.sh)
-- [5-Normalization Script](5-normalize.sh)
-- [6-Network Artifact Normalization](6-network_normalize.sh)
-- [7-Schema Validation](7-schema_validate.sh)
-- [8-Dirty Data Handling](8-data_quality.sh)
-- [9-Context Enrichment](9-enrich.sh)
-- [10-Timeline Index](10-timeline.sh)
-- [11-Per-Source Statistics](11-source_stats.sh)
-- [12-End-to-End Pipeline Script](evidence_pipeline.sh)
-- [13-Pipeline Generalization Test](3-pipeline_test.sh)
-- [14-Pipeline Specification](pipeline_spec.md)
-- [15-Evidence Handoff Package](15-handoff_package.sh)
+[0-Evidence Pack Inventory](#evidence-pack-inventory)
+[1-Telemetry Import](#telemetry-import)
+[2-Windows Event Parsing](2-windows_parse)
+[3-Linux Log Parsing](3-linux_parse)
+[4-Unified Event Schema Design](event_schema)
+[5-Normalization Script](5-normalize)
+[6-Network Artifact Normalization](6-network_normalize)
+[7-Schema Validation](7-schema_validate)
+[8-Dirty Data Handling](8-data_quality)
+[9-Context Enrichment](9-enrich.sh)
+[10-Timeline Index](10-timeline)
+[11-Per-Source Statistics](11-source_stats)
+[12-End-to-End Pipeline Script](evidence_pipeline)
+[13-Pipeline Generalization Test](3-pipeline_test)
+[14-Pipeline Specification](pipeline_spec)
+[15-Evidence Handoff Package](15-handoff_package)
+
+## Evidence Pack Inventory
+
+**Goal:** _Inventory every source file in the primary evidence pack and produce a structured manifest of what you have to work with._
+
+---
+
+**Context:** Before you parse anything, you need to know what you received. Real evidence drops are never what the cover email says they are. Files are missing, names are misspelled, exports are truncated, timezones are wrong. The first job of the pipeline is to tell you, loudly and in a machine-readable format, exactly what arrived. Every subsequent stage reads this manifest instead of walking the filesystem.
+
+---
+
+**Instructions:** Write a script `0-source_inventory.sh` that walks `~/evidence_pack_primary/` and produces `source_inventory.json`. For each file found under `windows/`, `linux/`, and `network/`, record:
+
+- `path` relative to the evidence pack root
+    
+- `source_type` (one of `windows_json`, `linux_text`, `network_csv`, `network_json`)
+    
+- `size_bytes`
+    
+- `sha256` hash
+    
+- `line_count` or `record_count` depending on format
+    
+- `first_event_time` and `last_event_time` extracted from the file (best effort per format)
+    
+
+The script must also print a human-readable summary to stdout listing the total number of files per category and the combined byte count.
+
+**Note:** The Windows event logs are pre-exported JSON files (NDJSON format). Use `source_type: windows_json` for them. No EVTX conversion is required.
+
+**Expected Output:**
+
+```yaml
+$ ./0-source_inventory.sh
+windows : 3 files  |  62.0 MB
+linux   : 3 files  |  17.2 MB
+network : 3 files  |   6.5 MB
+total   : 9 files  |  85.7 MB
+manifest written to source_inventory.json
+```
+
+[View the script](0-source_inventory.sh)
+
+---
+### Telemetry Import
+
+**Goal:** _Validate the pre-staged student telemetry files and confirm they meet the data contract before they are merged into the pipeline._
+
+---
+
+**Context:** Your Module 2 telemetry has already been staged at `~/evidence_pack_primary/student_telemetry/`. Before treating it as pipeline input, you must validate that it arrived intact and conforms to the expected schema. If you trust it blindly and it turns out to be malformed, every downstream stage inherits the corruption. This task validates the telemetry against the contract the pipeline expects, then writes a machine-readable report. Any mismatch is reported and the script exits non-zero so the pipeline stops before bad data propagates.
+
+---
+
+**Instructions:** Write a script `1-telemetry_import.sh` that:
+
+1. Locates the telemetry directory at `~/evidence_pack_primary/student_telemetry/`
+    
+2. Confirms the three required files exist: `windows_events.json`, `linux_events.json`, `attack_ground_truth.json`
+    
+3. Validates each file is parseable JSON and contains at least one record
+    
+4. Checks that every record in `windows_events.json` and `linux_events.json` has the four required fields: `timestamp`, `hostname`, `source_type`, `event_category`
+    
+5. Writes `import_validation.json` with per-file pass or fail, record counts, and the list of unique `source_type` values observed
+    
+
+The script must exit with code `0` on full pass and `1` on any failure.
+
+**Expected Output:**
+
+```csharp
+$ ./1-telemetry_import.sh
+[OK] windows_events.json    1859 records    sources: Security, Sysmon
+[OK] linux_events.json      1879 records    sources: auditd, auth
+[OK] attack_ground_truth.json  12 records
+3/3 files validated. Import OK.
+```
+
+[View the script](1-telemetry_import.sh)
+
+---
+###  Windows Event Parsing
+
+**Goal:** _Merge the three Windows JSON source files into a single combined intermediate file, appending student telemetry, ready for normalization._
+
+---
+
+**Context:** The Windows event logs are provided as pre-exported NDJSON files (one JSON object per line). Each file covers a different event channel: `security.json` (4625, 4624, 4720, etc.), `sysmon.json` (process creation, network connections, etc.), and `powershell.json` (script block logging). This stage merges all three into a single `windows_events.json` file and appends the student telemetry windows events. Every record already contains `timestamp_raw`, `hostname`, `event_id`, `channel`, `provider`, `raw_message`, `event_data`, and `source_origin: "evidence_pack"`. Student telemetry records must be tagged with `source_origin: "student_telemetry"` if not already set.
+
+---
+
+**Instructions:** Write a script `2-windows_parse.sh` that reads `security.json`, `sysmon.json`, and `powershell.json` from `~/evidence_pack_primary/windows/` and produces `windows_events.json` as a newline-delimited JSON file with one record per line. The script must:
+
+1. Read each of the three JSON files from `~/evidence_pack_primary/windows/`
+    
+2. Ensure each record contains at minimum: `timestamp_raw`, `hostname`, `event_id`, `channel`, `provider`, `raw_message`, `event_data`, `source_origin`
+    
+3. Set `source_origin: "evidence_pack"` for records from the windows/ directory (it is already set in the files; verify and preserve it)
+    
+4. Read `~/evidence_pack_primary/student_telemetry/windows_events.json` and append those records tagged with `source_origin: "student_telemetry"` if not already set
+    
+5. Write the combined output to `windows_events.json`
+    
+6. Print per-file record counts and a total
+    
+
+**Expected Output:**
+
+```yaml
+$ ./2-windows_parse.sh
+reading security.json      ... 38498 records
+reading sysmon.json        ... 72810 records
+reading powershell.json    ...  9408 records
+appending student telemetry ... 1859 records
+windows_events.json: 122575 records
+```
+
+[View the script](2-windows_parse.sh)
+
+---
+
+### Linux Log Parsing
+
+**Goal:** _Parse auth.log, audit.log, and syslog into structured JSON records with consistent intermediate fields._
+
+---
+
+**Context:** Unlike the pre-parsed Windows files, Linux logs are plain text with three different grammars. `auth.log` uses syslog format, `audit.log` uses the auditd `type=...` key-value format, and `syslog` mixes both. Each grammar needs its own parser, but the output shape must match the Windows intermediate so the normalization stage can treat them uniformly.
+
+---
+
+**Instructions:** Write a script `3-linux_parse.sh` (bash plus Python is fine) that reads `~/evidence_pack_primary/linux/auth.log`, `audit.log`, and `syslog` and produces `linux_events.json` as newline-delimited JSON. Each record must contain at minimum:
+
+- `timestamp_raw` (original timestamp string)
+    
+- `hostname`
+    
+- `program` (for auth.log and syslog) or `audit_type` (for auditd)
+    
+- `pid` if present
+    
+- `user` if present
+    
+- `raw_message` (the full original line)
+    
+- `parsed_fields` (object containing the key-value pairs extracted from the line)
+    
+- `source_origin: "evidence_pack"`
+    
+
+Your student telemetry `linux_events.json` from `~/evidence_pack_primary/student_telemetry/` must also be appended to the output, tagged with `source_origin: "student_telemetry"`.
+
+_Hint:_ auditd records can span multiple lines sharing the same `msg=audit(...)` timestamp. Group them before emitting a single record, or emit one record per line and flag the group in `parsed_fields.audit_group_id`.
+
+**Expected Output:**
+
+```lua
+$ ./3-linux_parse.sh
+parsing auth.log      ... 24880 lines  -> ~24880 records
+parsing audit.log     ... 67368 lines  -> ~50000 records (grouped)
+parsing syslog        ... 41736 lines  -> ~41736 records
+appending student telemetry ... 1879 records
+linux_events.json: written
+```
+
+[View the script](3-linux_parse.sh)
+
+---
+
+### Unified Event Schema Design
+
+**Goal:** _Design and justify the unified event schema that every source in the pipeline will be normalized into._
+
+---
+
+**Context:** Every downstream project in Module 3 reads events produced by this pipeline. If your schema is missing a field, 3x02 cannot write a detection rule that looks at it. If your schema collapses two distinct concepts into one field, 3x03 analysts cannot tell them apart during triage. This is the single most consequential design decision in the module. Make it carefully and commit to it.
+
+---
+
+**Instructions:** Produce `event_schema.json` containing your unified schema definition. The schema must be a JSON document with the following top-level structure:
+
+- `version` (string, your schema version)
+    
+- `author` (string, your name)
+    
+- `fields` (array of field definitions)
+    
+
+Each field definition must contain:
+
+- `name` (the field name as it appears in a normalized record)
+    
+- `type` (one of `string`, `integer`, `float`, `boolean`, `timestamp`, `object`, `array`)
+    
+- `required` (boolean)
+    
+- `description` (one sentence explaining what the field represents)
+    
+- `justification` (one sentence explaining why this field exists in the schema, what downstream question it answers)
+    
+- `source_mapping` (object mapping each source type to the intermediate field it is derived from, or `null` if derived)
+    
+
+Your schema **must** include at minimum: `timestamp`, `hostname`, `source_type`, `event_category`, `severity`, `user`, `process_name`, `src_ip`, `dst_ip`, `raw_message`. You are expected to add additional fields as you see fit and to justify every single one.
+
+_Note:_ this is the only task in this project where written justification is graded. Keep each justification to a single sentence. No essays.
+
+**Expected Output:**
+
+A valid JSON file. Example of one field definition:
+
+```json
+{
+  "name": "event_category",
+  "type": "string",
+  "required": true,
+  "description": "High-level category of the event such as authentication, process, file, network, or audit",
+  "justification": "Needed by 3x02 detection rules and 3x03 triage filters to group events independently of source vendor",
+  "source_mapping": {
+    "windows_json": "channel + event_id mapping table",
+    "linux_text": "program or audit_type mapping table",
+    "network_csv": "constant: network"
+  }
+```
+
+[View the json](event_schema.json)
+
+---
+
+### Normalization Script
+
+**Goal:** _Transform the Windows and Linux intermediate JSON files into a single normalized dataset that conforms to the schema you designed._
+
+---
+
+**Context:** This is where the pipeline stops speaking raw log grammar and starts speaking your schema. Downstream tasks never touch the intermediate files again. Every field in every record must be mapped, every missing optional field must be explicitly `null` (not absent), and every required field must be populated or the record must be flagged for quarantine.
+
+---
+
+**Instructions:** Write a script `5-normalize.sh` (or a Python equivalent) that:
+
+1. Reads `windows_events.json` and `linux_events.json` from the working directory
+    
+2. For each record, emits a normalized record conforming to `event_schema.json`
+    
+3. Applies the field mappings declared in your schema
+    
+4. Converts `timestamp_raw` to ISO 8601 UTC in the `timestamp` field
+    
+5. Writes the combined normalized dataset to `normalized_events.json` as newline-delimited JSON
+    
+6. Writes any records that cannot be normalized (missing required fields, unparseable timestamp) to `quarantine.json` with a `quarantine_reason` field
+    
+
+The script must print per-source counts of normalized and quarantined records.
+
+**Expected Output:**
+
+```yaml
+$ ./5-normalize.sh
+windows_json     : normalized    0 quarantined
+linux_text       : normalized    0 quarantined
+total            : normalized    quarantined
+normalized_events.json written
+quarantine.json  written
+```
+
+[View the script](5-normalize.sh)
+
+---
+
+### Network Artifact Normalization
+
+**Goal:** _Ingest the firewall CSV, Suricata EVE JSON, and PCAP summary, and normalize them into the same unified schema._
+
+---
+
+**Context:** Network telemetry is the third leg of the pipeline. Each of the three network sources has its own format and its own idea of what a "timestamp" and a "host" mean. The firewall CSV uses Unix epoch seconds, Suricata uses ISO 8601 with microseconds, the PCAP summary uses human-readable localized strings. They all end up as records with the same schema as the endpoint events so the analyst can pivot from a process event to a network event without changing tools.
+
+---
+
+**Instructions:** Write a script `6-network_normalize.sh` that:
+
+1. Reads `firewall.csv`, `suricata_eve.json`, and `pcap_summary.json` from `~/evidence_pack_primary/network/`
+    
+2. Parses each source into records
+    
+3. Normalizes each record to the unified schema
+    
+4. Appends the resulting records to `normalized_events.json`
+    
+5. Also writes a standalone `network_events.json` containing only the network records
+    
+
+For firewall events, `event_category` should be `network`, `source_type` should be `firewall`, and the `action` field should preserve `ALLOW` or `BLOCK`. For Suricata, `event_category` should be `network_alert` and the `signature` and `severity` fields should be populated. For PCAP summaries, `event_category` should be `network_flow`.
+
+**Note on formats:**
+
+- `firewall.csv`: Unix epoch timestamp in first column, header row: `timestamp,src_ip,src_port,dst_ip,dst_port,protocol,action,interface,rule_id,bytes_in,bytes_out`
+- `suricata_eve.json`: NDJSON, `timestamp` field in ISO 8601+TZ format, alert details under `alert.signature`
+- `pcap_summary.json`: NDJSON, `start_time` and `end_time` in `MM/DD/YYYY HH:MM:SS AM/PM` format
+
+**Expected Output:**
+
+```yaml
+$ ./6-network_normalize.sh
+firewall.csv        :  ~67547 records normalized
+suricata_eve.json   :   ~9977 records normalized
+pcap_summary.json   :   ~4096 records normalized
+appended to normalized_events.json
+network_events.json written
+```
+
+[View the script](6-network_normalize.sh)
+
+---
+
+### Schema Validation
+
+**Goal:** _Validate every record in the normalized dataset against the schema you designed and produce a machine-readable compliance report._
+
+---
+
+**Context:** A schema is a contract. A normalization script that produces records that violate the contract is a bug. This task is the automated check that catches that bug before the bad data reaches 3x02. Run it every time normalization changes.
+
+---
+
+**Instructions:** Write a script `7-schema_validate.sh` that:
+
+1. Reads `event_schema.json` and `normalized_events.json`
+    
+2. For every record, checks that every required field is present and has a non-null value
+    
+3. For every field, checks that the value matches the declared type
+    
+4. Counts compliant records, non-compliant records, and per-field completeness percentage across the dataset
+    
+5. Writes `validation_report.json` containing overall counts, per-field completeness, and up to 20 example non-compliant records with the reason
+    
+
+The script must exit with code `0` if compliance is above 99 percent and `1` otherwise.
+
+**Expected Output:**
+
+```yaml
+$ ./7-schema_validate.sh
+records checked       : <total>
+fully compliant       : <N> (>99%)
+non-compliant         : <N>
+per-field completeness:
+  timestamp      100.00%
+  hostname        99.xx%
+  source_type    100.00%
+  event_category 100.00%
+validation_report.json written
+```
+
+[View the script](7-schema_validate.sh)
+
+---
+
+### Dirty Data Handling
+
+**Goal:** _Detect and repair the intentional quality defects injected into the evidence pack, and log every correction you apply._
+
+---
+
+**Context:** Real logs are dirty. The primary evidence pack contains intentional defects that mirror what you will see in production: malformed timestamps that do not parse, duplicate events from network retransmissions, hostnames written in three different cases, a batch of records encoded in `latin-1` instead of `utf-8`, and a block of events with timestamps in the wrong timezone. Every defect you silently ignore becomes an analyst headache later. Every correction you make must be logged with the original value, the corrected value, and the reason, so the analyst can reconstruct exactly what you changed.
+
+---
+
+**Instructions:** Write a script `8-data_quality.sh` that reads `normalized_events.json` and produces `cleaned_events.json` plus `cleaning_log.json`. It must detect and correct the following categories of defects:
+
+1. **Malformed timestamps**: records whose timestamp does not parse as ISO 8601. Attempt repair using fallback formats. If repair fails, move the record to a `unrepairable` section of the cleaning log and drop it from the cleaned dataset
+    
+2. **Duplicates**: records where `timestamp`, `hostname`, `source_type`, and `raw_message` are all identical. Keep the first occurrence, drop the rest
+    
+3. **Hostname case inconsistency**: normalize all hostnames to lowercase
+    
+4. **Encoding errors**: records where `raw_message` contains replacement characters or mojibake. Attempt to re-decode from `latin-1` as `utf-8` and repair
+    
+5. **Timezone inconsistency**: records whose timestamp is valid but falls outside the expected date range of the evidence pack by more than 12 hours. Flag these as `suspected_wrong_tz` and include them in the cleaning log
+    
+
+`cleaning_log.json` must contain one entry per correction with: `defect_type`, `original_value`, `corrected_value`, `record_id`, `reason`.
+
+**Expected Output:**
+
+```yaml
+$ ./8-data_quality.sh
+malformed timestamps   :  detected   repaired    dropped
+duplicates             :  detected   removed
+hostname case          :  normalized
+encoding errors        :  detected   repaired
+suspected wrong tz     :  flagged
+cleaned_events.json    written
+cleaning_log.json      written
+```
+
+[View the script](8-data_quality.sh)
+
+---
+
+### Context Enrichment
+
+**Goal:** _Enrich every cleaned event with asset inventory and network zone context so analysts can tell immediately whether an event touches a critical system._
+
+---
+
+**Context:** A failed login on `db-patient-01` means something very different from a failed login on `jenkins-sandbox-03`. An outbound connection from the `CLINICAL` zone to the `INTERNET` zone means something very different from the same connection inside the `DMZ`. Raw events do not carry this context. Your pipeline attaches it. From this point forward, every downstream query can filter by asset criticality and network zone without ever joining back to the inventory.
+
+---
+
+**Instructions:** Write a script `9-enrich.sh` that:
+
+1. Reads `cleaned_events.json`, `~/evidence_pack_primary/context/asset_inventory.json`, and `~/evidence_pack_primary/context/network_zones.json`
+    
+2. For each event, looks up the `hostname` in the asset inventory and adds an `asset` object containing `role`, `criticality`, `os`, `owner`, `zone`
+    
+3. For each event that has an `src_ip` or `dst_ip`, looks up the IP against the network zones CIDR ranges and adds `src_zone` and `dst_zone` fields (value `unknown` if the IP does not match any declared zone)
+    
+4. Writes `enriched_events.json` as newline-delimited JSON
+    
+5. Reports enrichment coverage: percentage of events with asset context, percentage with zone context
+    
+
+_Hint:_ the `ipaddress` module in `python3` handles CIDR lookups cleanly. A sorted list of (network, zone) tuples is efficient enough for this scale.
+
+**Expected Output:**
+
+```php-template
+$ ./9-enrich.sh
+events processed    : <total>
+asset context added : <N> (<pct>%)
+src_zone resolved   : <N> (<pct>%)
+dst_zone resolved   : <N> (<pct>%)
+unknown hosts       : <N>
+enriched_events.json written
+```
+
+[View the script](9-enrich.sh)
+
+---
+
+### Timeline Index
+
+**Goal:** _Produce a sorted chronological timeline index with source attribution that analysts will use as their primary lookup tool in every downstream project._
+
+---
+
+**Context:** The enriched dataset is large and unordered. An analyst looking for "everything that happened on `srv-ehr-01` between 14:30 and 15:00" needs a compact, sorted, filterable index. The timeline is that index. It holds only the fields an analyst needs to decide whether to drill into the full record, and it is ordered so a single `jq select` over a time range is cheap.
+
+---
+
+**Instructions:** Write a script `10-timeline.sh` that reads `enriched_events.json` and produces `timeline_index.json` as newline-delimited JSON, sorted ascending by `timestamp`. Each timeline entry must contain only:
+
+- `timestamp`
+    
+- `hostname`
+    
+- `source_type`
+    
+- `event_category`
+    
+- `severity`
+    
+- `summary` (a one-line human-readable condensation of the event suitable for an analyst scanning the timeline)
+    
+- `event_ref` (an opaque identifier that points back to the full record in `enriched_events.json`)
+    
+
+The `summary` field must be built from a template per `event_category`. For authentication events include the user and result. For process events include the process name. For network events include the source and destination. The timeline must deduplicate consecutive identical entries within a one-second window collapsing them into a single entry with a `count` field.
+
+**Expected Output:**
+
+```php-template
+$ ./10-timeline.sh
+enriched events read : <total>
+collapsed duplicates : <N>
+timeline entries     : <total - N>
+first entry          : <ISO timestamp>
+last entry           : <ISO timestamp>
+timeline_index.json written
+```
+
+[View the script](10-timeline.sh)
+
+---
+
+### Per-Source Statistics
+
+**Goal:** _Produce a per-source statistics report describing the shape of the normalized dataset._
+
+---
+
+**Context:** Before handing the evidence off to downstream projects, you produce the equivalent of a data dashboard: how many events per source, what time range they cover, how many unique hosts, the ingest rate per hour. Anomalies in these numbers (a source with zero events, a source with a time range that does not match the rest, a host appearing in only one source) are the first sign of a pipeline bug and must be caught here, not in 3x02.
+
+---
+
+**Instructions:** Write a script `11-source_stats.sh` that reads `enriched_events.json` and produces `source_stats.json` containing, for each `source_type`:
+
+- `record_count`
+    
+- `first_event` and `last_event`
+    
+- `unique_hosts`
+    
+- `top_event_categories` (top five with counts)
+    
+- `events_per_hour` (records divided by the span in hours, rounded)
+    
+- `coverage_gap` (the largest gap between consecutive events in minutes)
+    
+
+It must also emit an `overall` section with global totals.
+
+**Expected Output:**
+
+```php-template
+$ ./11-source_stats.sh
+source            records    hosts   ev/hour   max_gap(min)
+windows_json      <N>        <N>     <N>       <N>
+linux_text        <N>        <N>     <N>       <N>
+firewall          <N>        <N>     <N>       <N>
+suricata_alert    <N>        <N>     <N>       <N>
+pcap_flow         <N>        <N>     <N>       <N>
+overall           <N>        <N>     <N>       <N>
+source_stats.json written
+```
+
+[View the script](11-source_stats.sh)
+
+---
+### End-to-End Pipeline Script
+
+**Goal:** _Wrap every stage into a single orchestrator script that runs the full intake-to-handoff chain with one command._
+
+---
+
+**Context:** James Chen wants to be able to rerun the whole pipeline against a new evidence drop in under five minutes without remembering the stage order. The orchestrator script is that guarantee. It calls every stage script in order, fails fast on the first error, and writes a run log an engineer can read.
+
+---
+
+**Instructions:** Write a script `evidence_pipeline.sh` that accepts one positional argument: the path to an evidence pack root directory. The script must:
+
+1. Validate the argument is a directory containing the expected subdirectories (`windows/`, `linux/`, `network/`, `context/`, `student_telemetry/`)
+    
+2. Set environment variables consumed by each stage script (e.g. `EVIDENCE_PACK` pointing to the argument)
+    
+3. Run the stages in order: 0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11
+    
+4. Fail fast: if any stage exits non-zero, stop and print the failing stage number
+    
+5. Print a timestamped log of each stage start and finish
+    
+6. On success, print the final event count, the path to `enriched_events.json`, and the total runtime in seconds
+    
+
+Note that Task 4 (schema design) is not a pipeline stage. The `event_schema.json` file must already exist in the working directory when the pipeline runs.
+
+**Expected Output:**
+
+```csharp
+$ ./evidence_pipeline.sh ~/evidence_pack_primary
+[HH:MM:SS] stage 0 source_inventory    ... ok (Xs)
+[HH:MM:SS] stage 1 telemetry_import    ... ok (Xs)
+[HH:MM:SS] stage 2 windows_parse       ... ok (Xs)
+[HH:MM:SS] stage 3 linux_parse         ... ok (Xs)
+[HH:MM:SS] stage 5 normalize           ... ok (Xs)
+[HH:MM:SS] stage 6 network_normalize   ... ok (Xs)
+[HH:MM:SS] stage 7 schema_validate     ... ok (Xs)
+[HH:MM:SS] stage 8 data_quality        ... ok (Xs)
+[HH:MM:SS] stage 9 enrich              ... ok (Xs)
+[HH:MM:SS] stage 10 timeline           ... ok (Xs)
+[HH:MM:SS] stage 11 source_stats       ... ok (Xs)
+pipeline ok. <N> enriched events in <T>s
+```
+
+[View the script](evidence_pipeline.sh)
+
+---
+
+### Pipeline Generalization Test
+
+**Goal:** _Run the pipeline against an unseen secondary evidence pack and report per-stage pass or fail without modifying any script._
+
+---
+
+**Context:** A pipeline that only works on the data it was developed against is not a pipeline. It is a one-off parser. This test proves your pipeline generalizes. The secondary evidence pack at `~/evidence_pack_secondary/` has the same source types as the primary pack but different hosts, a different time window, different asset inventory, and different network zones. If your scripts hardcoded anything from the primary pack they will fail here and you will see it.
+
+---
+
+**Instructions:** Write a script `13-pipeline_test.sh` that:
+
+1. Runs `./evidence_pipeline.sh ~/evidence_pack_secondary`
+    
+2. Captures stdout and stderr
+    
+3. Parses the run log to record per-stage result
+    
+4. After the run, verifies that the secondary run produced a non-empty `enriched_events.json` and `timeline_index.json` in the expected output location
+    
+5. Writes `pipeline_test_report.json` containing: pack path, stages and their result, final event count, runtime, and a top-level `verdict` of `pass` or `fail`
+    
+
+The script itself must exit `0` on full pass and `1` on any stage failure.
+
+**Expected Output:**
+
+```yaml
+$ ./13-pipeline_test.sh
+running pipeline against ~/evidence_pack_secondary
+all 11 stages passed
+enriched events: <N>
+runtime: <T>s
+verdict: pass
+pipeline_test_report.json written
+```
+
+[View the script](13-pipeline_test.sh)
+
+---
+
+### Pipeline Specification
+
+**Goal:** _Write a bounded technical specification that documents the pipeline so another engineer can rebuild it without reading the code._
+
+---
+
+**Context:** Robert Kim wants a spec. Two pages maximum. Stages in, stages out, failure modes. No prose. No marketing. If a new engineer joining the team on Monday cannot read this spec and rebuild the pipeline from it, the spec is wrong.
+
+---
+
+**Instructions:** Produce `pipeline_spec.md` containing exactly the following sections and nothing else:
+
+1. **Overview** (max 5 lines): one paragraph describing the pipeline's purpose and the one-command entry point
+    
+2. **Stage Table** (markdown table): one row per stage, columns: `stage`, `script`, `input`, `output`, `failure_modes`
+    
+3. **Schema Summary**: a reference to `event_schema.json` plus a bullet list of the required fields
+    
+4. **Inputs and Outputs**: the expected layout of an input evidence pack, and the final handoff directory layout
+    
+5. **Running the Pipeline**: the exact command used to run the pipeline end-to-end and to run the generalization test
+    
+6. **Known Limitations**: a bullet list of at most five items
+    
+
+**Hard constraints on this deliverable:**
+
+- Maximum 2 printed A4 pages when rendered
+    
+- Maximum 800 words total
+    
+- No narrative introduction beyond the Overview paragraph
+    
+- No section that is not listed above
+    
+
+_Note:_ this is the only Markdown deliverable in the project. It is graded on precision and completeness, not on style.
+
+**Expected Output:**
+
+A `pipeline_spec.md` file respecting the constraints above.
+
+[View the Markdown file](pipeline_spec.md)
+
+---
+
+### Evidence Handoff Package
+
+**Goal:** _Assemble the complete evidence handoff directory that every downstream Module 3 project will consume._
+
+---
+
+**Context:** This is the deliverable the rest of the module runs on. 3x01 reads the timeline index and the enriched dataset. 3x02 runs detection rules against the normalized dataset. 3x03 uses both. The directory layout you produce here is the contract.
+
+---
+
+**Instructions:** Write a script `15-handoff_package.sh` that assembles the handoff directory at the path given by `$HANDOFF_DIR` (default: `~/3x00_handoff/evidence_handoff/`) with the following exact layout:
+
+```graphql
+evidence_handoff/
+  data/
+    normalized_events.json
+    enriched_events.json
+    timeline_index.json
+    network_events.json
+    quarantine.json
+  context/
+    asset_inventory.json
+    network_zones.json
+  reports/
+    source_inventory.json
+    validation_report.json
+    cleaning_log.json
+    source_stats.json
+    pipeline_test_report.json
+  schema/
+    event_schema.json
+  pipeline/
+    evidence_pipeline.sh
+    0-source_inventory.sh
+    1-telemetry_import.sh
+    2-windows_parse.sh
+    3-linux_parse.sh
+    5-normalize.sh
+    6-network_normalize.sh
+    7-schema_validate.sh
+    8-data_quality.sh
+    9-enrich.sh
+    10-timeline.sh
+    11-source_stats.sh
+  pipeline_spec.md
+  MANIFEST.json
+```
+
+The script must copy every listed file from the working directory into the correct subdirectory, generate `MANIFEST.json` containing the path, size, and sha256 of every file in the handoff, and finish by running a sanity check that every listed file is present and non-empty.
+
+If `$HANDOFF_DIR` is not set, default to `~/3x00_handoff/evidence_handoff/`.
+
+**Expected Output:**
+
+```shell
+$ source ~/m3_env.sh && ./15-handoff_package.sh
+copying data/       ... 5 files
+copying context/    ... 2 files
+copying reports/    ... 5 files
+copying schema/     ... 1 file
+copying pipeline/   ... 12 files
+copying spec        ... 1 file
+MANIFEST.json       : 26 entries
+handoff sanity check: ok
+evidence_handoff/ ready
+```
+
+[View the script](15-handoff_package.sh)
 
 ---
 # Review Questions
 
 [Review Questions](Review)
-
-
