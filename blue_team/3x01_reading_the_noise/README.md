@@ -403,7 +403,7 @@ correlated_anomalies.json written
 [View the script](13-correlate_anomalies.sh)
 
 ---
-### 15. Baseline Validation
+### Baseline Validation
 
 **Goal:** _Validate the baseline by running the anomaly scripts against the baseline window itself and then against the evaluation window, then checking that the results match expectations._
 
@@ -451,5 +451,5 @@ baseline_validation.json written
 
 # Review 
 
-[Checkout the review questions](Review.md)
+[Checkout the review questions](Review )
 
