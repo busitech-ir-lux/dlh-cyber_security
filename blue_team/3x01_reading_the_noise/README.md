@@ -52,6 +52,7 @@ Last thing. The scripts you write become the MedDefense SOC reference toolkit. W
 0-
 [1-]()
 [2-Reusable Query Toolkit](#reusable-query-toolkit)
+[3-Event Type Taxonomy](event-type-taxonomy)
 ### Reusable Query Toolkit
 
 **Goal:** _Build a reusable CLI query toolkit that filters, projects, and aggregates events from the handoff dataset without a SIEM._
@@ -93,4 +94,52 @@ query_toolkit.sh <verb> [options]
 ```
 
 [View the script](2-query_toolkit.sh)
+
+---
+### Event Type Taxonomy
+
+**Goal:** _Build the MedDefense event type taxonomy that maps every observed source-specific event into a canonical analytical label._
+
+---
+
+**Context:** The schema gives you `event_category` at a coarse grain. For baselining and anomaly analysis you need finer granularity. The taxonomy is the deterministic mapping from raw source fields to canonical labels. Every downstream script in this project labels events through the taxonomy instead of interpreting source fields directly.
+
+---
+
+**Instructions:** Write a script `3-event_taxonomy.sh` that reads `$HANDOFF_DIR/data/enriched_events.json` and produces `event_taxonomy.json`. The taxonomy must contain, for each canonical label, the list of rules that identify it. A rule is a record `{source_type, match: {field: value, ...}, label}`.
+
+At minimum the taxonomy must cover:
+
+- `login_success`, `login_failure`, `logout`, `account_lockout`, `privilege_escalation`
+    
+- `process_start`, `process_stop`, `child_process_spawn`
+    
+- `file_read_sensitive`, `file_write_sensitive`, `file_permission_change`
+    
+- `network_connection_outbound`, `network_connection_inbound`, `network_alert`, `network_blocked`
+    
+
+The script must also write the labeled dataset to `labeled_events.json` (newline-delimited JSON) with a new `canonical_label` field. Records whose label cannot be determined are assigned `unlabeled`.
+
+The script must default `HANDOFF_DIR` to `~/3x00_handoff/evidence_handoff` if not set.
+
+**Expected Output:**
+
+```php-template
+$ source ~/m3_env.sh && ./3-event_taxonomy.sh
+taxonomy rules         : <N>
+records labeled        : <N>
+records unlabeled      : <N>
+canonical label distribution (top 10):
+  process_start              <N>
+  login_success              <N>
+  ...
+event_taxonomy.json written
+labeled_events.json written
+```
+
+
+[View the script](3-event_taxonomy.sh)
+
+---
 
