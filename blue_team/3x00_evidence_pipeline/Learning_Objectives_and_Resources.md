@@ -2,7 +2,7 @@
 
 By the end of this project, you are expected to be able to explain to anyone, **without the help of Google**:
 
-### Evidence Engineering
+### Evidence Engineering [read more](#evidence-engineering)
 
 - What an evidence pipeline is, the stages it contains (intake, parse, normalize, clean, enrich, index, validate), and why each stage exists
     
@@ -13,7 +13,7 @@ By the end of this project, you are expected to be able to explain to anyone, *
 - Why data normalization is a trade-off between fidelity and searchability, and what is lost when you collapse source-specific fields into a common format
     
 
-### Data Quality and Enrichment
+### Data Quality and Enrichment [read more](#data-quality-and-enrichment)
 
 - What dirty data looks like in a security context (malformed timestamps, duplicates, encoding errors, timezone inconsistencies, missing hostnames) and why it arises in production logging
     
@@ -22,7 +22,7 @@ By the end of this project, you are expected to be able to explain to anyone, *
 - Why a chronological timeline with source attribution is the primary lookup tool of a SOC analyst during an incident
     
 
-### Operational Reproducibility
+### Operational Reproducibility [read more](#operational-reproducibility)
 
 - Why an evidence pipeline must be runnable from a single command and must generalize to unseen data
     
@@ -71,6 +71,7 @@ _Read or watch:_
 - `man python3`
     
 - `man sort`
+
 ---
 ### Evidence Engineering
 
