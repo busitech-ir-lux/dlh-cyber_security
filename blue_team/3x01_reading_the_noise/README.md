@@ -47,7 +47,7 @@ Last thing. The scripts you write become the MedDefense SOC reference toolkit. W
 
 ---
 
-######### TASKS
+######### TASKS INTERLINK
 
 ---
 
@@ -61,7 +61,10 @@ Last thing. The scripts you write become the MedDefense SOC reference toolkit. W
 - [10-Authentication Anomalies](#authentication-anomalies)
 - [11-Process Anomalies](#process-anomalies)
 - [13-Cross-Source Correlation](#cross-source-correlation)
-- 
+- [15-Baseline Validation](#baseline-validation)
+
+
+---
 ## Reusable Query Toolkit
 
 **Goal:** _Build a reusable CLI query toolkit that filters, projects, and aggregates events from the handoff dataset without a SIEM._
@@ -400,4 +403,50 @@ correlated_anomalies.json written
 [View the script](13-correlate_anomalies.sh)
 
 ---
+### 15. Baseline Validation
+
+**Goal:** _Validate the baseline by running the anomaly scripts against the baseline window itself and then against the evaluation window, then checking that the results match expectations._
+
+---
+
+**Context:** An unvalidated baseline is guesswork. The only honest way to know whether your baseline produces useful output is to run the same anomaly logic over the baseline window (where you expect almost no findings) and over the evaluation window (where you expect the planted anomalies). The gap between the two tells you whether your baseline has any signal at all. This step is the equivalent of a backtest in quantitative analysis: it is what separates a baseline you can trust from a baseline you hope works.
+
+---
+
+**Instructions:** Write a script `15-baseline_validation.sh` that:
+
+1. Re-runs the three single-source anomaly scripts (T10, T11, T12) once with the evaluation window set to the **baseline window itself**, capturing output as `self_check_*.json`
+    
+2. Re-runs them once with the **normal evaluation window** (day 8), capturing output as `live_check_*.json`
+    
+3. Produces `baseline_validation.json` containing:
+    
+    - `self_check_total` (expected to be very small)
+        
+    - `live_check_total`
+        
+    - `signal_to_noise_ratio = live_check_total / max(self_check_total, 1)`
+        
+    - per-type breakdown for both runs
+        
+    - a `verdict`: `pass` if `self_check_total` is under a declared acceptable threshold (default: 5) and `signal_to_noise_ratio` is at least 3.0, `fail` otherwise
+        
+
+The script must exit `0` on `pass` and `1` on `fail`.
+
+**Expected Output:**
+
+```php-template
+$ ./15-baseline_validation.sh
+self-check anomalies (baseline window): <N>
+live-check anomalies (evaluation win ): <N>
+signal-to-noise ratio                : <X>
+verdict                              : pass
+baseline_validation.json written
+```
+
+[View the script](15-baseline_validation.sh)
+
+---
+
 
