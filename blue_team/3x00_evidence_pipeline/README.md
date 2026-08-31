@@ -47,3 +47,31 @@ One more thing. Robert Kim wants the pipeline **specification**, not a novel. T
 Get this right. Everything we do for the next four weeks runs on what you build today.
 
 -- James Chen
+
+---
+## Tasks
+
+[[0-source_inventory]]
+[[1-telemetry_import]]
+[[2-windows_parse]]
+[[3-linux_parse]]
+4-[[event_schema]]
+[[5-normalize]]
+[[6-network_normalize]]
+[[7-schema_validate]]
+[[8-data_quality]]
+[[9-enrich.sh]]
+[[10-timeline]]
+[[11-source_stats]]
+12-[[evidence_pipeline]]
+[[13-pipeline_test]]
+14-[[pipeline_spec]]
+[[15-handoff_package]]
+
+
+---
+
+# Review Questions
+
+[[Defensive Path/Modules/3x00_evidence_pipeline/tasks/Review|Review]]
+
