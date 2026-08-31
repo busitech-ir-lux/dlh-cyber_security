@@ -1,74 +1,124 @@
 #!/bin/bash
 set -euo pipefail
 
-INPUT="enriched_events.json"
-OUTPUT="source_stats.json"
+INPUT="${1:-enriched_events.json}"
+OUTPUT="${2:-source_stats.json}"
 
-[[ -f "$INPUT" ]] || { echo "ERROR: $INPUT not found"; exit 1; }
+[[ -f "$INPUT" ]] || {
+    echo "ERROR: $INPUT not found" >&2
+    exit 1
+}
 
 jq -s '
+# Convert ISO 8601 timestamp to epoch.
+def epoch:
+  try fromdateiso8601 catch null;
+
+# Calculate statistics for one group of events.
 def stats:
-  . as $e
-  | ($e | map(.timestamp | try fromdateiso8601 catch null)
-        | map(select(. != null))
-        | sort) as $t
+  . as $events
+
+  # Keep only valid timestamps.
+  | (
+      $events
+      | map({
+          raw: .timestamp,
+          time: (.timestamp | epoch)
+        })
+      | map(select(.time != null))
+      | sort_by(.time)
+    ) as $times
+
   | {
-      record_count: ($e | length),
+      record_count: ($events | length),
 
       first_event:
-        ($e | map(.timestamp) | min),
+        (if ($times | length) > 0
+         then $times[0].raw
+         else null
+         end),
 
       last_event:
-        ($e | map(.timestamp) | max),
+        (if ($times | length) > 0
+         then $times[-1].raw
+         else null
+         end),
 
       unique_hosts:
-        ($e
+        ($events
          | map(.hostname)
          | map(select(. != null and . != ""))
          | unique
          | length),
 
       top_event_categories:
-        ($e
+        ($events
          | map(.event_category // "unknown")
          | group_by(.)
          | map({
              category: .[0],
              count: length
            })
-         | sort_by(-.count)
+         | sort_by(.count)
+         | reverse
          | .[0:5]),
 
       events_per_hour:
-        (if ($t | length) > 1 and ($t[-1] - $t[0]) > 0
-         then (($e | length) / (($t[-1] - $t[0]) / 3600) | round)
-         else ($e | length)
+        (if ($times | length) > 1
+            and ($times[-1].time - $times[0].time) > 0
+         then
+           (
+             ($events | length)
+             /
+             (($times[-1].time - $times[0].time) / 3600)
+             | round
+           )
+         else 0
          end),
 
       coverage_gap:
-        (if ($t | length) > 1
+        (if ($times | length) > 1
          then
-           ([range(1; $t|length) as $i
-             | (($t[$i] - $t[$i-1]) / 60)]
-            | max
-            | round)
+           (
+             [
+               range(1; $times | length) as $i
+               | (
+                   ($times[$i].time - $times[$i - 1].time)
+                   / 60
+                 )
+             ]
+             | max
+             | round
+           )
          else 0
          end)
     };
 
-group_by(.source_type)
-| map({
-    key: (.[0].source_type // "unknown"),
-    value: stats
-  })
-| from_entries as $sources
+# Save the complete dataset before grouping.
+. as $all
 
-| . as $all
+# Produce one section for each source_type.
+| (
+    $all
+    | sort_by(.source_type // "unknown")
+    | group_by(.source_type // "unknown")
+    | map({
+        key: (.[0].source_type // "unknown"),
+        value: stats
+      })
+    | from_entries
+  ) as $sources
+
+# Add global statistics.
 | $sources + {
     overall: ($all | stats)
   }
 ' "$INPUT" > "$OUTPUT"
 
+
+# ------------------------------------------------------------
+# Human-readable summary
+# ------------------------------------------------------------
 
 printf "%-18s %10s %8s %10s %14s\n" \
     "source" "records" "hosts" "ev/hour" "max_gap(min)"
