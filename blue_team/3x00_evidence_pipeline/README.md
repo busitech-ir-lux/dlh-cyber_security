@@ -51,22 +51,22 @@ Get this right. Everything we do for the next four weeks runs on what you build 
 ---
 ## Tasks
 
-[0-Evidence Pack Inventory](0-source_inventory)
-[1-Telemetry Import](1-telemetry_import)
-[2-Windows Event Parsing](2-windows_parse)
-[3-Linux Log Parsing](3-linux_parse)
-[4-Unified Event Schema Design](event_schema)
-[5-Normalization Script](5-normalize)
-[6-Network Artifact Normalization](6-network_normalize)
-[7-Schema Validation](7-schema_validate)
-[8-Dirty Data Handling](8-data_quality)
-[9-Context Enrichment](9-enrich.sh)
-[10-Timeline Index](10-timeline)
-[11-Per-Source Statistics](11-source_stats)
-[12-End-to-End Pipeline Script](evidence_pipeline)
-[13-Pipeline Generalization Test](3-pipeline_test)
-[14-Pipeline Specification](pipeline_spec)
-[15-Evidence Handoff Package](15-handoff_package)
+- [0-Evidence Pack Inventory](./0-source_inventory)
+- [1-Telemetry Import](1-telemetry_import)
+- [2-Windows Event Parsing](2-windows_parse)
+- [3-Linux Log Parsing](3-linux_parse)
+- [4-Unified Event Schema Design](event_schema)
+- [5-Normalization Script](5-normalize)
+- [6-Network Artifact Normalization](6-network_normalize)
+- [7-Schema Validation](7-schema_validate)
+- [8-Dirty Data Handling](8-data_quality)
+- [9-Context Enrichment](9-enrich.sh)
+- [10-Timeline Index](10-timeline)
+- [11-Per-Source Statistics](11-source_stats)
+- [12-End-to-End Pipeline Script](evidence_pipeline)
+- [13-Pipeline Generalization Test](3-pipeline_test)
+- [14-Pipeline Specification](pipeline_spec)
+- [15-Evidence Handoff Package](15-handoff_package)
 
 ---
 # Review Questions
