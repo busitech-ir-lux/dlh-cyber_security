@@ -8,7 +8,7 @@ That is the work this week. You are going to take your 3x00 handoff, split it in
 
 This project does not ask you to click buttons in a dashboard. It asks you to write the analytical scripts that the dashboard would run behind the scenes if you had one. The dataset is the one your own pipeline produced in 3x00. The tools are `jq`, `python3`, and a handful of bash. The output is a `baseline_package/` directory that will be loaded as a dependency by every downstream project in this module and reused as the ground truth reference in the capstone.
 
-### Why this matters
+## Why this matters
 
 A Tier 1 analyst stares at a queue of alerts and has to decide, in under two minutes, whether each alert is worth waking somebody up at 3 AM. That decision is only possible if the analyst has a reference for what the same alert looks like on a quiet Tuesday. Without a baseline, every alert is equally suspicious or equally boring, and the analyst guesses. With a baseline, the analyst compares. The baseline is the analyst's intuition, externalized into a JSON file that does not care about coffee or fatigue.
 
@@ -22,7 +22,7 @@ Security+ domain 4.9 expects you to understand the mitigation and risk-reduction
 
 You are currently working as a **SOC Analyst** for **MedDefense Health Systems**.
 
-### The Scenario: "What Normal Sounds Like"
+## The Scenario: "What Normal Sounds Like"
 
 **FROM:** James Chen, SOC Lead - MedDefense Health Systems
 
@@ -49,12 +49,14 @@ Last thing. The scripts you write become the MedDefense SOC reference toolkit. W
 #######                                              TASKS                                                                     ######
 #####################################################################
 
-0-
-[1-]()
-[2-Reusable Query Toolkit](#reusable-query-toolkit)
-[3-Event Type Taxonomy](#event-type-taxonomy)
-[4-Authentication Baseline](#authentication-baseline)
-### Reusable Query Toolkit
+- 0-
+- [1-]()
+- [2-Reusable Query Toolkit](#reusable-query-toolkit)
+- [3-Event Type Taxonomy](#event-type-taxonomy)
+- [4-Authentication Baseline](#authentication-baseline)
+-  [5-Process Execution Baseline](#process-execution-baseline)
+- 
+## Reusable Query Toolkit
 
 **Goal:** _Build a reusable CLI query toolkit that filters, projects, and aggregates events from the handoff dataset without a SIEM._
 
@@ -97,7 +99,7 @@ query_toolkit.sh <verb> [options]
 [View the script](2-query_toolkit.sh)
 
 ---
-### Event Type Taxonomy
+## Event Type Taxonomy
 
 **Goal:** _Build the MedDefense event type taxonomy that maps every observed source-specific event into a canonical analytical label._
 
@@ -143,7 +145,7 @@ labeled_events.json written
 [View the script](3-event_taxonomy.sh)
 
 ---
-### Authentication Baseline
+## Authentication Baseline
 
 **Goal:** _Compute the authentication baseline over the clean window: per-host, per-user, per-time-of-day success and failure patterns._
 
@@ -186,4 +188,38 @@ baseline_auth.json written
 [View the script](4-baseline_auth.sh)
 
 ---
+## Process Execution Baseline
 
+**Goal:** _Compute the per-host process execution baseline: which processes are expected on which host and with what frequency._
+
+---
+
+**Context:** A process that has never been seen on a host is an investigation trigger in almost every SOC playbook. The baseline is the authoritative list of "expected" processes per host. The key distinction is **per host, not global**: `python3` may be normal on a data analyst workstation and deeply abnormal on a clinical imaging server. A global baseline erases that distinction and produces useless noise.
+
+---
+
+**Instructions:** Write a script `5-baseline_process.sh` that reads `labeled_events.json`, restricts to the baseline window, and produces `baseline_process.json` containing:
+
+- `per_host`: for each host, the list of expected process names with execution count, first and last seen timestamps, and distinct executing users
+    
+- `global_top`: the 50 most executed processes across the whole baseline
+    
+- `rare_processes`: processes that appear on only one host or run fewer than five times total during the baseline
+    
+- `parent_child_pairs`: for process start events with parent-child information, the set of observed `parent -> child` pairs per host
+    
+
+**Expected Output:**
+
+```php-template
+$ ./5-baseline_process.sh
+baseline window : <start> -> <end>
+processes indexed by host: <N> hosts
+global top process    : <name> (<N> executions)
+rare processes        : <N>
+parent->child pairs   : <N>
+baseline_process.json written
+```
+
+
+[View the script](5-baseline_process.sh)
