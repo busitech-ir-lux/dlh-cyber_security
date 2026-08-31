@@ -52,7 +52,8 @@ Last thing. The scripts you write become the MedDefense SOC reference toolkit. W
 0-
 [1-]()
 [2-Reusable Query Toolkit](#reusable-query-toolkit)
-[3-Event Type Taxonomy](event-type-taxonomy)
+[3-Event Type Taxonomy](#event-type-taxonomy)
+[4-Authentication Baseline](#authentication-baseline)
 ### Reusable Query Toolkit
 
 **Goal:** _Build a reusable CLI query toolkit that filters, projects, and aggregates events from the handoff dataset without a SIEM._
@@ -140,6 +141,49 @@ labeled_events.json written
 
 
 [View the script](3-event_taxonomy.sh)
+
+---
+### Authentication Baseline
+
+**Goal:** _Compute the authentication baseline over the clean window: per-host, per-user, per-time-of-day success and failure patterns._
+
+---
+
+**Context:** Authentication is the most frequently queried log category in a SOC. The baseline must answer: who logs in where, when do they log in, what is the normal success-to-failure ratio, what is the largest failure burst from a single source that is considered normal. Every number in this baseline will be compared against day 8 by the anomaly script in T10.
+
+---
+
+**Instructions:** Write a script `4-baseline_auth.sh` that reads `labeled_events.json`, restricts to the baseline window (first seven days by default, overridable by `$BASELINE_DAYS`), and produces `baseline_auth.json` containing:
+
+- `window`: the baseline window start and end timestamps
+    
+- `per_host`: for each host, the counts of `login_success`, `login_failure`, `logout`, `account_lockout`, `privilege_escalation`
+    
+- `per_user`: list of accounts observed with per-account success and failure counts
+    
+- `known_accounts`: the deduplicated list of usernames that appear at least once
+    
+- `business_hours_avg`: average successes and failures per hour during 06:00 to 17:59
+    
+- `offhours_avg`: average successes and failures per hour during 18:00 to 05:59
+    
+- `max_failures_1h_window`: the maximum number of failures observed in any 1-hour window from a single `src_ip` during the baseline
+    
+
+**Expected Output:**
+
+```php-template
+$ ./4-baseline_auth.sh
+baseline window : <start> -> <end>
+hosts           : <N>
+known accounts  : <N>
+business hours  : <N> success/h  |  <N> failure/h
+off hours       : <N> success/h  |  <N> failure/h
+max 1h src_ip failures : <N>
+baseline_auth.json written
+```
+
+[View the script](4-baseline_auth.sh)
 
 ---
 
