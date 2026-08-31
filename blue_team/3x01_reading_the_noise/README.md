@@ -54,8 +54,9 @@ Last thing. The scripts you write become the MedDefense SOC reference toolkit. W
 - [2-Reusable Query Toolkit](#reusable-query-toolkit)
 - [3-Event Type Taxonomy](#event-type-taxonomy)
 - [4-Authentication Baseline](#authentication-baseline)
--  [5-Process Execution Baseline](#process-execution-baseline)
-- 
+- [5-Process Execution Baseline](#process-execution-baseline)
+- [9-Cross-Source Baseline Summary](#cross-source-baseline-summary)
+- [10-Authentication Anomalies](#authentication-anomalies)
 ## Reusable Query Toolkit
 
 **Goal:** _Build a reusable CLI query toolkit that filters, projects, and aggregates events from the handoff dataset without a SIEM._
@@ -223,3 +224,86 @@ baseline_process.json written
 
 
 [View the script](5-baseline_process.sh)
+
+---
+
+### Cross-Source Baseline Summary
+
+**Goal:** _Combine all baselines into a single machine-readable baseline summary consumed by the anomaly detection block._
+
+---
+
+**Context:** Each previous task produced one slice of the baseline. The anomaly scripts in the next block should not have to open four separate files and cross-reference them. The summary is the single input contract: one file that contains everything an anomaly detector needs, with clear section boundaries and a version number. It is also the artifact Tier 1 analysts will load on Monday morning.
+
+---
+
+**Instructions:** Write a script `9-baseline_summary.sh` that reads `baseline_auth.json`, `baseline_process.json`, `baseline_network.json`, `baseline_file.json`, and `temporal_profile.json`, and produces `baseline_summary.json` containing:
+
+- `version`
+    
+- `generated_at` (ISO 8601 UTC)
+    
+- `baseline_window` (start, end, duration in days)
+    
+- `evaluation_window` (start, end, duration in hours)
+    
+- `host_inventory`: the set of hosts present in the baseline
+    
+- `auth`, `process`, `network`, `file`, `temporal`: the respective sub-documents from the prior tasks, nested
+    
+- `thresholds`: a derived object containing the numeric thresholds anomaly scripts will apply (for example, `failure_rate_multiplier: 3`, `unknown_process_penalty: 5`, `unknown_port_penalty: 4`). Each threshold must include a short comment explaining how it was derived
+    
+
+**Expected Output:**
+
+```php-template
+$ ./9-baseline_summary.sh
+version           : 1.0
+baseline window   : <start> -> <end>  (<N> days)
+evaluation window : <start> -> <end>  (24h)
+hosts             : <N>
+sections included : auth, process, network, file, temporal, thresholds
+baseline_summary.json written
+```
+
+[View the script](9-baseline_summary.sh)
+
+---
+
+### Authentication Anomalies
+
+**Goal:** _Scan the evaluation window for authentication anomalies using thresholds derived from the baseline summary._
+
+---
+
+**Context:** This is where the baseline pays off. Every deviation you flag is a potential signal that has to be credible enough to justify an analyst's time. The script must detect the categories that matter most in practice: accounts that do not exist in the baseline, failure bursts that exceed baseline expectations, logins at unusual hours, and privilege escalations that did not appear during the baseline.
+
+---
+
+**Instructions:** Write a script `10-anomalies_auth.sh` that reads `baseline_summary.json` and `labeled_events.json`, restricts to the evaluation window, and writes `anomalies_auth.json` containing one entry per anomaly with at minimum these fields: `timestamp`, `host`, `user`, `src_ip`, `anomaly_type`, `baseline_value`, `observed_value`, `severity`, `event_refs`.
+
+The script must detect at minimum:
+
+- `unknown_account`: a `user` value not present in the baseline `known_accounts`
+    
+- `failure_rate_burst`: any 1-hour window where the failure rate from a single `src_ip` exceeds the baseline `max_failures_1h_window` multiplied by the `failure_rate_multiplier` threshold
+    
+- `offhours_login`: a `login_success` event outside business hours for a user that has only ever logged in during business hours in the baseline
+    
+- `privilege_escalation_surge`: more than N `privilege_escalation` events on a host where the baseline has zero such events
+    
+
+**Expected Output:**
+
+```php-template
+$ ./10-anomalies_auth.sh
+evaluation window  : <start> -> <end>
+unknown_account           : <N>
+failure_rate_burst        : <N>
+offhours_login            : <N>
+privilege_escalation_surge: <N>
+total anomalies           : <N>
+anomalies_auth.json written
+```
+
+[View the script](10-anomalies_auth.sh)
