@@ -64,9 +64,9 @@ Last thing. The scripts you write become the MedDefense SOC reference toolkit. W
 - [10-Authentication Anomalies](#10-authentication-anomalies)
 - [11-Process Anomalies](#11-process-anomalies)
 - [12-Network Anomalies](#12-network-anomalies)
-- [13-Cross-Source Correlation](#12-cross-source-correlation)
+- [13-Cross-Source Correlation](#13-cross-source-correlation)
 - [14-Anomaly Priority Ranking](#14-anomaly-priority-ranking)
-- [15-Baseline Validation](#15baseline-validation)
+- [15-Baseline Validation](#15-baseline-validation)
 - [16-Baseline Package Assembly](#16-baseline-package-assembly)
 
 
