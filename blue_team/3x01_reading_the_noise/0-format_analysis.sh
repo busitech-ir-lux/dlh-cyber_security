@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 # ============================================================
 # Task 0 - Format Analysis Across All Sources
