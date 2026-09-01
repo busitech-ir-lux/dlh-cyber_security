@@ -40,22 +40,22 @@ _"Whatever you build, it runs against production. No staging environment. No lab
 
 ---
 
-[0-The Vulnerability Inventory](#0-the-vulnerability-inventory)
-[1-The Service Dependency Map](#1-the-service-dependeny-map)
-[2-The Pre-Patch Snapshot](#2-the-pre-patch-snapshot)
-[3-The Patch Plan](3-the-patch-plan)
-[4-The Safe Patch Execution](#4-the-safe-patch-execution)
-[5-The Post-Patch Service Validation](#5-the-post-patch-service-validation)
-[6-The Configuration Drift Detector](#6-the-configuration-drift-detector)
-[7-The Broken Upgrade Recovery](#7-the-broken-upgrade-recovery)
-[8-The Unattended Upgrades Configuration](#8-the-unattended-upgrades-configuration)
-[9-The Rollback Capability](#9-the-rollback-capability)
-[10-The Version Hold Management](#10-the-version-hold-management)
-[11-The Maintenance Window Enforcement](#11-the-maintenance-window-enforcement)
-[12-The Change Tracking Log](#12-the-change-tracking-log)
-[13-The End-to-End Patch Pipeline](#13-the-end-to-end-patch-pipeline)
-[14-The Pipeline Test Against a Simulated Advisory](#14-the-pipeline-test-against-a-simulated-advisory)
-[15-The Patch Compliance Artifact](#15-the-patch-compliance-artifact)
+- [0-The Vulnerability Inventory](#0-the-vulnerability-inventory)
+- [1-The Service Dependency Map](#1-the-service-dependeny-map)
+- [2-The Pre-Patch Snapshot](#2-the-pre-patch-snapshot)
+- [3-The Patch Plan](3-the-patch-plan)
+- [4-The Safe Patch Execution](#4-the-safe-patch-execution)
+- [5-The Post-Patch Service Validation](#5-the-post-patch-service-validation)
+- [6-The Configuration Drift Detector](#6-the-configuration-drift-detector)
+- [7-The Broken Upgrade Recovery](#7-the-broken-upgrade-recovery)
+- [8-The Unattended Upgrades Configuration](#8-the-unattended-upgrades-configuration)
+- [9-The Rollback Capability](#9-the-rollback-capability)
+- [10-The Version Hold Management](#10-the-version-hold-management)
+- [11-The Maintenance Window Enforcement](#11-the-maintenance-window-enforcement)
+- [12-The Change Tracking Log](#12-the-change-tracking-log)
+- [13-The End-to-End Patch Pipeline](#13-the-end-to-end-patch-pipeline)
+- [14-The Pipeline Test Against a Simulated Advisory](#14-the-pipeline-test-against-a-simulated-advisory)
+- [15-The Patch Compliance Artifact](#15-the-patch-compliance-artifact)
 
 ---
 
