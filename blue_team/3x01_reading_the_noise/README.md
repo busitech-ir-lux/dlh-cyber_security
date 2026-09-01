@@ -51,21 +51,112 @@ Last thing. The scripts you write become the MedDefense SOC reference toolkit. W
 
 ---
 
-- 0-
-- [1-]()
-- [2-Reusable Query Toolkit](#reusable-query-toolkit)
-- [3-Event Type Taxonomy](#event-type-taxonomy)
-- [4-Authentication Baseline](#authentication-baseline)
-- [5-Process Execution Baseline](#process-execution-baseline)
-- [9-Cross-Source Baseline Summary](#cross-source-baseline-summary)
-- [10-Authentication Anomalies](#authentication-anomalies)
-- [11-Process Anomalies](#process-anomalies)
-- [13-Cross-Source Correlation](#cross-source-correlation)
-- [15-Baseline Validation](#baseline-validation)
+- [0-Format Analysis Across All Sources](#0-format-analysis-across-all-sources)
+- [1-Critical Field Extraction and Indexing](#1-critical-field-extraction-and-indexing)
+- [2-Reusable Query Toolkit](#2-reusable-query-toolkit)
+- [3-Event Type Taxonomy](#3-event-type-taxonomy)
+- [4-Authentication Baseline](#4-authentication-baseline)
+- [5-Process Execution Baseline](#5-process-execution-baseline)
+- [6-Network Connection Baseline](#6-network-connection-baseline)
+- [7-File Access Baseline](#7-file-access-baseline)
+- [8-Temporal Pattern Analysis](#8-temporal-pattern-analysis)
+- [9-Cross-Source Baseline Summary](#9-cross-source-baseline-summary)
+- [10-Authentication Anomalies](#10-authentication-anomalies)
+- [11-Process Anomalies](#11-process-anomalies)
+- [12-Network Anomalies](#12-network-anomalies)
+- [13-Cross-Source Correlation](#12-cross-source-correlation)
+- [14-Anomaly Priority Ranking](#14-anomaly-priority-ranking)
+- [15-Baseline Validation](#15baseline-validation)
+- [16-Baseline Package Assembly](#16-baseline-package-assembly)
 
 
 ---
-## Reusable Query Toolkit
+
+### 0-Format Analysis Across All Sources
+
+#advanced
+
+**Goal:** _Profile every source type in the enriched dataset and produce a structured breakdown of fields, types, cardinality, and example values._
+
+---
+
+**Context:** Before you can reason about what normal looks like, you have to know what you actually have. The 3x00 pipeline guarantees the schema is uniform, but per-source field populations vary wildly: `src_ip` is present on almost every network record and almost no process record, `user` is mandatory on authentication events but empty on PCAP flows. The format analysis is the first thing a Tier 1 analyst should run when a new dataset lands.
+
+---
+
+**Instructions:** Write a script `0-format_analysis.sh` (bash calling a Python helper is fine) that reads `$HANDOFF_DIR/data/enriched_events.json` and produces `format_analysis.json`. For each distinct `source_type` present in the data, the output must include:
+
+- `record_count`
+    
+- `first_event` and `last_event` timestamps
+    
+- `unique_hosts` count
+    
+- `field_profile`: for every field observed in at least one record of this source, list `presence_pct`, `inferred_type`, `cardinality`, and up to three `example_values`
+    
+- `top_event_categories` with counts
+    
+
+The script must also print a human-readable summary to stdout listing each source and its record count, and a line counting the total number of source types discovered.
+
+The script must default `HANDOFF_DIR` to `~/3x00_handoff/evidence_handoff` if the variable is not set.
+
+**Expected Output:**
+
+```php-template
+$ source ~/m3_env.sh && ./0-format_analysis.sh
+windows_json     <N> records   <N> hosts   <N> fields
+linux_text       <N> records   <N> hosts   <N> fields
+firewall         <N> records   <N> hosts   <N> fields
+suricata_alert   <N> records   <N> hosts   <N> fields
+pcap_flow        <N> records   <N> hosts   <N> fields
+<N> source types profiled
+format_analysis.json written
+```
+
+_Note: Exact counts depend on your 3x00 pipeline output._
+
+[View the script](0-format_analysis.md)
+
+---
+### 1-Critical Field Extraction and Indexing
+
+**Goal:** _Extract the critical analytical fields from every record and build a compact index keyed by field name for fast lookup._
+
+---
+
+**Context:** During triage you do not want to scan 40,000 records every time you ask "which hosts saw a `user` value of `svc_backup`". You want an index that answers that question in milliseconds. This task builds the index once and writes it to disk so every subsequent task in the project reads from it instead of re-scanning the enriched dataset.
+
+---
+
+**Instructions:** Write a script `1-field_index.sh` that reads `$HANDOFF_DIR/data/enriched_events.json` and produces `field_index.json` containing, for each critical field in the schema, a reverse index mapping observed values to the list of event references where they appear. Critical fields must include at minimum: `hostname`, `user`, `process_name`, `src_ip`, `dst_ip`, `event_category`, `source_type`.
+
+For each value in the index, include the count of occurrences and an optional capped list of up to 50 `event_ref` pointers. Values that occur more than 50 times should only store the count and a `capped: true` marker to keep the index bounded.
+
+The script must default `HANDOFF_DIR` to `~/3x00_handoff/evidence_handoff` if not set.
+
+Print a summary showing total fields indexed, total unique values, and index size on disk.
+
+**Expected Output:**
+
+```sql
+$ source ~/m3_env.sh && ./1-field_index.sh
+indexing 7 critical fields over <N> records
+  hostname        unique values :   <N>
+  user            unique values :   <N>
+  process_name    unique values :   <N>
+  src_ip          unique values :   <N>
+  dst_ip          unique values :   <N>
+  event_category  unique values :   <N>
+  source_type     unique values :   <N>
+field_index.json written (<X> MB)
+```
+
+[View the script](1-field_index.sh)
+
+---
+
+### 2-Reusable Query Toolkit
 
 **Goal:** _Build a reusable CLI query toolkit that filters, projects, and aggregates events from the handoff dataset without a SIEM._
 
@@ -108,7 +199,7 @@ query_toolkit.sh <verb> [options]
 [View the script](2-query_toolkit.sh)
 
 ---
-## Event Type Taxonomy
+### 3-Event Type Taxonomy
 
 **Goal:** _Build the MedDefense event type taxonomy that maps every observed source-specific event into a canonical analytical label._
 
@@ -154,7 +245,7 @@ labeled_events.json written
 [View the script](3-event_taxonomy.sh)
 
 ---
-## Authentication Baseline
+### 4-Authentication Baseline
 
 **Goal:** _Compute the authentication baseline over the clean window: per-host, per-user, per-time-of-day success and failure patterns._
 
@@ -197,7 +288,7 @@ baseline_auth.json written
 [View the script](4-baseline_auth.sh)
 
 ---
-## Process Execution Baseline
+### 5-Process Execution Baseline
 
 **Goal:** _Compute the per-host process execution baseline: which processes are expected on which host and with what frequency._
 
@@ -234,8 +325,126 @@ baseline_process.json written
 [View the script](5-baseline_process.sh)
 
 ---
+### 6-Network Connection Baseline
 
-### Cross-Source Baseline Summary
+**Goal:** _Compute the network baseline: expected destinations, ports, and services per host, and expected cross-zone flows._
+
+---
+
+**Context:** The network baseline captures who normally talks to whom, on which port, and across which network zone boundaries. The asset inventory and network zone enrichment from 3x00 make it possible to reason about flows at the zone level, not just at the IP level, which matters for healthcare segmentation compliance. A clinical workstation normally talks to the EHR server on 443 and to the internal DNS on 53 and to nothing else. A flow to an unknown external IP on port 8443 is immediately suspicious even if the destination is not on a threat feed.
+
+---
+
+**Instructions:** Write a script `6-baseline_network.sh` that reads `labeled_events.json`, restricts to the baseline window, and produces `baseline_network.json` containing:
+
+- `per_host_destinations`: for each host, the set of distinct `dst_ip` contacted with counts
+    
+- `per_host_ports`: for each host, the set of distinct `dst_port` used with counts
+    
+- `zone_flows`: counts of flows keyed by `(src_zone, dst_zone)` tuples derived from the enrichment
+    
+- `known_external_ips`: the list of `dst_ip` values falling into an external zone with counts
+    
+- `service_profiles`: the mapping of `dst_port` to the set of hosts that normally use it
+    
+
+**Expected Output:**
+
+```php-template
+$ ./6-baseline_network.sh
+baseline window   : <start> -> <end>
+hosts with network activity : <N>
+distinct dst_ip           : <N>
+distinct dst_port         : <N>
+zone flows recorded       : <N>
+known external IPs        : <N>
+baseline_network.json written
+```
+
+[View the script](6-baseline_network.sh)
+
+---
+### 7-File Access Baseline
+
+**Goal:** _Compute the baseline for file access events against sensitive directories on every host._
+
+---
+
+**Context:** Sensitive directories are the ones where a single unexpected read or write is a signal. `/etc/shadow`, `/etc/sudoers.d/`, `/var/log/audit/`, `C:\Windows\System32\config\`, and the MedDefense application config directories are touched by a small, predictable set of processes and users during normal operation. The baseline captures that footprint so any access from outside the footprint becomes visible later.
+
+---
+
+**Instructions:** Write a script `7-baseline_file.sh` that reads `labeled_events.json`, restricts to events with canonical labels `file_read_sensitive`, `file_write_sensitive`, or `file_permission_change`, and produces `baseline_file.json` containing:
+
+- `sensitive_paths`: the distinct set of sensitive file paths observed during the baseline
+    
+- `per_path_access`: for each path, the list of distinct accessing processes and users with counts
+    
+- `per_host_paths`: for each host, the set of sensitive paths touched during the baseline
+    
+- `rare_accesses`: paths touched fewer than three times during the whole baseline
+    
+
+The list of sensitive path prefixes must be declared at the top of the script as a configurable array: `/etc/shadow`, `/etc/sudoers`, `/etc/ssh/`, `/var/log/audit/`, `C:\\Windows\\System32\\config\\`, and MedDefense application paths.
+
+**Expected Output:**
+
+```php-template
+$ ./7-baseline_file.sh
+baseline window   : <start> -> <end>
+sensitive paths   : <N>
+total accesses    : <N>
+per host coverage : <N> hosts
+rare accesses     : <N>
+baseline_file.json written
+```
+
+[View the script](7-baseline_file.sh)
+
+---
+### 8-Temporal Pattern Analysis
+
+**Goal:** _Produce hourly and daily activity profiles per source type to capture when things normally happen._
+
+---
+
+**Context:** MedDefense is a hospital. Clinical staff log in at 06:00, administrative staff arrive at 08:00, backup jobs run at 02:00, nobody deploys code at midnight. A burst of auditd execve events at 03:00 on Saturday is either the weekly backup window or something that should have never happened. The temporal profile encodes those rhythms as numbers. T10, T11, and T12 will compare the evaluation window against this profile to flag time-shape anomalies.
+
+---
+
+**Instructions:** Write a script `8-temporal_profile.sh` that reads `labeled_events.json`, restricts to the baseline window, and produces `temporal_profile.json` containing for each `source_type` and each `canonical_label`:
+
+- `hour_of_day_histogram`: 24 buckets with mean count per hour of day over the baseline
+    
+- `day_of_week_histogram`: 7 buckets with mean count per day of week
+    
+- `peak_hour` and `quiet_hour`
+    
+- `business_offhours_ratio`: the ratio of business-hours events to off-hours events
+    
+
+The script must also emit a simple ASCII histogram for the top three most active canonical labels for human inspection.
+
+**Expected Output:**
+
+```php-template
+$ ./8-temporal_profile.sh
+source_type         labels profiled
+  windows_json           <N>
+  linux_text             <N>
+  firewall               <N>
+  suricata_alert         <N>
+  pcap_flow              <N>
+top 3 labels temporal shape (per hour, baseline avg):
+  process_start  ...
+  login_success  ...
+temporal_profile.json written
+```
+
+[View the script](8-temporal_profile.sh)
+
+---
+### 9-Cross-Source Baseline Summary
 
 **Goal:** _Combine all baselines into a single machine-readable baseline summary consumed by the anomaly detection block._
 
@@ -278,7 +487,7 @@ baseline_summary.json written
 
 ---
 
-### Authentication Anomalies
+### 10-Authentication Anomalies
 
 **Goal:** _Scan the evaluation window for authentication anomalies using thresholds derived from the baseline summary._
 
@@ -318,7 +527,7 @@ anomalies_auth.json written
 
 ---
 
-### Process Anomalies
+### 11-Process Anomalies
 
 **Goal:** _Scan the evaluation window for process execution anomalies relative to the per-host process baseline._
 
@@ -360,7 +569,49 @@ anomalies_process.json written
 [View the script](11-anomalies_process.sh)
 
 ---
-### Cross-Source Correlation
+### 12-Network Anomalies
+
+**Goal:** _Scan the evaluation window for network anomalies relative to the per-host network baseline._
+
+---
+
+**Context:** Network anomalies catch lateral movement, data exfiltration, and command and control before the endpoint side has a chance to generate high-fidelity telemetry. The baseline tells you what each host normally contacts and how. Anything outside that set is either a new service, a misconfiguration, or the thing you need to find.
+
+---
+
+**Instructions:** Write a script `12-anomalies_network.sh` that reads `baseline_summary.json` and `labeled_events.json`, restricts to the evaluation window, and writes `anomalies_network.json` containing one entry per anomaly with `timestamp`, `host`, `src_ip`, `dst_ip`, `dst_port`, `src_zone`, `dst_zone`, `anomaly_type`, `severity`, `event_refs`.
+
+The script must detect at minimum:
+
+- `unknown_destination_for_host`: a `dst_ip` that this host never contacted during the baseline
+    
+- `unknown_port_for_host`: a `dst_port` this host never used during the baseline
+    
+- `unexpected_zone_flow`: a `(src_zone, dst_zone)` pair that never occurred in the baseline
+    
+- `volume_burst`: a 1-hour window where the host's outbound connection count exceeds the baseline mean multiplied by the threshold
+    
+- `external_destination_new`: a `dst_ip` in an external zone that never appeared in `known_external_ips`
+    
+
+**Expected Output:**
+
+```php-template
+$ ./12-anomalies_network.sh
+evaluation window : <start> -> <end>
+unknown_destination_for_host : <N>
+unknown_port_for_host        : <N>
+unexpected_zone_flow         : <N>
+volume_burst                 : <N>
+external_destination_new     : <N>
+total anomalies              : <N>
+anomalies_network.json written
+```
+
+[View the script](12-anomalies_network.sh)
+
+---
+### 13-Cross-Source Correlation
 
 **Goal:** _Correlate anomalies from multiple sources that share a host and a time window to produce higher confidence findings._
 
@@ -403,7 +654,51 @@ correlated_anomalies.json written
 [View the script](13-correlate_anomalies.sh)
 
 ---
-### Baseline Validation
+### 14-Anomaly Priority Ranking
+
+
+**Goal:** _Rank every anomaly (single-source and correlated) by a composite priority score suitable for an analyst queue._
+
+---
+
+**Context:** Anomaly output without ranking is useless in a real SOC. If you give a Tier 1 analyst a flat list of 40 items, they work the first few and run out of shift. You need to guarantee the highest-risk item is at the top so the first ten minutes of the shift focus on the right thing. The score must be explainable so senior analysts can audit why item number one is at the top.
+
+---
+
+**Instructions:** Write a script `14-rank_anomalies.sh` that reads `anomalies_auth.json`, `anomalies_process.json`, `anomalies_network.json`, and `correlated_anomalies.json`, and writes `ranked_anomalies.json` containing every item sorted descending by `priority_score`.
+
+The priority score must be a deterministic integer computed from:
+
+- Base severity value (`low=1`, `medium=3`, `high=5`, `critical=8`)
+    
+- Asset criticality multiplier (`low=1`, `medium=2`, `high=3`, `critical=4`)
+    
+- Cross-source correlation bonus (`+2` per additional source beyond the first)
+    
+- Off-hours bonus (`+1` if the anomaly occurred outside business hours)
+    
+- Known high-risk category bonus (`+2` for `high_risk_process`, `privilege_escalation_surge`, or `external_destination_new`)
+    
+
+The output must include for every ranked entry the full anomaly record plus a `score_breakdown` sub-object.
+
+Print the top five items as a short table for human inspection.
+
+**Expected Output:**
+
+```php-template
+$ ./14-rank_anomalies.sh
+ranked anomalies total : <N>
+top 5:
+ 1  score <N>  <host>  <anomaly_type>
+ ...
+ranked_anomalies.json written
+```
+
+[View the script](14-rank_anomalies.sh)
+
+---
+### 15-Baseline Validation
 
 **Goal:** _Validate the baseline by running the anomaly scripts against the baseline window itself and then against the evaluation window, then checking that the results match expectations._
 
@@ -449,7 +744,79 @@ baseline_validation.json written
 
 ---
 
+### 16-Baseline Package Assembly
+
+**Goal:** _Assemble the self-contained `baseline_package/` directory that downstream projects and future analysts consume without configuration._
+
+---
+
+**Context:** This is the deliverable every other Module 3 project cites as a dependency. 3x02 uses the ranked anomalies to calibrate detection rule thresholds. 3x03 uses the ranked queue as the starting seed for its triage workflow. The capstone runs the same toolkit against a fresh handoff. The directory layout is the contract.
+
+---
+
+**Instructions:** Write a script `16-baseline_package.sh` that assembles the package at the path given by `$BASELINE_PKG` (default: `~/3x01_package/baseline_package/`) with the following exact layout:
+
+```markdown
+baseline_package/
+  baselines/
+    baseline_auth.json
+    baseline_process.json
+    baseline_network.json
+    baseline_file.json
+    temporal_profile.json
+    baseline_summary.json
+  anomalies/
+    anomalies_auth.json
+    anomalies_process.json
+    anomalies_network.json
+    correlated_anomalies.json
+    ranked_anomalies.json
+  taxonomy/
+    event_taxonomy.json
+    labeled_events.json
+  reports/
+    format_analysis.json
+    field_index.json
+    baseline_validation.json
+  toolkit/
+    2-query_toolkit.sh
+    4-baseline_auth.sh
+    5-baseline_process.sh
+    6-baseline_network.sh
+    7-baseline_file.sh
+    8-temporal_profile.sh
+    9-baseline_summary.sh
+    10-anomalies_auth.sh
+    11-anomalies_process.sh
+    12-anomalies_network.sh
+    13-correlate_anomalies.sh
+    14-rank_anomalies.sh
+    15-baseline_validation.sh
+  MANIFEST.json
+```
+
+The script must copy every listed file, generate `MANIFEST.json` with path, size, and sha256 of every file, and run a final sanity check.
+
+**Expected Output:**
+
+```shell
+$ source ~/m3_env.sh && ./16-baseline_package.sh
+copying baselines   ... 6 files
+copying anomalies   ... 5 files
+copying taxonomy    ... 2 files
+copying reports     ... 3 files
+copying toolkit     ... 13 files
+MANIFEST.json       : 29 entries
+sanity check        : ok
+baseline_package/ ready
+```
+
+[View the script](16-baseline_package.sh)
+
+
+---
+
 # Review 
 
-[Checkout the review questions](Review.md)
+[Checkout the review questions](Review )
 
