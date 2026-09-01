@@ -40,8 +40,24 @@ _"Whatever you build, it runs against production. No staging environment. No lab
 
 ---
 
+[0-The Vulnerability Inventory](#0-the-vulnerability-inventory)
+[1-The Service Dependency Map](#1-the-service-dependeny-map)
+[2-The Pre-Patch Snapshot](#2-the-pre-patch-snapshot)
+[3-The Patch Plan](3-the-patch-plan)
+[4-The Safe Patch Execution](#4-the-safe-patch-execution)
+[5-The Post-Patch Service Validation](#5-the-post-patch-service-validation)
+[6-The Configuration Drift Detector](#6-the-configuration-drift-detector)
+[7-The Broken Upgrade Recovery](#7-the-broken-upgrade-recovery)
+[8-The Unattended Upgrades Configuration](#8-the-unattended-upgrades-configuration)
+[9-The Rollback Capability](#9-the-rollback-capability)
+[10-The Version Hold Management](#10-the-version-hold-management)
+[11-The Maintenance Window Enforcement](#11-the-maintenance-window-enforcement)
+[12-The Change Tracking Log](#12-the-change-tracking-log)
+[13-The End-to-End Patch Pipeline](#13-the-end-to-end-patch-pipeline)
+[14-The Pipeline Test Against a Simulated Advisory](#14-the-pipeline-test-against-a-simulated-advisory)
+[15-The Patch Compliance Artifact](#15-the-patch-compliance-artifact)
 
-## Tasks
+---
 
 ### 0-The Vulnerability Inventory
 
@@ -346,6 +362,7 @@ $ jq '.details[] | select(.status!="pass")' post_patch_validation.json
 ---
 
 ### 6-The Configuration Drift Detector
+
 **Goal:** _Detect every configuration file that changed during the patch run, distinguishing expected changes introduced by the new package versions from unexpected modifications that require investigation._
 
 **Context:** Patches often ship updated configuration defaults. Most of the time the package manager asks whether to keep the existing config or use the new one, and a noninteractive run defaults to keeping yours. But sometimes a patch silently updates an auxiliary config file under /etc, and that change can reintroduce a previously hardened setting. Drift detection catches this.
@@ -608,7 +625,7 @@ Report saved to: hold_management.json
 
 ---
 
-### 11. The Maintenance Window Enforcement
+### 11-The Maintenance Window Enforcement
 
 **Goal:** _Implement maintenance window control as code: a guard script that refuses to run patch operations outside defined windows and defers them with a machine-readable rationale._
 
