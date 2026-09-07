@@ -1,0 +1,36 @@
+title: Outbound Connection on Uncommon Port
+id: 6d3e27f1-91b4-4c8a-b7d2-3f105e9a62c4
+status: experimental
+description: Detects outbound connections on ports not previously observed for the host during baseline.
+logsource:
+  category: network_connection
+
+detection:
+  selection:
+    event_category: network_connection_outbound
+    baseline_known_port: false
+
+  filter_common_ports:
+    dst_port:
+      - 53
+      - 80
+      - 123
+      - 389
+      - 443
+      - 445
+      - 636
+      - 3306
+      - 5432
+
+  condition: selection and not filter_common_ports
+
+falsepositives:
+  - Developer hosts using temporary services
+  - Patch management servers
+  - Software update agents
+
+level: medium
+
+tags:
+  - attack.command_and_control
+  - attack.t1571

@@ -1,0 +1,24 @@
+title: Unknown Outbound Network Destination
+id: 4f19a6d0-3b82-45e1-a9c4-8c6e71f30b25
+status: experimental
+description: Detects outbound connections to external destinations not observed for the host during the baseline period.
+logsource:
+  category: network_connection
+
+detection:
+  selection:
+    event_category: network_connection_outbound
+    dst_zone: external
+    baseline_known_destination: false
+
+  condition: selection
+
+falsepositives:
+  - Newly approved external services
+  - Legitimate software update destinations
+
+level: medium
+
+tags:
+  - attack.command_and_control
+  - attack.t1071
