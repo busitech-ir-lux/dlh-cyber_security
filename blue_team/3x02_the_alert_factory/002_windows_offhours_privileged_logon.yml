@@ -1,0 +1,43 @@
+title: Windows Off-Hours Privileged Logon
+id: 2c7ad6f1-8b39-4d77-a950-43e86b23f2c1
+status: experimental
+description: >
+  Detects privileged Windows authentication activity occurring during
+  off-hours from 18:00 through 05:59. The rule uses the custom
+  hour_of_day field, which is derived from the event timestamp by the
+  project Sigma runner at execution time. In the MedDefense healthcare
+  environment, privileged remote or network logons outside normal working
+  hours may indicate stolen administrative credentials or unauthorized
+  access to systems supporting clinical operations. SOC analysts should
+  verify the account, source workstation, destination host, and whether
+  the activity corresponds to approved after-hours administration.
+logsource:
+  product: windows
+  service: security
+
+detection:
+  selection:
+    event_id:
+      - 4624
+      - 4672
+    LogonType:
+      - '3'
+      - '10'
+
+  offhours_evening:
+    hour_of_day|gte: 18
+
+  offhours_morning:
+    hour_of_day|lt: 6
+
+  condition: selection and (offhours_evening or offhours_morning)
+
+falsepositives:
+  - MedDefense IT or clinical support staff performing approved after-hours support shifts
+  - Scheduled administrative jobs or maintenance tasks running with privileged credentials
+
+level: medium
+
+tags:
+  - attack.initial_access
+  - attack.t1078
