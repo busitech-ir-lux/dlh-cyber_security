@@ -1,0 +1,130 @@
+#!/bin/bash
+set -euo pipefail
+
+ASSETS_DIR="${ASSETS_DIR:-$HOME/3x02_assets}"
+
+RISK="$ASSETS_DIR/risk_register.json"
+QUALITY="rule_quality.json"
+COVERAGE="attack_coverage.json"
+OUTPUT="rule_prioritization.json"
+
+python3 -W error - "$RISK" "$QUALITY" "$COVERAGE" "$OUTPUT" <<'PY'
+import json
+import sys
+
+risk_file, quality_file, coverage_file, output = sys.argv[1:]
+
+with open(risk_file, encoding="utf-8") as f:
+    risk_data = json.load(f)
+
+with open(quality_file, encoding="utf-8") as f:
+    quality_data = json.load(f)
+
+with open(coverage_file, encoding="utf-8") as f:
+    coverage_data = json.load(f)
+
+# Support either a plain list or {"rules": [...]}
+quality = quality_data.get("rules", quality_data) if isinstance(quality_data, dict) else quality_data
+coverage = coverage_data.get("rules", coverage_data) if isinstance(coverage_data, dict) else coverage_data
+
+# Risk register scenarios
+scenarios = risk_data.get(
+    "threat_scenarios",
+    risk_data.get("scenarios", risk_data if isinstance(risk_data, list) else [])
+)
+
+# Map coverage information by rule_id
+coverage_by_id = {
+    str(r["rule_id"]): r
+    for r in coverage
+    if r.get("rule_id")
+}
+
+results = []
+
+for rule in quality:
+    rule_id = str(rule.get("rule_id", ""))
+    cov = coverage_by_id.get(rule_id, {})
+
+    # ATT&CK techniques covered by this rule
+    techniques = cov.get(
+        "techniques",
+        cov.get("attack_techniques", cov.get("tags", []))
+    )
+
+    rule_techniques = {
+        str(t).lower().replace("attack.", "")
+        for t in techniques
+        if str(t).lower().startswith(("attack.t", "t"))
+    }
+
+    risk_score = 0
+    covering_scenarios = []
+
+    for scenario in scenarios:
+        scenario_techniques = scenario.get(
+            "techniques",
+            scenario.get(
+                "attack_techniques",
+                scenario.get("covered_techniques", [])
+            )
+        )
+
+        scenario_techniques = {
+            str(t).lower().replace("attack.", "")
+            for t in scenario_techniques
+        }
+
+        if rule_techniques & scenario_techniques:
+            likelihood = float(scenario.get("likelihood", 0))
+            impact = float(scenario.get("impact", 0))
+
+            risk_score += likelihood * impact
+
+            covering_scenarios.append(
+                scenario.get(
+                    "id",
+                    scenario.get("name", scenario.get("title", "unknown"))
+                )
+            )
+
+    f1 = rule.get("f1")
+    f1 = 0.0 if f1 is None else float(f1)
+
+    # Minimum multiplier of 0.1 when F1 is zero
+    multiplier = 0.1 if f1 == 0 else f1
+    priority_score = risk_score * multiplier
+
+    results.append({
+        "rule_id": rule_id,
+        "rule_title": rule.get("rule_title", ""),
+        "risk_score": round(risk_score, 2),
+        "f1": round(f1, 4),
+        "priority_score": round(priority_score, 2),
+        "covering_scenarios": covering_scenarios,
+        "level": rule.get("level", "")
+    })
+
+# Highest priority first
+results.sort(key=lambda x: x["priority_score"], reverse=True)
+
+with open(output, "w", encoding="utf-8") as f:
+    json.dump(results, f, indent=2)
+    f.write("\n")
+
+print("top 10 rules by priority_score")
+
+top = [r for r in results if r["priority_score"] > 0][:10]
+
+for i, r in enumerate(top, 1):
+    print(f"{i:2}  {r['priority_score']:5.1f}  {r['rule_title']}")
+
+orphans = [r for r in results if r["priority_score"] == 0]
+
+print(f"orphan rules (no risk scenario covers) : {len(orphans)}")
+
+for r in orphans:
+    print(f"  ORPHAN  {r['rule_title']}")
+
+print("rule_prioritization.json written")
+PY
