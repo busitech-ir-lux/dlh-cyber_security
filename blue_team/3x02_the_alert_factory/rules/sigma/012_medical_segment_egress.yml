@@ -1,0 +1,26 @@
+title: Medical Device Segment Egress
+id: 98e6a21d-4b73-45f0-a8c1-5d29e3407b16
+status: experimental
+description: Detects traffic leaving the medical_devices segment to an unauthorized zone. MedDefense policy states that medical devices have no direct internet egress.
+logsource:
+  category: network_connection
+
+detection:
+  selection:
+    src_zone: medical_devices
+
+  filter_allowed:
+    dst_zone:
+      - medical_devices
+      - management
+
+  condition: selection and not filter_allowed
+
+falsepositives:
+  - Newly approved medical device management flow
+
+level: critical
+
+tags:
+  - attack.command_and_control
+  - attack.t1071.001

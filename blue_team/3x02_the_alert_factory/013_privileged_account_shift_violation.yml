@@ -1,0 +1,24 @@
+title: Privileged Account Outside Approved Shift
+id: 3a5c7e92-18d4-4f63-9b20-e71c6a405d38
+status: experimental
+description: Detects privileged Windows activity occurring outside the account's normal shift hours derived from the 3x01 temporal profile.
+logsource:
+  product: windows
+  service: security
+
+detection:
+  selection:
+    event_id: 4672
+    shift_hour_match: false
+
+  condition: selection
+
+falsepositives:
+  - Approved on-call incident response rotations
+  - Emergency after-hours administration
+
+level: high
+
+tags:
+  - attack.privilege_escalation
+  - attack.t1078

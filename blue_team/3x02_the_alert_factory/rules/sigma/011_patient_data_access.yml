@@ -1,0 +1,31 @@
+title: Unauthorized Patient Data Access
+id: 7c31e5a8-0d62-4b74-9f26-3a80d1e59c42
+status: experimental
+description: Detects access to MedDefense patient record locations by accounts outside the approved clinical access whitelist.
+logsource:
+  category: file_access
+
+detection:
+  selection_windows:
+    product: windows
+    event_id: 4663
+    target_path|startswith: '\\meddb\patient_data\'
+
+  selection_linux:
+    product: linux
+    target_path|startswith: '/mnt/ehr/patient_records/'
+
+  filter_whitelist:
+    clinical_access_whitelist: true
+
+  condition: (selection_windows or selection_linux) and not filter_whitelist
+
+falsepositives:
+  - Approved emergency clinical access
+  - Authorized audit activity
+
+level: critical
+
+tags:
+  - attack.collection
+  - attack.t1005
