@@ -1,0 +1,45 @@
+title: Windows Interpreter Execution from Non-Standard Parent
+id: 6c56ecf7-c1de-4f27-a983-3c107ef93e52
+status: experimental
+description: >
+  Detects execution of high-risk Windows command and script interpreters
+  when they are launched by a process that is not a standard interactive
+  Windows shell. PowerShell, Command Prompt, Windows Script Host, and
+  MSHTA are frequently abused for execution. MedDefense SOC analysts
+  should review the parent process, command line, user, and destination
+  host and determine whether the activity is part of approved scripted
+  maintenance.
+logsource:
+  category: process_creation
+  product: windows
+
+detection:
+  selection:
+    process_name|endswith:
+      - powershell.exe
+      - cmd.exe
+      - wscript.exe
+      - cscript.exe
+      - mshta.exe
+
+  parent_present:
+    parent_process_name|exists: true
+
+  filter_standard_shell:
+    parent_process_name|endswith:
+      - explorer.exe
+      - cmd.exe
+      - powershell.exe
+
+  condition: selection and parent_present and not filter_standard_shell
+
+falsepositives:
+  - Approved MedDefense scripted maintenance launched by endpoint management or software deployment tooling
+  - Administrative scripts started by authorized IT support tools during system maintenance
+
+level: high
+
+tags:
+  - attack.execution
+  - attack.t1059.001
+  - attack.t1059.003
