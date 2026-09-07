@@ -56,6 +56,23 @@ Robert Kim will drop the risk register at `~/3x02_assets/risk_register.json` o
 ---
 
 - [0-Detection Type Analysis](#0-detection-type-analysis)
+- [1-First Sigma Rule: SSH Repeated Failed Auth](#1-first-sigma-rule:-ssh-repeated-failed-auth)
+- [2-Windows Authentication Pattern Rule](#2-windows-authentication-pattern-rule)
+- [3-Sigma Toolchain and Runner](#3-sigma-toolchain-and-runner)
+- [4-Process Execution Detection Rules](#4-process-execution-detection-rules)
+- [5-Scheduled Task and Registry Persistence Rules](#5-scheduled-task-and-registry-persistence-rules)
+- [6-Network Connection Pattern Rules](#6-network-connection-pattern-rules)
+- [7-Cross-Host Lateral Movement Rule](#7-cross-host-lateral-movement-rule)
+- [8-Multi-Source Credential Theft Chain](#8-multi-source-sredential-theft-chain)
+- [9-MedDefense-Specific Detection Rules](#9-meddefense-specific-setection-rules)
+- [10-False Positive Baseline](#10-false-positive-baseline)
+- [11-Tuning Pass on Noisy Rules](#11-tuning-pass-on-noisy-rules)
+- [12-ATT&CK Coverage Map](#12-att&ck-coverage-map)
+- [13-Per-Rule Quality Metrics](#13-per-rule-quality-metrics)
+- [14-Risk-Based Rule Prioritization](#14-risk-based-rule-prioritization)
+- [15-Generate Alert Queue for Triage](#15-generate-alert-queue-for-triage)
+- [16-Detection Catalog Assembly](#16-detection-catalog-assembly)
+- [17-Detection Engineering Specification](#17-detection-engineering-specification)
 
 
 ---
@@ -96,4 +113,779 @@ detection_matrix.json written
 ```
 
 [View the script](0-detection_matrix.sh)
+
+---
+
+### 1-First Sigma Rule: SSH Repeated Failed Auth
+
+**Goal:** _Write your first production-grade Sigma rule and prove it matches the SSH brute force events present in the evaluation window._
+
+---
+
+**Context:** Every SOC writes an SSH brute force rule. It is the canonical introductory detection because the log format is standardized, the signal is unambiguous, and the failure mode is well understood. You will write a Sigma rule that detects repeated failed SSH authentications from the same source within a short window, author it to the full Sigma specification, and confirm it fires on the exact events the 3x01 anomaly output already flagged. This is the rule every subsequent rule in the project is graded against for stylistic consistency.
+
+---
+
+**Instructions:** Write a Sigma rule at `rules/sigma/001_ssh_brute_force.yml` that detects five or more SSH authentication failures from the same source IP within 120 seconds on any Linux host. The rule must:
+
+- Declare a valid UUID v4 `id`
+- Set `status: experimental`
+- Target `logsource: product: linux, service: auth`
+- Select on `canonical_label: login_failure` and `event_category: authentication`
+- Include a `count() by src_ip` aggregation condition with `> 5` threshold and `timeframe: 120s`
+- Declare `level: high`
+- Tag with `attack.credential_access` and `attack.t1110.001`
+- Include a `falsepositives` list with at least two realistic MedDefense scenarios
+- Include a `description` naming the threat, data source, and expected operational response
+
+**Expected Output:**
+
+```rust
+$ python3 -c 'import yaml; print(yaml.safe_load(open("rules/sigma/001_ssh_brute_force.yml"))["title"])'
+SSH Repeated Authentication Failures from Single Source
+```
+
+[View the yaml file](rules/sigma/001_ssh_brute_force.yml)
+
+---
+
+### 2-Windows Authentication Pattern Rule
+
+**Goal:** _Write a Sigma rule detecting suspicious Windows authentication patterns derived from your 3x01 baseline._
+
+---
+
+**Context:** Windows authentication attacks rarely look like brute force. They look like a single successful login for an account that has never logged into that host, at a time the account never logs in, from a workstation the account has never used. The 3x01 authentication baseline already captured the per-user, per-host, per-hour pattern. The rule you are writing here encodes those expectations in a form the runner can execute against any evidence drop.
+
+---
+
+**Instructions:** Write a Sigma rule at `rules/sigma/002_windows_offhours_privileged_logon.yml` that detects privileged Windows logons during off-hours (18:00 to 05:59). The rule must:
+
+- Target `logsource: product: windows, service: security`
+- Select on `event_id` values 4624 and 4672 with `LogonType: '3'` or `LogonType: '10'`
+- Include a condition using a custom field `hour_of_day` (computed by the runner at execution time; document this extension in `description`)
+- Set `level: medium`
+- Tags: `attack.initial_access`, `attack.t1078`
+- `falsepositives` including after-hours support shifts and scheduled administrative jobs
+- `description` explaining why off-hours privileged logon is meaningful in a healthcare environment
+
+**Expected Output:**
+
+```rust
+$ python3 -c 'import yaml; r=yaml.safe_load(open("rules/sigma/002_windows_offhours_privileged_logon.yml")); print(r["level"], r["tags"])'
+medium ['attack.initial_access', 'attack.t1078']
+```
+
+[View the YAML file](002_windows_offhours_privileged_logon.yml)
+
+---
+
+### 3-Sigma Toolchain and Runner
+
+**Goal:** _Install the Sigma toolchain and build the runner script that executes Sigma rules against the flat normalized dataset._
+
+---
+
+**Context:** `sigma-cli` converts rules to SIEM query languages but does not execute rules directly against flat JSON files. The runner you build here closes the gap: it loads a Sigma rule YAML, interprets the detection block, and executes the predicate against the normalized dataset.
+
+**Note:** `sigma-cli` is not pre-installed on the lab. Build `3-sigma_runner.sh` using Python3 and the standard `yaml` library (which is available). If you choose to install sigma-cli, use `pip install sigma-cli pysigma --user`.
+
+---
+
+**Instructions:** Write `3-sigma_runner.sh` that takes a Sigma rule file and optionally an evidence file as arguments and emits a JSON object to stdout with:
+
+- `rule_id`, `rule_title`, `level`, `evidence_path`
+- `match_count`
+- `matches`: list of event references (each with `timestamp`, `hostname`, `event_ref`)
+- `execution_time_ms`
+
+The runner must support:
+
+- `--dry-run`: only validates the rule YAML and prints `VALID` or the parse error
+- `--count-only`: returns only the match count
+- `--window <start_iso,end_iso>`: restricts evaluation to a time range
+
+The runner reads from `$HANDOFF_DIR/data/normalized_events.json` by default and uses `python3` with `import yaml` to parse the rule. Aggregation conditions (`count() by src_ip > 5 within 120s`) must be implemented in a Python helper.
+
+**Expected Output:**
+
+```shell
+$ ./3-sigma_runner.sh rules/sigma/001_ssh_brute_force.yml --dry-run
+VALID
+
+$ ./3-sigma_runner.sh rules/sigma/001_ssh_brute_force.yml --count-only
+<N>
+```
+
+[View the script](3-sigma_runner.sh)
+
+---
+
+### 4-Process Execution Detection Rules
+
+**Goal:** _Write two Sigma rules detecting interpreter abuse and reconnaissance tool execution on endpoints._
+
+---
+
+**Context:** Process execution is the highest-signal telemetry a defender has. An attacker on an endpoint almost always launches something. The 3x01 process baseline identified per-host expected processes and flagged `high_risk_process` anomalies for interpreters (`powershell.exe`, `cmd.exe`, `wscript.exe`, `mshta.exe`) and recon tooling (`nmap`, `whoami`, `net.exe`, `systeminfo`, `tasklist`). You now encode those behaviors as detection rules the runner can execute on any fresh dataset without depending on an already-computed baseline.
+
+---
+
+**Instructions:** Write two Sigma rules.
+
+`rules/sigma/003_interpreter_abuse.yml` must:
+
+- Detect execution of `powershell.exe`, `cmd.exe`, `wscript.exe`, `cscript.exe`, or `mshta.exe` when parent process is not a standard shell
+- Target `logsource: category: process_creation, product: windows`
+- Level `high`; tags `attack.execution`, `attack.t1059.001`, `attack.t1059.003`
+- Realistic `falsepositives` covering legitimate MedDefense scripted maintenance
+
+`rules/sigma/004_recon_tool_execution.yml` must:
+
+- Detect execution of `whoami.exe`, `net.exe`, `systeminfo.exe`, `tasklist.exe`, `netstat.exe`, or `nmap` where the process was not seen during baseline
+- Use custom field `baseline_seen: false` (boolean computed by the runner from `$BASELINE_PKG/baselines/baseline_process.json`)
+- Target both `product: windows` and `product: linux` via two selection blocks
+- Level `medium`; tags `attack.discovery`, `attack.t1087`, `attack.t1082`
+- `description` citing the 3x01 anomaly report as source
+
+**Expected Output:**
+
+```shell
+$ ./3-sigma_runner.sh rules/sigma/003_interpreter_abuse.yml --count-only
+<N>
+
+$ ./3-sigma_runner.sh rules/sigma/004_recon_tool_execution.yml --count-only
+<N>
+```
+
+
+- [View YAML 3 file](003_interpreter_abuse.yml) 
+- [View YAML 4 file](004_recon_tool_execution.yml)
+
+---
+### 5-Scheduled Task and Registry Persistence Rules
+
+**Goal:** _Write two Sigma rules detecting persistence via scheduled tasks and registry autorun modification._
+
+---
+
+**Context:** Persistence is the attacker's insurance policy. Once an attacker has code execution, they immediately plant a mechanism to survive reboots and credential rotations. Scheduled task creation and registry autorun modification are the two most common persistence techniques on Windows and appear in almost every red team engagement. On the detection side they are straightforward because the underlying events are structured, logged by default, and rarely touched by clinical software.
+
+---
+
+**Instructions:** Write two Sigma rules.
+
+`rules/sigma/005_scheduled_task_creation.yml` must:
+
+- Detect Windows Event ID 4698 (scheduled task created) or Sysmon Event ID 1 where image is `schtasks.exe` with `/create` argument
+- Exclude tasks created by `SYSTEM` account or `Windows Defender` via a Sigma `filter` selection
+- Level `high`; tags `attack.persistence`, `attack.t1053.005`
+- `falsepositives` including software installers and known MedDefense automation
+
+`rules/sigma/006_registry_autorun_modify.yml` must:
+
+- Detect Sysmon Event ID 13 (registry value set) on autorun paths:
+- `HKLM\Software\Microsoft\Windows\CurrentVersion\Run`
+- `HKLM\Software\Microsoft\Windows\CurrentVersion\RunOnce`
+- `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
+- `HKCU\Software\Microsoft\Windows\CurrentVersion\RunOnce`
+- Level `high`; tags `attack.persistence`, `attack.t1547.001`
+- `falsepositives` including OEM software and clinical imaging vendor update agent
+
+**Expected Output:**
+
+```shell
+$ ./3-sigma_runner.sh rules/sigma/005_scheduled_task_creation.yml --count-only
+<N>
+
+$ ./3-sigma_runner.sh rules/sigma/006_registry_autorun_modify.yml --count-only
+<N>
+```
+
+[View YAML file 1](005_scheduled_task_creation.yml)
+[View YAML file 2](006_registry_autorun_modify.yml)
+
+---
+### 6-Network Connection Pattern Rules
+
+**Goal:** _Write two Sigma rules detecting outbound connections to unknown destinations and connections on uncommon ports._
+
+---
+
+**Context:** The 3x01 network baseline captured per-host destinations, ports, and zone flows. You already know every production host's expected talker set. Translating that knowledge into Sigma rules lets the runner reproduce the same findings without rerunning the full baseline script, and gives Dr. Morales a single detection catalog entry for each behavior rather than a buried line in an anomalies report.
+
+---
+
+**Instructions:** Write two Sigma rules.
+
+`rules/sigma/007_unknown_outbound_destination.yml` must:
+
+- Detect an outbound network connection where `dst_ip` is not in per-host destination list from `$BASELINE_PKG/baselines/baseline_network.json` and destination is in an `external` zone
+- Use custom field `baseline_known_destination: false` (computed by the runner)
+- Level `medium`; tags `attack.command_and_control`, `attack.t1071`
+
+`rules/sigma/008_uncommon_port_outbound.yml` must:
+
+- Detect outbound connections on ports outside `{53, 80, 123, 389, 443, 445, 636, 3306, 5432}` when host has never used that port during baseline
+- Level `medium`; tags `attack.command_and_control`, `attack.t1571`
+- `falsepositives` including developer hosts, patch management servers, and update agents
+
+**Expected Output:**
+
+```shell
+$ ./3-sigma_runner.sh rules/sigma/007_unknown_outbound_destination.yml --count-only
+<N>
+
+$ ./3-sigma_runner.sh rules/sigma/008_uncommon_port_outbound.yml --count-only
+<N>
+```
+
+[View YAML file 1](007_unknown_outbound_destination.yml)
+[View YAML file 2](008_uncommon_port_outbound.yml)
+
+---
+### 7-Cross-Host Lateral Movement Rule
+
+**Goal:** _Write a Sigma rule detecting cross-host authentication patterns consistent with lateral movement._
+
+---
+
+**Context:** Lateral movement is the defining behavior that turns a foothold into a breach. On Windows it surfaces as network logons to multiple hosts from the same source within a short window, often using administrative protocols like SMB or WinRM. On Linux it surfaces as remote SSH sessions establishing connections outward after landing. The rule here captures the Windows variant, which is the more common pattern at MedDefense based on the 3x01 auth baseline.
+
+---
+
+**Instructions:** Write a Sigma rule at `rules/sigma/009_lateral_movement_smb.yml` that:
+
+- Detects Windows Event ID 4624 with `LogonType: '3'` where the same account authenticates to three or more distinct destination hosts within 300 seconds
+- Excludes service accounts via a `lateral_movement_allowlist` field populated from `$ASSETS_DIR/risk_register.json` at runner time
+- Uses aggregation condition `count(distinct Computer) by TargetUserName > 2` with `timeframe: 5m`
+- Level `high`; tags `attack.lateral_movement`, `attack.t1021.002`
+- `description` explaining why three distinct targets in five minutes is the canonical lateral movement signature
+
+**Expected Output:**
+
+```shell
+$ ./3-sigma_runner.sh rules/sigma/009_lateral_movement_smb.yml --count-only
+<N>
+```
+
+[View YAML file](009_lateral_movement_smb.yml)
+
+---
+### 8-Multi-Source Credential Theft Chain
+
+**Goal:** _Write a multi-source correlation rule that detects a credential theft chain combining failed authentications, successful authentication from a different source, and downstream privileged activity._
+
+---
+
+**Context:** Pure Sigma has limited native support for multi-source correlation. Most real SIEM implementations execute Sigma rules single-source and delegate correlation to higher layers. Here you write a Sigma rule that expresses the intent in Sigma syntax and delegate the heavy lifting of cross-source matching to the runner, which preprocesses events into correlation primitives before applying the rule predicate. This is how detection engineers actually build chain detections in practice.
+
+---
+
+**Instructions:** Write a Sigma rule at `rules/sigma/010_credential_theft_chain.yml` that detects:
+
+1. Three or more authentication failures for the same user from source IP A within 300 seconds
+2. Followed by a successful authentication for the same user from source IP B (different from A) within 300 seconds
+3. Followed by any `privilege_escalation` canonical label on the same host within 600 seconds
+
+The rule must:
+
+- Use custom field `correlation_primitive: credential_compromise_chain` that the runner recognizes
+- Ship with companion Python helper `8-correlation_primitives.py` that builds the correlation stream and writes `correlation_primitives.json`
+- Level `critical`; tags `attack.credential_access`, `attack.t1110`, `attack.t1078`
+- `description` explaining the three-stage pattern and its ATT&CK mapping
+
+**Expected Output:**
+
+```shell
+$ python3 8-correlation_primitives.py
+credential_compromise_chain primitives : <N>
+correlation_primitives.json written
+
+$ ./3-sigma_runner.sh rules/sigma/010_credential_theft_chain.yml --preprocess --count-only
+<N>
+```
+
+[View script file](8-correlation_primitives.py)
+[View YAML file](010_credential_theft_chain.yml)
+
+---
+
+### 9-MedDefense-Specific Detection Rules
+
+**Goal:** _Write three Sigma rules that encode MedDefense-specific risks derived from the asset inventory and network zones._
+
+---
+
+**Context:** Generic detection catalogs only take you so far. The rules that make the biggest difference at a specific organization are the ones nobody else could have written because they encode the organization's own data flows and regulatory posture. MedDefense is a healthcare provider. The medical device segment does not talk to the internet. Patient data lives in a small set of database hosts. Privileged accounts follow shift patterns that do not match generic Windows norms. This task produces the rules that would be cited in a HIPAA audit as compensating detection controls.
+
+---
+
+**Instructions:** Write three Sigma rules.
+
+`rules/sigma/011_patient_data_access.yml` must:
+
+- Detect Windows Event ID 4663 (file access) or Linux `auditd` syscall events where target path matches `\\meddb\\patient_data\\*` (Windows) or `/mnt/ehr/patient_records/*` (Linux) and accessing account is not in `clinical_access_whitelist` from `$ASSETS_DIR/risk_register.json`
+- Level `critical`; tags `attack.collection`, `attack.t1005`
+
+`rules/sigma/012_medical_segment_egress.yml` must:
+
+- Detect any outbound network connection from a host whose `src_zone` enrichment equals `medical_devices` and whose `dst_zone` is not `medical_devices` or `management`
+- Level `critical`; tags `attack.command_and_control`, `attack.t1071.001`
+- `description` stating that the medical devices segment has no egress by policy
+
+`rules/sigma/013_privileged_account_shift_violation.yml` must:
+
+- Detect Windows Event ID 4672 (special privileges assigned) for accounts whose shift pattern in the 3x01 temporal profile does not include the current hour
+- Use custom field `shift_hour_match: false` from the runner
+- Level `high`; tags `attack.privilege_escalation`, `attack.t1078`
+- `falsepositives` referencing on-call incident response rotations
+
+**Expected Output:**
+
+```bash
+$ for r in 011 012 013; do
+    ./3-sigma_runner.sh rules/sigma/${r}_*.yml --count-only
+  done
+<N>
+<N>
+<N>
+```
+
+[View YAML file](011_patient_data_access.yml)
+
+---
+### 10-False Positive Baseline
+
+**Goal:** _Run every rule authored so far against the clean baseline window and record the false positive count per rule._
+
+---
+
+**Context:** A rule is only as good as its false positive rate on clean data. The baseline window is seven days of confirmed clean activity from 3x01. Any match a rule produces during that window is by definition a false positive, because nothing malicious was present. The resulting `fp_baseline.json` is the foundation for every tuning decision in the rest of this project. Rules with unacceptable baseline false positive rates will be tuned in T11 or retired.
+
+---
+
+**Instructions:** Write a script `10-fp_baseline.sh` that:
+
+1. Enumerates every rule under `rules/sigma/`
+2. For each rule, invokes `3-sigma_runner.sh` with `--window` set to the baseline window from `$BASELINE_PKG/baselines/baseline_summary.json`
+3. Records `match_count` as the rule's `fp_count`
+4. Writes `fp_baseline.json` with one entry per rule: `rule_id`, `rule_title`, `level`, `fp_count`, `baseline_window_start`, `baseline_window_end`, `fp_rate_per_day`
+5. Prints a summary sorted by `fp_count` descending; marks rules with `fp_count > 10` as `[TUNE]`
+
+Rules with `fp_count > 10` on a seven-day clean window must be clearly marked in the output because they are the first tuning targets.
+
+**Expected Output:**
+
+```yaml
+$ ./10-fp_baseline.sh
+evaluating 13 rules against baseline window 2026-03-18 -> 2026-03-24
+  001 ssh_brute_force                fp=  0
+  002 windows_offhours_priv_logon    fp= 14   [TUNE]
+  003 interpreter_abuse              fp=  3
+  004 recon_tool_execution           fp=  7
+  005 scheduled_task_creation        fp=  1
+  006 registry_autorun_modify        fp=  0
+  007 unknown_outbound_destination   fp= 18   [TUNE]
+  008 uncommon_port_outbound         fp=  9
+  009 lateral_movement_smb           fp=  0
+  010 credential_theft_chain         fp=  0
+  011 patient_data_access            fp=  2
+  012 medical_segment_egress         fp=  0
+  013 privileged_shift_violation     fp=  6
+fp_baseline.json written
+```
+
+[View the script](10-fp_baseline.md)
+
+---
+### 11-Tuning Pass on Noisy Rules
+
+**Goal:** _Produce tuned variants of every rule marked `TUNE` in the false positive baseline and prove the tuning worked without destroying recall._
+
+---
+
+**Context:** Tuning is the defining discipline of a working SOC. A rule that catches the bad thing but fires on ten innocent things per day will be silenced within a week by the first analyst who gets tired of clicking through it. The correct response is neither to delete the rule nor to leave it alone. It is to narrow the predicate with a surgical exclusion that keeps the malicious match intact. This task forces you to practice that skill against your own rules, not somebody else's.
+
+---
+
+**Instructions:** Write a script `11-tune_rules.sh` that:
+
+1. Reads `fp_baseline.json` and identifies rules with `fp_count > 10`
+2. For each noisy rule, reads the matched events and inspects distribution of `user`, `hostname`, `process_name`
+3. Writes a tuned variant under `rules/sigma/tuned/NNN_name.yml` with explicit Sigma `filter` exclusions added
+4. Re-runs the tuned rule against both windows
+5. Writes `tuning_report.json` with: `original_rule_id`, `tuned_rule_id`, `fp_before`, `fp_after`, `tp_before`, `tp_after`, `exclusions_added`, `tuning_justification`
+6. Accepts a tuned rule only if `fp_after < fp_before * 0.5` AND `tp_after >= tp_before`
+
+Print a per-rule summary.
+
+**Expected Output:**
+
+```rust
+$ ./11-tune_rules.sh
+tuning 002 windows_offhours_priv_logon
+  exclusions added : 2
+  fp 14 -> 4    tp 1 -> 1    ACCEPTED
+tuning 007 unknown_outbound_destination
+  exclusions added : 3
+  fp 18 -> 6    tp 5 -> 5    ACCEPTED
+2 rules tuned  2 accepted  0 rejected
+tuning_report.json written
+```
+
+[View the script](11-tune_rules.sh)
+
+---
+### 12-ATT&CK Coverage Map
+
+**Goal:** _Aggregate every rule in the catalog into an ATT&CK coverage map showing which techniques have detection and which do not._
+
+---
+
+**Context:** Dr. Morales's board presentation needs one chart: the MedDefense ATT&CK coverage map. It has to show every technique the catalog covers, every technique it does not cover, and how densely each tactic column is populated. This is the single most common slide in a modern SOC status update and it is the concrete answer to _"what can we detect"_. You will generate it from the rules you have written, not from a vendor report.
+
+---
+
+**Instructions:** Write a script `12-attack_coverage.sh` that:
+
+1. Parses every rule under `rules/sigma/` and `rules/sigma/tuned/`
+    
+2. Extracts every `attack.tXXXX[.YYY]` tag
+    
+3. Groups techniques by tactic (use a bundled `attack_taxonomy.json` from `$ASSETS_DIR` or fetch from the ATT&CK Enterprise JSON one time into the assets directory)
+    
+4. Writes `attack_coverage.json` containing a matrix of tactic -> list of covered techniques and a separate `uncovered_tactics` list flagging tactics with zero coverage
+    
+5. Prints a compact tactic-by-tactic coverage summary as a text table
+    
+
+**Expected Output:**
+
+```ruby
+$ ./12-attack_coverage.sh
+initial_access        1 technique
+execution             2 techniques
+persistence           2 techniques
+privilege_escalation  1 technique
+defense_evasion       0 techniques  [GAP]
+credential_access     2 techniques
+discovery             2 techniques
+lateral_movement      1 technique
+collection            1 technique
+command_and_control   3 techniques
+exfiltration          0 techniques  [GAP]
+impact                0 techniques  [GAP]
+attack_coverage.json written
+```
+
+[View the script](12-attack_coverage.sh)
+
+---
+
+### 13-Per-Rule Quality Metrics
+
+**Goal:** _Compute precision, recall, and F1 for every rule in the catalog against the 3x01 labeled ground truth._
+
+---
+
+**Context:** You already have `fp_count` from T10. You need `tp_count` to compute precision and recall. The ground truth is the 3x01 `ranked_anomalies.json` and `labeled_events.json`, which between them identify the events that actually correspond to malicious activity in the dataset. A rule that flags 80 percent of those events and nothing else has recall 0.8 precision 1.0. A rule that flags all of them and also one hundred innocent events has recall 1.0 precision 0.1. Neither is sufficient. This task makes the trade-off explicit for every rule.
+
+---
+
+**Instructions:** Write a script `13-rule_quality.sh` that:
+
+1. Reads `$BASELINE_PKG/anomalies/ranked_anomalies.json` and `$BASELINE_PKG/taxonomy/labeled_events.json` to build a ground truth set of `true_positive_event_refs`
+    
+2. For each rule in `rules/sigma/` and `rules/sigma/tuned/`, invokes the runner with `--window` set to the evaluation window
+    
+3. Computes:
+    
+    - `tp_count` = matches that intersect `true_positive_event_refs`
+        
+    - `fp_count` = matches that do not intersect plus the baseline-window matches from `fp_baseline.json`
+        
+    - `fn_count` = ground truth events of the same category that were not matched by this rule
+        
+    - `precision` = `tp / (tp + fp)`
+        
+    - `recall` = `tp / (tp + fn)`
+        
+    - `f1` = `2 * precision * recall / (precision + recall)`
+        
+4. Writes `rule_quality.json` with one entry per rule
+    
+5. Prints the top five and bottom five rules by F1
+    
+
+Rules with `f1 < 0.3` are marked `[WEAK]`, rules with `f1 >= 0.7` are marked `[STRONG]`.
+
+**Expected Output:**
+
+```ruby
+$ ./13-rule_quality.sh
+evaluating 13 rules against labeled ground truth
+strongest
+  010 credential_theft_chain      f1=1.00  p=1.00 r=1.00  [STRONG]
+  012 medical_segment_egress      f1=0.86  p=1.00 r=0.75  [STRONG]
+  001 ssh_brute_force             f1=0.80  p=1.00 r=0.67  [STRONG]
+  009 lateral_movement_smb        f1=0.80  p=1.00 r=0.67  [STRONG]
+  005 scheduled_task_creation     f1=0.75  p=1.00 r=0.60  [STRONG]
+weakest
+  004 recon_tool_execution        f1=0.36  p=0.29 r=0.50
+  002 windows_offhours_priv_logon f1=0.25  p=0.20 r=0.33  [WEAK]
+  007 unknown_outbound_destinatio f1=0.22  p=0.17 r=0.33  [WEAK]
+rule_quality.json written
+```
+
+[View the script](13-rule_quality.sh)
+
+---
+
+### 14-Risk-Based Rule Prioritization
+
+**Goal:** _Rank every rule by organizational risk using the risk register provided by Robert Kim._
+
+---
+
+**Context:** Quality metrics tell you which rule works. Risk prioritization tells you which rule matters. A perfect rule covering a technique nobody would use against MedDefense ranks lower than an imperfect rule covering a technique that shows up in healthcare breaches every quarter. The risk register at `$ASSETS_DIR/risk_register.json` is a structured inventory of threat scenarios, each with a likelihood score, an impact score, and a list of detection-relevant ATT&CK techniques. The ranking you compute here is the order Dr. Morales uses when she presents the catalog to the board.
+
+---
+
+**Instructions:** Write a script `14-rule_prioritization.sh` that:
+
+1. Reads `$ASSETS_DIR/risk_register.json`, `rule_quality.json`, and `attack_coverage.json`
+    
+2. For each rule, computes a `risk_score` as the sum of `(likelihood * impact)` for every threat scenario in the risk register whose covered techniques intersect the rule's `attack.tXXXX` tags
+    
+3. Computes a `priority_score = risk_score * f1` with a floor of `risk_score * 0.1` for rules with `f1 = 0`
+    
+4. Writes `rule_prioritization.json` with one entry per rule containing `rule_id`, `rule_title`, `risk_score`, `f1`, `priority_score`, `covering_scenarios`, `level`
+    
+5. Prints the top ten rules ordered by `priority_score`
+    
+
+Rules whose `priority_score` is zero (no risk register scenario covers their technique) must be printed in a separate `ORPHAN` section to flag detection work that does not map to MedDefense risk.
+
+**Expected Output:**
+
+```shell
+$ source ~/m3_env.sh && export ASSETS_DIR=$HOME/3x02_assets && ./14-rule_prioritization.sh
+top 10 rules by priority_score
+ 1  30.0  010 credential_theft_chain
+ 2  24.5  011 patient_data_access
+ 3  21.0  012 medical_segment_egress
+ 4  18.0  001 ssh_brute_force
+ 5  16.0  009 lateral_movement_smb
+ 6  15.0  005 scheduled_task_creation
+ 7  12.0  006 registry_autorun_modify
+ 8   9.8  003 interpreter_abuse
+ 9   8.0  013 privileged_shift_violation
+10   5.4  008 uncommon_port_outbound
+orphan rules (no risk scenario covers) : 0
+rule_prioritization.json written
+```
+
+[View the script](14-rule_prioritization.sh)
+
+---
+### 15-Generate Alert Queue for Triage
+
+**Goal:** _Produce the ranked `alert_queue.json` that 3x03 Triage Shift will consume directly._
+
+---
+
+**Context:** This is the contract with 3x03. Every Sigma rule in the catalog gets executed against the evaluation window by the runner. Every match becomes an alert. Every alert is enriched with asset context, priority score from T14, and a stable alert identifier. The resulting queue is the literal input file the Tier 1 triage team reads on Monday. If the schema changes, 3x03 breaks. If the ranking is wrong, Tier 1 works the wrong thing first. If the deduplication is wrong, the queue looks twice as bad as it actually is. Treat this file as a production API.
+
+---
+
+**Instructions:** Write a script `15-generate_alerts.sh` that:
+
+1. Enumerates every active rule (tuned variant when present, original otherwise)
+    
+2. Runs each rule via `3-sigma_runner.sh` against the evaluation window
+    
+3. Converts every match into an alert object with:
+    
+    - `alert_id` (deterministic uuid5 from `rule_id + event_ref`)
+        
+    - `generated_at` (ISO 8601 UTC)
+        
+    - `rule_id`, `rule_title`, `rule_level`
+        
+    - `priority_score` from `rule_prioritization.json`
+        
+    - `event_ref` back to `normalized_events.json`
+        
+    - `event_summary`: flattened subset containing `timestamp`, `hostname`, `user`, `src_ip`, `dst_ip`, `process_name`, `canonical_label`, `event_category`
+        
+    - `asset_context` from `$HANDOFF_DIR/context/asset_inventory.json`
+        
+    - `attack_techniques`: list of ATT&CK technique IDs from the rule tags
+        
+    - `status`: always `new`
+        
+    - `evidence_hash`: sha256 of the matched event's raw record
+        
+4. Deduplicates alerts that fire within sixty seconds on the same `(rule_id, hostname, user)` key
+    
+5. Sorts descending by `priority_score`, breaks ties by `event_summary.timestamp` ascending
+    
+6. Writes `alert_queue.json` as a JSON array
+    
+7. Writes a companion `alert_queue_schema.json` containing the field-level schema for the queue so 3x03 has an explicit contract
+    
+
+Print the top five alerts in the same compact format T14 used, plus total counts.
+
+**Expected Output:**
+
+```yaml
+$ ./15-generate_alerts.sh
+rules executed            : 13
+raw matches               : 47
+after deduplication       : 38
+top 5 alerts
+ 1  30.0  critical  010 credential_theft_chain         db-patient-01
+ 2  24.5  critical  011 patient_data_access            meddb-01
+ 3  21.0  critical  012 medical_segment_egress         med-img-02
+ 4  18.0  high      001 ssh_brute_force                db-patient-01
+ 5  16.0  high      009 lateral_movement_smb           clin-ws-07
+alert_queue.json        : 38 alerts
+alert_queue_schema.json : written
+```
+
+[View the script](15-generate_alerts.sh)
+
+---
+### 16-Detection Catalog Assembly
+
+**Goal:** _Assemble the `detection_catalog/` directory containing every rule, every metric, every ranking, and the alert queue, packaged as the MedDefense detection deliverable._
+
+---
+
+**Context:** Dr. Morales walks into the boardroom with one artifact. James Chen hands it to the next SOC engineer when they join the team. The Tier 1 team in 3x03 loads it as the dependency for their triage workflow. Everything you built this project collapses into this single directory with a locked layout. Nothing else you produced matters if the layout is wrong.
+
+---
+
+**Instructions:** Write a script `16-detection_catalog.sh` that assembles the catalog at `$CATALOG_DIR` (default: `~/3x02_package/detection_catalog/`) with this exact layout:
+
+```cpp
+detection_catalog/
+  rules/
+    sigma/
+      001_ssh_brute_force.yml
+      002_windows_offhours_privileged_logon.yml
+      003_interpreter_abuse.yml
+      004_recon_tool_execution.yml
+      005_scheduled_task_creation.yml
+      006_registry_autorun_modify.yml
+      007_unknown_outbound_destination.yml
+      008_uncommon_port_outbound.yml
+      009_lateral_movement_smb.yml
+      010_credential_theft_chain.yml
+      011_patient_data_access.yml
+      012_medical_segment_egress.yml
+      013_privileged_account_shift_violation.yml
+    tuned/
+      [any tuned variants produced in T11]
+  metrics/
+    detection_matrix.json
+    fp_baseline.json
+    tuning_report.json
+    rule_quality.json
+  coverage/
+    attack_coverage.json
+    rule_prioritization.json
+  alerts/
+    alert_queue.json
+    alert_queue_schema.json
+  runtime/
+    3-sigma_runner.sh
+    8-correlation_primitives.py
+    10-fp_baseline.sh
+    11-tune_rules.sh
+    12-attack_coverage.sh
+    13-rule_quality.sh
+    14-rule_prioritization.sh
+    15-generate_alerts.sh
+  spec/
+    detection_spec.md
+  MANIFEST.json
+```
+
+The script must copy every listed file, generate `MANIFEST.json` with `path`, `size`, and `sha256` for each entry, verify that every required file exists and is non-empty, and fail loudly on any missing file. The `spec/` directory is populated by T17 and the script should error gracefully if T17 has not been run yet.
+
+**Expected Output:**
+
+```bash
+$ source ~/m3_env.sh && ./16-detection_catalog.sh
+copying rules/sigma   ... 13 files
+copying rules/tuned   ...  2 files
+copying metrics       ...  4 files
+copying coverage      ...  2 files
+copying alerts        ...  2 files
+copying runtime       ...  8 files
+copying spec          ...  1 file
+MANIFEST.json         : 32 entries
+sanity check          : ok
+detection_catalog/ ready
+```
+
+[View the script](16-detection_catalog.sh)
+
+---
+### 17-Detection Engineering Specification
+
+**Goal:** _Write the bounded detection engineering specification that accompanies the catalog._
+
+---
+
+**Context:** Robert Kim asked for the pipeline spec in 3x00. He is asking for the detection spec in 3x02. Same format, same bound, same audience. The spec is the document a new SOC engineer reads on their first day to understand how MedDefense detection works. It is not a tutorial, not a rule-by-rule walkthrough, and not marketing. It is the contract description of the detection layer.
+
+---
+
+**Instructions:** Write `detection_spec.md`, bounded to two pages and 800 words, with these exact sections in this order:
+
+1. **Purpose** (2 sentences)
+    
+2. **Inputs** (list of dependency paths and the environment variables that resolve them)
+    
+3. **Rule Authoring Standard** (Sigma structure, required fields, naming convention, ATT&CK tag requirement)
+    
+4. **Execution Model** (the runner, preprocessing primitives, window semantics)
+    
+5. **Quality Thresholds** (the precision, recall, F1, and false positive rate gates that a rule must pass to ship)
+    
+6. **Tuning Protocol** (how a noisy rule is tuned and how the tuning is validated)
+    
+7. **Risk Ranking Model** (how `priority_score` is derived from the risk register)
+    
+8. **Outputs** (the `alert_queue.json` schema and the downstream 3x03 contract)
+    
+9. **Failure Modes** (at least three realistic failures and their symptoms)
+    
+10. **Reviewer Checklist** (a short list a new detection engineer uses to validate a new rule before merging it into the catalog)
+    
+
+Any section exceeding the budget must be trimmed. The full spec must fit in two pages rendered on `A4` at 11pt.
+
+This file goes into `detection_catalog/spec/detection_spec.md` via T16.
+
+**Expected Output:**
+
+```shell
+$ wc -w detection_spec.md
+<= 800 detection_spec.md
+
+$ head -3 detection_spec.md
+# MedDefense Detection Engineering Specification
+
+## Purpose
+```
+
+[View the markdown file](detection_spec.md)
+
+---
+
 
