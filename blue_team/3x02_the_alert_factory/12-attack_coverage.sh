@@ -23,67 +23,50 @@ TACTICS=(
     impact
 )
 
+# ------------------------------------------------------------
+# Collect ATT&CK techniques from all Sigma rules
+# ------------------------------------------------------------
+
 find rules/sigma -type f -name '*.yml' | sort |
 while read -r rule; do
 
-    id="$(yq -r '.id' "$rule")"
-    title="$(yq -r '.title' "$rule")"
-
-    techniques="$(
-        yq -r '.tags[]? | select(test("^attack\\.t"))' "$rule" |
+    yq -r '.tags[]? | select(test("^attack\\.t"))' "$rule" |
         sed 's/attack\.//' |
-        tr '[:lower:]' '[:upper:]' |
-        jq -R . |
-        jq -s .
-    )"
+        tr '[:lower:]' '[:upper:]'
 
-    jq -n \
-        --arg id "$id" \
-        --arg title "$title" \
-        --argjson techniques "$techniques" '
-        {
-          rule_id: $id,
-          rule_title: $title,
-          techniques: $techniques
-        }
-    ' >> "$TMP/rules.jsonl"
+done | sort -u > "$TMP/covered.txt"
 
-done
-
-jq -s '.' "$TMP/rules.jsonl" > "$TMP/rules.json"
+# ------------------------------------------------------------
+# Build coverage for each tactic
+# ------------------------------------------------------------
 
 for tactic in "${TACTICS[@]}"; do
 
+    # Techniques belonging to this tactic.
+    jq -r --arg tactic "$tactic" '
+        .techniques[]
+        | select((.tactics // []) | index($tactic))
+        | .id
+    ' "$TAXONOMY" > "$TMP/tactic.txt"
+
+    # Keep only techniques that our rules cover.
+    grep -Fxf "$TMP/covered.txt" "$TMP/tactic.txt" \
+        > "$TMP/current.txt" || true
+
+    count="$(wc -l < "$TMP/current.txt")"
+
     techniques="$(
-        jq -r --arg tactic "$tactic" '
-            .techniques[]
-            | select((.tactics // []) | index($tactic))
-            | .id
-        ' "$TAXONOMY" |
-        sort -u
+        jq -R . < "$TMP/current.txt" | jq -s .
     )"
 
-    covered=""
-
-    while read -r technique; do
-        [[ -n "$technique" ]] || continue
-
-        if jq -e --arg t "$technique" '
-            any(.[]; (.techniques // []) | index($t))
-        ' "$TMP/rules.json" >/dev/null; then
-            covered+="$technique"$'\n'
-        fi
-    done <<<"$techniques"
-
-    count="$(printf '%s' "$covered" | sed '/^$/d' | wc -l)"
-
-    printf '%s\n' "$covered" |
-        sed '/^$/d' |
-        jq -R . |
-        jq -s \
-            --arg tactic "$tactic" \
-            '{tactic:$tactic, techniques:.}' \
-            >> "$TMP/matrix.jsonl"
+    jq -n \
+        --arg tactic "$tactic" \
+        --argjson techniques "$techniques" '
+        {
+            tactic: $tactic,
+            techniques: $techniques
+        }
+    ' >> "$TMP/matrix.jsonl"
 
     if (( count == 0 )); then
         printf "%-22s %d techniques  [GAP]\n" "$tactic" "$count"
@@ -92,19 +75,36 @@ for tactic in "${TACTICS[@]}"; do
     else
         printf "%-22s %d techniques\n" "$tactic" "$count"
     fi
-
 done
 
-jq -n \
-    --slurpfile rules "$TMP/rules.json" \
-    --slurpfile matrix "$TMP/matrix.jsonl" '
-    {
-      rules: $rules[0],
-      matrix:
-        ($matrix | map({key:.tactic, value:.techniques}) | from_entries),
-      uncovered_tactics:
-        [$matrix[] | select(.techniques | length == 0) | .tactic]
-    }
-' > "$OUTPUT"
+# ------------------------------------------------------------
+# Convert JSONL to a normal JSON array
+# ------------------------------------------------------------
+
+jq -s '.' "$TMP/matrix.jsonl" > "$TMP/matrix.json"
+
+# ------------------------------------------------------------
+# Create final output
+# ------------------------------------------------------------
+
+jq '
+{
+    matrix:
+        (
+            map({
+                key: .tactic,
+                value: .techniques
+            })
+            | from_entries
+        ),
+
+    uncovered_tactics:
+        [
+            .[]
+            | select(.techniques | length == 0)
+            | .tactic
+        ]
+}
+' "$TMP/matrix.json" > "$OUTPUT"
 
 echo "attack_coverage.json written"
