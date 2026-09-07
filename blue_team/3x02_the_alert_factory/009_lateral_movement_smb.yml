@@ -1,0 +1,28 @@
+title: Rapid SMB Lateral Movement Across Multiple Hosts
+id: 25a79e4b-b87d-4f26-8b9a-c4e15d063e72
+status: experimental
+description: Detects the same account performing network logons to more than two destination hosts within five minutes, a common lateral movement pattern using SMB.
+logsource:
+  product: windows
+  service: security
+
+detection:
+  selection:
+    event_id: 4624
+    LogonType: '3'
+
+  filter_allowlist:
+    lateral_movement_allowlist: true
+
+  timeframe: 5m
+  condition: selection and not filter_allowlist | count(distinct Computer) by TargetUserName > 2
+
+falsepositives:
+  - Approved administrative automation
+  - Authorized management systems connecting to multiple hosts
+
+level: high
+
+tags:
+  - attack.lateral_movement
+  - attack.t1021.002
