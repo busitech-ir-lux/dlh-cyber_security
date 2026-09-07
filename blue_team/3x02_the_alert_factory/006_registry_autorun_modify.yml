@@ -1,0 +1,28 @@
+title: Registry Autorun Persistence Modification
+id: 1f6b88b2-7d39-46af-9a22-2e41f6120c7d
+status: experimental
+description: Detects Sysmon registry changes to common Windows autorun locations.
+logsource:
+  product: windows
+  category: registry_event
+
+detection:
+  selection:
+    event_id: 13
+    target_path|startswith:
+      - 'HKLM\Software\Microsoft\Windows\CurrentVersion\Run'
+      - 'HKLM\Software\Microsoft\Windows\CurrentVersion\RunOnce'
+      - 'HKCU\Software\Microsoft\Windows\CurrentVersion\Run'
+      - 'HKCU\Software\Microsoft\Windows\CurrentVersion\RunOnce'
+
+  condition: selection
+
+falsepositives:
+  - Legitimate OEM software configuring startup applications
+  - Clinical imaging vendor update agents
+
+level: high
+
+tags:
+  - attack.persistence
+  - attack.t1547.001
