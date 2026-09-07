@@ -1,0 +1,44 @@
+title: Previously Unseen Reconnaissance Tool Execution
+id: c54ff91d-64d0-4692-b67a-cae4594ae709
+status: experimental
+description: >
+  Detects reconnaissance and system-discovery tools whose process name was
+  not observed for the host during the 3x01 baseline window. This rule is
+  derived from the 3x01 process anomaly report and uses the custom boolean
+  field baseline_seen, calculated at execution time by the Sigma runner
+  from $BASELINE_PKG/baselines/baseline_process.json. Previously unseen
+  reconnaissance tooling can indicate post-compromise discovery activity.
+  MedDefense SOC analysts should review the user, host, parent process,
+  command line, and surrounding authentication or network activity.
+logsource:
+  category: process_creation
+
+detection:
+  selection_windows:
+    product: windows
+    process_name|endswith:
+      - whoami.exe
+      - net.exe
+      - systeminfo.exe
+      - tasklist.exe
+      - netstat.exe
+    baseline_seen: false
+
+  selection_linux:
+    product: linux
+    process_name|endswith:
+      - nmap
+    baseline_seen: false
+
+  condition: selection_windows or selection_linux
+
+falsepositives:
+  - MedDefense administrators running diagnostic commands that were not present during the seven-day baseline
+  - Newly introduced troubleshooting or inventory activity using reconnaissance utilities
+
+level: medium
+
+tags:
+  - attack.discovery
+  - attack.t1087
+  - attack.t1082
