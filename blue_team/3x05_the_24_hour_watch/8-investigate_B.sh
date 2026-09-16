@@ -692,31 +692,31 @@ select(
 # 6. Verdict
 # --------------------------------------------------
 
-TICKET_FULL_MATCH=false
+# --------------------------------------------------
+# Final ticket decision
+#
+# Task rule:
+# ANY mismatch means the approved change does NOT
+# cover the observed activity -> TP
+#
+# Only a complete match can be considered FP.
+# --------------------------------------------------
 
-
-if [[ "$HOST_MATCH" == "true" &&
-      "$WINDOW_MATCH" == "true" &&
-      "$OWNER_MATCH" == "true" &&
-      "$SCOPE_MATCH" == "true" ]]
+if [[ "$HOST_MATCH" != "true" ||
+      "$WINDOW_MATCH" != "true" ||
+      "$OWNER_MATCH" != "true" ||
+      "$SCOPE_MATCH" != "true" ]]
 then
 
-    TICKET_FULL_MATCH=true
-
-fi
-
-
-# Requirement:
-# ANY mismatch means the approved change does not
-# fully cover the observed activity.
-
-if [[ "$TICKET_FULL_MATCH" == "false" ]]; then
-
     VERDICT="TP"
+
+    echo "[inv-B] verdict: TP (approved change does not fully cover observed activity)"
 
 else
 
     VERDICT="FP"
+
+    echo "[inv-B] verdict: FP (host, window, owner and scope all match approved change)"
 
 fi
 
