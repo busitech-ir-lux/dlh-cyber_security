@@ -1,0 +1,9 @@
+{
+  "pcap": "normalbaselineclinical.pcap",
+  "duration_minutes": 29.97,
+  "total_packets": 2842,
+  "dns_queries_per_minute": 17.35,
+  "txt_queries_per_minute": 0.23,
+  "packet_volume_min_per_minute": 54,
+  "packet_volume_max_per_minute": 168
+}
