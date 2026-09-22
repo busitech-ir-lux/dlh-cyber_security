@@ -1,5 +1,5 @@
 {
-  "pcap": "7fe2b4e3acd872e34f7ec949f63e606fc5496f33.pcap",
+  "pcap": "normalbaselineclinical.pcap",
   "capture_duration_minutes": 29.97,
   "total_packets": 2842,
   "normal_dns_queries_per_minute": 17.35,
