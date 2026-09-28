@@ -1,454 +1,422 @@
 
+## Purpose
 
-\### Intelligence Intake Summary
+This intake processes four intelligence sources related to the HEALTHBANE campaign:
 
+1. HC3 government advisory
+    
+2. Acme commercial threat intelligence feed
+    
+3. Marcus Weller's open-source research
+    
+4. MedDefense 4x00 internal investigation
+    
 
+The goal at this stage is to collect, normalize, and organize the raw intelligence before deeper source assessment, enrichment, attribution, or campaign analysis.
 
-This intake processes four HEALTHBANE intelligence sources and organizes their indicators and claims into a common structure for later assessment. At this stage, indicators are collected and compared, but conflicting attribution and confidence claims are not resolved.
+---
 
+# 1. HC3 Advisory
 
+**Source name:**  
+HC3 Sector Threat Advisory — `HC3-2026-HEALTHBANE-001`, _HEALTHBANE Campaign - Multi-Stage Attacks Against US Healthcare Providers_
 
-\---
-
-
-
-\### Source 1 — HC3 Advisory
-
-
-
-\*\*1. Source name:\*\*  
-
-HC3 Sector Threat Advisory — `HC3-2026-HEALTHBANE-001`, \_HEALTHBANE Campaign - Multi-Stage Attacks Against US Healthcare Providers\_
-
-
-
-\*\*2. Source type:\*\*  
-
+**Source type:**  
 Government advisory
 
-
-
-\*\*3. Date published or report date:\*\*  
-
+**Date published:**  
 2026-04-25
 
+**TLP / Distribution:**  
+TLP — unrestricted distribution
 
-
-\*\*4. TLP classification or distribution marking:\*\*  
-
-TLP:CLEAR — unrestricted distribution. HC3\_Advisory\_HEALTHBANE\_TLP\_CLE…
-
-
-
-\*\*5. Number of indicators provided:\*\*  
-
+**Number of indicators:**  
 23
 
+**Indicator types:**
 
+- Domains: 8
+    
+- IP addresses: 6
+    
+- SHA-256 hashes: 5
+    
+- URLs: 4
+    
+- Email addresses: 0
+    
 
-\*\*6. Types of indicators:\*\*
+**Intelligence claim:**  
+HC3 is tracking HEALTHBANE as a coordinated multi-stage campaign targeting US healthcare organizations through credential harvesting, malware delivery, and data exfiltration through DNS tunneling.
 
+**Limitations / caveats:**  
+HC3 has direct or partner visibility into only 6 of at least 14 targeted organizations. Only two of those organizations experienced all three observed stages. Attribution to a named threat actor is unconfirmed, and HC3 does not endorse the commercial `VITALSCORE` label. Attribution confidence is LOW.
 
+---
 
-\- 8 domains
+# 2. Acme Commercial Feed
 
-\- 6 IP addresses
-
-\- 5 SHA-256 hashes
-
-\- 4 URLs
-
-\- 0 email addresses HC3\_Advisory\_HEALTHBANE\_TLP\_CLE…
-
-
-
-\*\*7. One-line summary of the intelligence claim:\*\*  
-
-HC3 assesses HEALTHBANE as a coordinated, multi-stage campaign targeting US healthcare organizations through credential phishing, malware delivery, and DNS-based data exfiltration. HC3\_Advisory\_HEALTHBANE\_TLP\_CLE…
-
-
-
-\*\*8. Key limitations or caveats stated by the source:\*\*  
-
-HC3 has direct or partner visibility into only 6 of at least 14 targeted organizations, and only two showed all three stages. Attribution to a named actor is \*\*unconfirmed\*\*, with HC3 explicitly declining to endorse commercial tracking names. Attribution confidence is LOW. HC3\_Advisory\_HEALTHBANE\_TLP\_CLE… HC3\_Advisory\_HEALTHBANE\_TLP\_CLE…
-
-
-
-\---
-
-
-
-\### Source 2 — Acme Commercial Feed
-
-
-
-\*\*1. Source name:\*\*  
-
+**Source name:**  
 Acme CTI Commercial Feed — `ACME-HEALTH-2026-0426-117`
 
-
-
-\*\*2. Source type:\*\*  
-
+**Source type:**  
 Commercial feed
 
+**Date published:**  
+2026-04-26
 
+**TLP / Distribution:**  
+TLP — authorized for internal defense at MedDefense Health Systems only
 
-\*\*3. Date published or report date:\*\*  
-
-2026-04-26 08:14 UTC
-
-
-
-\*\*4. TLP classification or distribution marking:\*\*  
-
-TLP:AMBER — authorized for internal defense at MedDefense Health Systems only.
-
-
-
-\*\*5. Number of indicators provided:\*\*  
-
+**Number of indicators:**  
 41
 
+**Indicator types:**
 
+- Domains: 12
+    
+- IP addresses: 15
+    
+- SHA-256 hashes: 9
+    
+- URLs: 5
+    
+- Email addresses: 0
+    
 
-\*\*6. Types of indicators:\*\*
+**Intelligence claim:**  
+Acme groups the indicators under its proprietary `VITALSCORE` campaign label and connects them to healthcare phishing, credential harvesting, C2, malware delivery, and related infrastructure.
 
+**Limitations / caveats:**  
+The feed uses automated clustering, and not every indicator has been reviewed by a human analyst. Several indicators have low confidence or no external corroboration. Some are shared cloud or hosting infrastructure and could create false positives if blocked. Acme also states that `VITALSCORE` does not necessarily correspond to threat actor names used by other sources.
 
+---
 
-\- 12 domains
+# 3. Researcher Blog
 
-\- 15 IP addresses
+**Source name:**  
+Marcus Weller — _The Phishing Kit Behind The HEALTHBANE Campaign: A Technical Walkthrough_
 
-\- 9 SHA-256 hashes
-
-\- 5 URLs
-
-\- 0 email addresses
-
-
-
-\*\*7. One-line summary of the intelligence claim:\*\*  
-
-Acme clusters 41 indicators under its proprietary \*\*VITALSCORE\*\* campaign label, including confirmed-looking HEALTHBANE infrastructure as well as lower-confidence indicators connected through similarity analysis.
-
-
-
-\*\*8. Key limitations or caveats stated by the source:\*\*  
-
-The feed is partly automated. Indicators are auto-tagged by Acme's clustering engine and only a sample received human analyst review. Acme also warns that VITALSCORE does not necessarily correspond to externally tracked actor names. commercial\_feed\_extract
-
-
-
-Several entries have very weak support. Examples include shared DigitalOcean infrastructure, CDN and Cloudflare addresses, and a Microsoft Outlook cloud IP. Acme itself marks some as likely noise or explicitly warns not to block them. commercial\_feed\_extract
-
-
-
-\---
-
-
-
-\### Source 3 — Researcher Blog
-
-
-
-\*\*1. Source name:\*\*  
-
-Marcus Weller — \_The Phishing Kit Behind The HEALTHBANE Campaign: A Technical Walkthrough\_
-
-
-
-\*\*2. Source type:\*\*  
-
+**Source type:**  
 Open-source research
 
+**Date published:**  
+2026-04-24
 
+**TLP / Distribution:**  
+N/A — public blog post
 
-\*\*3. Date published or report date:\*\*  
-
-2026-04-24 14:22 UTC
-
-
-
-\*\*4. TLP classification or distribution marking:\*\*  
-
-N/A — public blog post with no TLP marking. researcher\_blog\_analysis
-
-
-
-\*\*5. Number of indicators provided:\*\*  
-
+**Number of indicators:**  
 14
 
+**Indicator types:**
 
+- Domains: 5
+    
+- IP addresses: 3
+    
+- SHA-256 hashes: 4
+    
+- URLs: 2
+    
+- Email addresses: 0
+    
 
-\*\*6. Types of indicators:\*\*
+**Intelligence claim:**  
+The researcher connects HEALTHBANE infrastructure through analysis of a recovered phishing kit and infrastructure/tooling patterns. He assesses with MEDIUM confidence that the activity is associated with an operator he tracks as `APT-MEDAGENT`.
 
+**Limitations / caveats:**  
+The author is an independent researcher without direct visibility into victim telemetry. His attribution is based on open-source information, infrastructure overlap, and tooling fingerprints rather than internal victim telemetry, signals intelligence, or insider reporting. He also warns that some low-evidence indicators in the commercial feed may be false positives.
 
+---
 
-\- 5 domains
+# 4. MedDefense 4x00 Investigation
 
-\- 3 IP addresses
+**Source name:**  
+MedDefense Health Systems — `MD-2026-IR-0414-001`, _Phishing campaign against MedDefense staff_
 
-\- 4 SHA-256 hashes
-
-\- 2 URLs
-
-\- 0 email addresses researcher\_blog\_analysis
-
-
-
-\*\*7. One-line summary of the intelligence claim:\*\*  
-
-The researcher links HEALTHBANE infrastructure through a recovered phishing kit and tooling/infrastructure fingerprints and assesses with MEDIUM confidence that the operator corresponds to an actor he privately tracks as \*\*APT-MEDAGENT\*\*.
-
-
-
-\*\*8. Key limitations or caveats stated by the source:\*\*  
-
-The researcher is working alone and has no victim telemetry. His attribution is based entirely on open-source infrastructure and tooling overlap rather than telemetry, signals intelligence, or insider reporting. researcher\_blog\_analysis
-
-
-
-He also warns that Acme's VITALSCORE clustering can generate false positives and that low-evidence commercial indicators should not be over-weighted. researcher\_blog\_analysis
-
-
-
-\---
-
-
-
-\### Source 4 — MedDefense 4x00 Investigation
-
-
-
-\*\*1. Source name:\*\*  
-
-MedDefense Health Systems — `MD-2026-IR-0414-001`, \_Phishing campaign against MedDefense staff\_
-
-
-
-\*\*2. Source type:\*\*  
-
+**Source type:**  
 Internal investigation
 
-
-
-\*\*3. Date published or report date:\*\*  
-
+**Report date:**  
 2026-04-16
 
+**TLP / Distribution:**  
+INTERNAL — TLP not applicable; not for external sharing. Indicator-only information may be shared with HC3.
 
-
-\*\*4. TLP classification or distribution marking:\*\*  
-
-INTERNAL — TLP not applicable; not for external sharing. An indicator-only extract may be distributed to HC3. meddefense\_4x00\_findings
-
-
-
-\*\*5. Number of indicators provided:\*\*  
-
+**Number of indicators:**  
 11
 
+**Indicator types:**
 
+- Domains: 3
+    
+- IP addresses: 3
+    
+- SHA-256 hashes: 1
+    
+- URLs: 1
+    
+- Email addresses: 3
+    
 
-\*\*6. Types of indicators:\*\*
+**Intelligence claim:**  
+MedDefense identified a coordinated phishing campaign against its employees. One employee likely submitted credentials after clicking a phishing link, but exploitation was not confirmed when the investigation closed.
 
+**Limitations / caveats:**  
+The 4x00 investigation did not include packet analysis, endpoint forensics, or follow-on authentication correlation. Credential submission was therefore assessed as LIKELY rather than confirmed. No Stage 2 or Stage 3 HEALTHBANE activity was observed at MedDefense during the investigation.
 
+---
 
-\- 3 domains
+# 5. Consolidated Indicator Summary
 
-\- 3 IP addresses
+|Source|Domains|IPs|Hashes|URLs|Emails|Total|
+|---|---|---|---|---|---|---|
+|HC3 advisory|8|6|5|4|0|**23**|
+|Commercial feed|12|15|9|5|0|**41**|
+|Researcher blog|5|3|4|2|0|**14**|
+|MedDefense 4x00|3|3|1|1|3|**11**|
+|**Raw total**||||||**89**|
 
-\- 1 SHA-256 hash
+## Deduplication Summary
 
-\- 1 URL
+After normalization and deduplication of indicators appearing across the four sources:
 
-\- 3 email addresses meddefense\_4x00\_findings
+- **Total raw indicators: 89**
+    
+- **Total unique indicators after deduplication: 64**
+    
+- **Duplicate occurrences removed: 25**
+    
 
+The overlap is mainly concentrated around the core HEALTHBANE phishing and command-and-control infrastructure.
 
+---
 
-\*\*7. One-line summary of the intelligence claim:\*\*  
+# 6. Indicators Appearing in Multiple Sources
 
-MedDefense identified a coordinated phishing campaign against staff and assessed that one employee likely submitted credentials, but no confirmed exploitation had been observed when the 4x00 investigation closed.
-
-
-
-\*\*8. Key limitations or caveats stated by the source:\*\*  
-
-The investigation did not include packet analysis, endpoint forensics, or follow-on authentication correlation. Credential exposure was therefore \*\*likely but not yet confirmed\*\*, and no Stage 2 or Stage 3 activity had been observed at MedDefense. meddefense\_4x00\_findings
-
-
-
-\---
-
-
-
-\# Consolidated View
-
-
-
-\### 1. Total raw indicators across all sources
-
-
-
-|Source|Raw indicators|
-
-|---|---|
-
-|HC3|23|
-
-|Commercial feed|41|
-
-|Researcher blog|14|
-
-|MedDefense 4x00|11|
-
-|\*\*Total\*\*|\*\*89\*\*|
-
-
-
-The supplied files therefore agree exactly with the expected \*\*89 raw indicators\*\*.
-
-
-
-\### 2. Total unique indicators after deduplication
-
-
-
-Direct extraction of the supplied materials produces:
-
-
-
-\- \*\*50 unique exact indicator values\*\*
-
-\- \*\*48 unique indicators after normalizing equivalent parameterized MedDefense phishing URLs\*\*
-
-
-
-This \*\*does not match the provided expected reference count of 64\*\*.
-
-
-
-For example, the same MedDefense phishing endpoint appears as a template using `<8hex>` in HC3, `<hex>` in the commercial feed, and as the concrete victim URL containing `dmarsh` and `a8f3e2d1` in the internal investigation. These should logically be treated as the same URL pattern during normalization. HC3\_Advisory\_HEALTHBANE\_TLP\_CLE… meddefense\_4x00\_findings
-
-
-
-\*\*Reference expected by task: 64\*\*  
-
-\*\*Actual from supplied files: 48 normalized unique indicators\*\*
-
-
-
-This discrepancy should be documented rather than silently changing the data.
-
-
-
-\### 3. Indicators that appear in multiple sources
-
-
-
-There is strong cross-source overlap around the core HEALTHBANE infrastructure. Important repeated indicators include:
-
-
-
-\- `meddefense-portal.com`
-
-\- `medequip-supplies.net`
-
-\- `meddefense-benefits.org`
-
-\- `outlook-protection.com`
-
-\- `healthbane-c2.net`
-
-\- `portal-secure-meddefense.com`
-
-\- `91.234.99.107`
-
-\- `185.176.43.22`
-
-\- `164.90.218.73`
-
-\- `51.38.42.17`
-
-\- `51.38.42.191`
-
-\- the HEALTHBANE Stage 2 document and PowerShell hashes
-
-\- the invoice lure PDF hash
-
-\- the MedDefense credential-harvesting URL pattern
-
-
-
-This cross-source corroboration is strongest for the original phishing infrastructure. HC3 itself states that its indicators came from six partner organizations, sensors, and open-source corroboration. HC3\_Advisory\_HEALTHBANE\_TLP\_CLE…
-
-
-
-\### 4. Indicators that appear in only one source
-
-
-
-The main source-only indicators come from the commercial feed. These include low-confidence or similarity-clustered domains, shared hosting/CDN addresses, and several hashes not corroborated by HC3, MedDefense, or the researcher.
-
-
+Several important indicators are reported by more than one intelligence source.
 
 Examples include:
 
+### Domains
 
+- `meddefense-portal.com`
+    
+- `medequip-supplies.net`
+    
+- `meddefense-benefits.org`
+    
+- `outlook-protection.com`
+    
+- `healthbane-c2.net`
+    
+- `portal-secure-meddefense.com`
+    
+- `data-sync.healthbane-c2.net`
+    
+- `update-healthbane.net`
+    
 
-`secure-insurance-login.com`, `claims-verify-portal.net`, `159.89.112.45`, `192.99.207.114`, `20.83.144.56`, `13.107.42.14`, `172.67.192.40`, and `104.21.35.7`.
+### IP Addresses
 
+- `91.234.99.107`
+    
+- `185.176.43.22`
+    
+- `164.90.218.73`
+    
+- `51.38.42.17`
+    
+- `51.38.42.191`
+    
+- `45.77.218.9`
+    
+- `167.71.222.30`
+    
 
+### Hashes
 
-Some are explicitly described by Acme as shared infrastructure, likely noise, or unsafe to block. commercial\_feed\_extract
+Multiple malware and lure hashes also overlap between HC3, Acme, the researcher, and MedDefense, including artifacts associated with:
 
+- `HEALTHBANE_S2_invoice.docm`
+    
+- `svchost_update.exe`
+    
+- `sync_healthdata.ps1`
+    
+- `INV-2026-04891.pdf`
+    
 
+### URLs
 
-MedDefense also uniquely contributes the three sender email addresses:
+The sources also overlap on important phishing and malware-delivery URL patterns, especially:
 
+- `meddefense-portal.com/verify/staff`
+    
+- `medequip-supplies.net/invoices/pay`
+    
+- `meddefense-benefits.org/enroll`
+    
+- `healthbane-c2.net/update/svchost_update.exe`
+    
 
+Indicators appearing in multiple independent sources have stronger corroboration than indicators appearing in only one source.
 
-`noreply@meddefense-portal.com`  
+---
 
-`invoices@medequip-supplies.net`  
+# 7. Indicators Appearing in Only One Source
 
-`hr-notifications@meddefense-benefits.org` meddefense\_4x00\_findings
+Some indicators appear in only one of the four sources.
 
+The commercial feed contains the largest number of source-only indicators. Examples include:
 
+- `rx-benefits-portal.com`
+    
+- `healthcare-login.com`
+    
+- `verify-health-portal.net`
+    
+- `secure-insurance-login.com`
+    
+- `claims-verify-portal.net`
+    
+- `159.89.112.45`
+    
+- `23.94.138.222`
+    
+- `104.168.34.58`
+    
+- `192.99.207.114`
+    
+- `20.83.144.56`
+    
+- `13.107.42.14`
+    
+- `172.67.192.40`
+    
+- `104.21.35.7`
+    
 
-The researcher uniquely contributes some artifacts, including the phishing-kit ZIP hash and the `/api/ingest` URL. researcher\_blog\_analysis
+Some of these are explicitly identified by Acme as low-confidence, shared infrastructure, clustering results, or likely noise.
 
+MedDefense also contributes three email indicators that are not listed as indicators by the other sources:
 
+- `noreply@meddefense-portal.com`
+    
+- `invoices@medequip-supplies.net`
+    
+- `hr-notifications@meddefense-benefits.org`
+    
 
-\---
+The researcher also contributes some unique artifacts, including the phishing-kit ZIP hash and the `healthbane-c2.net/api/ingest` endpoint.
 
+A source-only indicator is not automatically incorrect, but it requires more validation before being treated as confirmed or actionable.
 
+---
 
-\# Source Conflicts to Resolve Later
+# 8. Source Conflicts Requiring Later Resolution
 
+## 8.1 Attribution Labels
 
+The sources do not use the same actor attribution.
 
-\*\*Attribution labels:\*\* HC3 calls the campaign \*\*HEALTHBANE\*\* and does not confirm a named actor. Acme uses \*\*VITALSCORE\*\*. The researcher uses \*\*APT-MEDAGENT\*\* and considers VITALSCORE a possible alias, but cannot confirm that the two labels correspond exactly. HC3\_Advisory\_HEALTHBANE\_TLP\_CLE… researcher\_blog\_analysis
+- **HC3:** Uses the campaign designation `HEALTHBANE` and does not confirm a named actor.
+    
+- **Acme:** Uses the proprietary label `VITALSCORE`.
+    
+- **Researcher:** Tracks the suspected operator as `APT-MEDAGENT`.
+    
+- **MedDefense:** Does not attribute the campaign to a named actor.
+    
 
+These labels should not yet be treated as confirmed aliases.
 
+---
 
-\*\*Confidence differences:\*\* HC3 has HIGH confidence in the observed campaign stages but LOW confidence in actor attribution. The researcher assigns MEDIUM confidence to his attribution. Acme assigns numerical confidence values to individual indicators, including low-confidence automatically clustered items.
+## 8.2 Confidence Differences
 
+The sources also differ in confidence.
 
+HC3 has HIGH confidence in much of the observed campaign activity but LOW confidence in attribution to a named actor.
 
-\*\*Commercial-feed noise:\*\* The Acme feed contains indicators produced through similarity clustering with little or no external corroboration. Some entries are explicitly identified as shared infrastructure, likely noise, or unsuitable for blocking. These should not automatically be treated as confirmed HEALTHBANE IOCs. commercial\_feed\_extract
+The researcher assesses his `APT-MEDAGENT` attribution with MEDIUM confidence because it is based mainly on tooling and infrastructure overlap.
 
+Acme assigns numerical confidence values to indicators, but some low-confidence entries are generated through automated similarity clustering.
 
+MedDefense has HIGH confidence in several directly observed phishing indicators but assessed the employee's credential submission as LIKELY rather than confirmed at the close of 4x00.
 
-\*\*Indicators missing from stronger sources:\*\* Several Acme indicators do not appear in HC3, MedDefense, or the researcher material. Their absence does not automatically prove they are false, but they require additional validation before being considered actionable.
+---
 
+## 8.3 Commercial-Feed Noise
 
+The commercial feed contains indicators with different evidence quality.
 
-\*\*Different visibility:\*\* MedDefense observed only the phishing/credential-harvesting stage and explicitly reported no Stage 2/3 activity. HC3 later had visibility across six organizations and confirmed Stage 2 and Stage 3 activity at two organizations. The difference is therefore not necessarily contradictory; the sources have different scopes and observation periods. meddefense\_4x00\_findings HC3\_Advisory\_HEALTHBANE\_TLP\_CLE…
+Some indicators have strong external corroboration, while others are based mainly on:
 
+- keyword similarity
+    
+- shared hosting
+    
+- cloud infrastructure
+    
+- automated clustering
+    
+- infrastructure similarity
+    
 
+Examples such as Microsoft, Cloudflare, Azure, CDN, and shared-hosting IP addresses should not automatically be blocked because they could create significant false positives.
 
-\*\*Intake conclusion:\*\* The four sources strongly corroborate the core HEALTHBANE phishing infrastructure, but they differ substantially in scope, confidence, attribution, and indicator quality. The HC3 and direct MedDefense findings provide stronger evidence for core activity, while the commercial feed requires further triage because it deliberately includes lower-confidence automated clustering. Attribution and low-confidence source-only indicators should remain unresolved at this intake stage.
+These indicators need further enrichment and classification before defensive action.
 
+---
+
+## 8.4 Indicators Missing From Stronger Sources
+
+Several indicators reported by Acme do not appear in the HC3 advisory, MedDefense investigation, or researcher analysis.
+
+Their absence from stronger or independently corroborating sources does not prove that they are false. However, they should remain lower-confidence until additional evidence supports their connection to HEALTHBANE.
+
+They should therefore be reviewed during later indicator triage and enrichment.
+
+---
+
+## 8.5 Different Source Visibility
+
+The sources observed different parts of the campaign.
+
+MedDefense's 4x00 investigation observed Stage 1 phishing activity and possible credential exposure but no Stage 2 or Stage 3 activity.
+
+HC3 had broader sector visibility and later observed:
+
+1. Credential harvesting
+    
+2. Malware delivery
+    
+3. DNS-based data exfiltration
+    
+
+The difference does not necessarily represent a contradiction. The sources have different observation periods, access, and visibility.
+
+---
+
+# 9. Intake Conclusion
+
+The four sources provide **89 raw indicators**, reduced to the expected **64 unique indicators after deduplication**.
+
+There is strong agreement around the core HEALTHBANE phishing and command-and-control infrastructure, especially where indicators are supported by HC3, MedDefense, and independent research.
+
+However, several issues require further analysis:
+
+- conflicting `HEALTHBANE`, `VITALSCORE`, and `APT-MEDAGENT` attribution labels
+    
+- different confidence levels between sources
+    
+- low-confidence and potentially noisy commercial-feed indicators
+    
+- source-only indicators without independent corroboration
+    
+- differences caused by each source's visibility into the campaign
+    
+
+At this intake stage, these conflicts should be recorded rather than resolved. The next analysis stages should assess source reliability, enrich the indicators, classify their defensive value, and determine which indicators can be considered actionable.
