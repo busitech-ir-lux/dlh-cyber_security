@@ -1,0 +1,118 @@
+
+playbook_id: PB-CLIN-001
+title: Radiology imaging degradation affecting emergency care
+owner_role: M.H
+
+applies_to:
+  triggers:
+    - "ER nurses cannot retrieve X-rays from the radiology imaging service at Main Hospital."
+    - "Radiology server response times or errors rise above its recent normal baseline."
+  indicators:
+    - "Performance indicators: sustained high CPU, memory, disk I/O, storage saturation, or network congestion; a known maintenance task; no suspicious access or endpoint alerts. Treat as a performance hypothesis, not proof of safety."
+    - "Security indicators: Wazuh alert for suspicious process or file changes, abnormal administrator login, unexpected outbound traffic, new persistence, or unexplained configuration changes. Treat as suspected incident."
+    - "Correlate Splunk, Wazuh, server metrics, AD authentication, network telemetry, and service logs over the same UTC window; document which indicators are present or absent."
+
+severity_mapping:
+  initial: SEV2
+  escalate_if:
+    - "SEV1: high patient-safety impact, such as urgent imaging unavailable for active emergency care without a safe clinical fallback."
+    - "SEV1: full outage of a critical clinical service or confirmed broad patient-data exposure."
+    - "Reassess severity if a security investigation confirms limited ePHI exposure, other affected sites, or a changing clinical impact; never downgrade solely because compromise is unconfirmed."
+
+immediate_actions:
+  - step: "0-2 min: Open a SEV2 incident and bridge; record first failed X-ray retrieval, affected patients/workflows, server identity, symptoms, and UTC time; page Technical_Lead and Scribe."
+    owner: IR_Commander
+    timebox_minutes: 2
+  - step: "2-5 min: Contact the on-call Emergency Department (ED) clinical lead and radiology on-call lead; ask whether care is delayed and whether urgent images remain accessible by approved alternative workflow."
+    owner: IR_Commander
+    timebox_minutes: 3
+  - step: "5-8 min: ED clinical lead activates approved downtime procedures as soon as X-rays needed for active care cannot be retrieved safely in time; coordinates radiology workflow, alternative imaging access, and manual documentation. Record activation time."
+    owner: IR_Commander
+    timebox_minutes: 3
+  - step: "8-12 min: Collect quick read-only logs and metrics described below; compare malicious activity indicators against performance causes and record uncertainty. Do not reboot or disconnect the server."
+    owner: Technical_Lead
+    timebox_minutes: 4
+  - step: "12-15 min: With ED clinical lead and IT Director, choose and record either investigate under clinical downtime with approved partial isolation, or continue service with elevated monitoring and constrained access; IR Commander approves within SEV2 authority and escalates SEV1 decisions to CISO."
+    owner: IR_Commander
+    timebox_minutes: 3
+
+evidence_preservation:
+  - artifact: "Radiology server service/application logs and system resource metrics"
+    method: "Export relevant logs and CPU, disk, memory, storage, network, and latency metrics with UTC timestamps to restricted incident storage; preserve originals and record collection owner."
+    before_step: "Service throttling or network segmentation"
+  - artifact: "Wazuh agent alerts, suspicious process details, and Splunk event timeline"
+    method: "Export alert/event results, process tree if available, hashes, and source time range; record missing telemetry and checksum exported files. Use read-only acquisition first."
+    before_step: "Account restriction or network segmentation"
+  - artifact: "AD authentication and network connection records for the affected service"
+    method: "Export sign-ins, privileged changes, active connections, and relevant network flows for the suspected window; preserve original time zones and capture UTC normalization."
+    before_step: "Account restriction or network segmentation"
+  - artifact: "Clinical-impact and decision record"
+    method: "Scribe records affected imaging workflow, ED and radiology lead assessments, downtime activation, approvals, isolation exceptions, and UTC timestamps without copying patient identifiers into the general incident log."
+    before_step: "Any containment action"
+
+containment_actions:
+  - step: "Apply narrowly scoped network segmentation/ACLs that block suspicious destinations or nonessential management paths while keeping approved ED, radiology, and imaging communications available; test image retrieval with the clinical lead before and after."
+    owner: Technical_Lead
+    decision_point: "Only after ED clinical lead confirms clinical fallback or validates continued imaging access; IT Director coordinates infrastructure change and IR Commander approves. CISO approves SEV1 patient-safety trade-offs. Do not fully isolate by default."
+    trade_off: "Restricts potential attacker movement while preserving clinical data paths; an incorrect ACL can interrupt X-ray delivery."
+  - step: "Restrict suspicious administrator/service-account access and terminate only verified unauthorized sessions; use an approved replacement account if essential imaging service depends on the identity."
+    owner: Technical_Lead
+    decision_point: "Check service-account dependencies with IT Director and radiology lead before any disablement; IR Commander approves and logs the affected identities."
+    trade_off: "Reduces unauthorized access but may interrupt imaging integrations or radiologist workflows."
+  - step: "Throttle or pause nonessential background jobs, exports, or noisy traffic; maintain priority for urgent image retrieval and verify capacity and latency."
+    owner: Technical_Lead
+    decision_point: "IT Director and radiology lead identify safe nonclinical work to throttle; IR Commander records approval and rollback conditions."
+    trade_off: "Can restore urgent imaging responsiveness but delays background processing and may reduce some diagnostic evidence of the original load."
+  - step: "Keep clinical imaging service online under elevated Splunk/Wazuh monitoring and tightly constrained accounts/network access, or investigate with ED downtime procedures active when care cannot safely continue online."
+    owner: IR_Commander
+    decision_point: "ED clinical lead determines clinical safety and downtime need; IR Commander chooses and documents the SEV2 response with IT Director. Escalate immediately to CISO if high patient-safety impact requires SEV1 authority."
+    trade_off: "Continuing service protects immediate care but prolongs exposure to a possible attacker; downtime enables stronger isolation but slows clinical work and requires tested fallback."
+
+eradication_actions:
+  - "If compromise is confirmed, preserve forensic evidence, remove verified malicious processes/persistence, rotate affected credentials, and close the confirmed entry path under IR Commander approval."
+  - "If performance-only, correct the validated bottleneck or failed service component through IT change control; do not label maintenance as malware eradication."
+  - "Review and remove temporary ACLs, throttling, and account restrictions only after safe recovery approval."
+
+recovery_validation:
+  - check: "ED clinical lead and radiology lead perform end-to-end test of urgent X-ray retrieval."
+    criterion: "Clinicians can retrieve clinically required images promptly and safely; leads approve returning from downtime."
+  - check: "Technical_Lead confirms server and imaging-service performance under representative workload."
+    criterion: "Latency, errors, resource use, and image-delivery success have returned to agreed normal baseline without recurrent stalls."
+  - check: "Review Splunk, Wazuh, authentication, and network monitoring after corrective action."
+    criterion: "No continuing suspicious activity; compromised accounts/paths are remediated or explicitly documented as unresolved and escalated."
+  - check: "Reconcile downtime clinical records and any queued imaging work with clinical leads."
+    criterion: "Outstanding images and documentation are reconciled, no missed critical examinations identified, and ED lead authorizes normal workflow."
+
+communication_plan:
+  - audience: "On-call ED clinical lead and radiology on-call lead"
+    trigger: "Immediately on image-retrieval failure affecting active care; before any isolation; and at downtime activation or restoration."
+    template: ir_clinical_status.md
+  - audience: "IT Director"
+    trigger: "On declaration, before infrastructure containment, and whenever patient-facing workflows change."
+    template: ir_internal_status.md
+  - audience: "IR_Commander"
+    trigger: "At detection, triage decision, any confirmed security indicator, and each containment/rollback decision."
+    template: ir_internal_status.md
+  - audience: "Executive_Sponsor"
+    trigger: "Immediately on SEV1 patient-safety impact, full critical-service outage, or broad ePHI exposure."
+    template: ir_executive_brief.md
+  - audience: "Legal_Liaison"
+    trigger: "If audit evidence indicates possible unauthorized access to radiology ePHI or patient-record disclosure; initiate HIPAA assessment."
+    template: hipaa_assessment_notice.md
+  - audience: "Communications_Lead"
+    trigger: "When approved clinical service disruption messaging or external communication is needed."
+    template: ir_external_communications_request.md
+
+escalation_triggers:
+  - "Raise immediately to SEV1 and page CISO if delay to urgent imaging creates high patient-safety impact or approved downtime workflow is inadequate."
+  - "Reassess scope and notify IR Commander/IT Director if additional clinical systems, wards, or MedDefense sites develop symptoms."
+  - "Raise SEV2 to SEV1 if there is no meaningful triage/containment progress in 60 minutes, per IR team escalation rules."
+  - "Escalate immediately if confirmed malicious activity, new evidence of ePHI exposure, or any contemplated containment would interrupt active care."
+
+post_incident_tasks:
+  - "Preserve the UTC incident timeline, severity decisions, clinical approvals, downtime timestamps, and chain-of-custody evidence inventory."
+  - "Document whether the root cause was infrastructure performance or a security incident, including supporting indicators and detection gaps."
+  - "Review clinical downtime activation and imaging backlog, assess patient-safety near misses, and assign corrective actions with the ED/radiology leads."
+  - "Test limited-segmentation rollback, account restrictions, monitoring improvements, and playbook steps in a tabletop exercise."
+
+
