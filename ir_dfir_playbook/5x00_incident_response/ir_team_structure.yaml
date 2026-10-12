@@ -1,0 +1,114 @@
+
+    
+  
+roles:
+  IR_Commander:
+    primary: James Chen, SOC Lead
+    backup: Robert Kim, Infrastructure Lead
+    responsibilities:
+      - Owns incident coordination through closure
+      - Runs the incident bridge and maintains the timeline
+      - Approves containment within delegated authority
+    authority_ceiling: SEV2
+
+  Technical_Lead:
+    primary: Robert Kim, Infrastructure Lead
+    backup: Mike Torres, Network Engineer
+    responsibilities:
+      - Directs technical investigation and containment
+      - Coordinates evidence collection and system recovery
+      - Assesses impact on Epic, LIS, and clinical infrastructure
+    authority_ceiling: SEV2
+
+  Communications_Lead:
+    primary: Marcus Webb, Communications Director
+    backup: Sarah Park, IT Director
+    responsibilities:
+      - Coordinates approved staff and public updates
+      - Keeps incident messaging consistent across sites
+      - Obtains Legal Liaison approval for regulated notices
+    authority_ceiling: SEV2
+
+  Legal_Liaison:
+    primary: Helena Reyes, General Counsel
+    backup: Dr. Patricia Morales, CISO
+    responsibilities:
+      - Coordinates HIPAA and applicable state-law assessments
+      - Directs litigation holds and evidence retention requirements
+      - Approves legal content of breach notifications
+    authority_ceiling: SEV2
+
+  Executive_Sponsor:
+    primary: Dr. Patricia Morales, CISO
+    backup: Sarah Park, IT Director
+    responsibilities:
+      - Owns SEV1 decisions and executive escalation
+      - Approves patient-care versus containment trade-offs
+      - Coordinates board-level reporting and resources
+    authority_ceiling: SEV1
+
+  Scribe:
+    primary: Mike Torres, Network Engineer
+    backup: Marcus Webb, Communications Director
+    responsibilities:
+      - Records decisions, timestamps, and incident actions
+      - Tracks owners and follow-up tasks
+      - Preserves the incident log for review and handoff
+    authority_ceiling: SEV4
+
+escalation:
+  SEV1:
+    on_detection:
+      - IR_Commander
+      - Technical_Lead
+      - Executive_Sponsor
+      - Scribe
+    on_confirmation:
+      - Legal_Liaison
+      - Communications_Lead
+    on_scope_expansion:
+      - Executive_Sponsor
+      - IR_Commander
+      - Technical_Lead
+      - Legal_Liaison
+      - Communications_Lead
+    # SEV1 has no higher severity; this threshold triggers renewed executive escalation.
+    time_threshold_minutes_to_escalate: 15
+
+  SEV2:
+    on_detection:
+      - IR_Commander
+      - Technical_Lead
+      - Scribe
+    on_confirmation:
+      - Legal_Liaison
+      - Communications_Lead
+    on_scope_expansion:
+      - Executive_Sponsor
+      - IR_Commander
+    time_threshold_minutes_to_escalate: 60
+
+  SEV3:
+    on_detection:
+      - IR_Commander
+      - Technical_Lead
+    on_confirmation:
+      - Legal_Liaison
+      - Scribe
+    on_scope_expansion:
+      - Executive_Sponsor
+      - IR_Commander
+    time_threshold_minutes_to_escalate: 120
+
+  SEV4:
+    on_detection:
+      - IR_Commander
+    on_confirmation:
+      - Technical_Lead
+      - Scribe
+    on_scope_expansion:
+      - IR_Commander
+      - Technical_Lead
+    time_threshold_minutes_to_escalate: 240
+
+
