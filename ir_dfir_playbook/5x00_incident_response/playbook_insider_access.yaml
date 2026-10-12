@@ -1,0 +1,119 @@
+
+    
+  
+playbook_id: PB-INS-001
+title: Suspected Insider Access to Patient Records
+owner_role: IR_Commander
+
+applies_to:
+  triggers:
+    - "Epic access audit flags a nurse viewing 47 patient records outside her assigned care team over 14 days."
+    - "Splunk correlation identifies repeated patient-chart access without a matching care assignment."
+  indicators:
+    - "Epic audit entries: user ID, patient/chart ID, action, timestamp, workstation, and source IP."
+    - "Access to records outside assigned clinical duties, especially repeated or unusual searches."
+    - "Possible legitimate explanation: float coverage, cross-team consultation, or approved temporary assignment."
+
+severity_mapping:
+  initial: SEV3
+  escalate_if:
+    - "SEV2: investigation confirms unauthorized access to a limited set of patient records."
+    - "SEV1: evidence confirms broad patient-record exposure or material risk to patient safety."
+    - "Reassess immediately if exfiltration, identity theft, or additional compromised accounts are discovered."
+
+immediate_actions:
+  - step: "Open restricted case; record the 47-access alert and its 14-day window without contacting the nurse."
+    owner: IR_Commander
+    timebox_minutes: 2
+  - step: "Quietly preserve Epic and Splunk access logs with timestamps, user ID, chart IDs, workstation, and queries."
+    owner: Technical_Lead
+    timebox_minutes: 4
+  - step: "Preserve available workstation telemetry/state remotely and request restricted retention of email and messaging records."
+    owner: Technical_Lead
+    timebox_minutes: 4
+  - step: "Notify Legal Liaison confidentially; request legal hold guidance and approved minimum-necessary evidence scope."
+    owner: IR_Commander
+    timebox_minutes: 3
+  - step: "Check care-team assignment records through an authorized clinical manager without disclosing the allegation; set next review time."
+    owner: IR_Commander
+    timebox_minutes: 2
+
+evidence_preservation:
+  - artifact: "Epic patient-access audit logs and related Splunk events for the full 14-day window and nearby activity."
+    method: "Export read-only results with user, chart, action, UTC timestamp, workstation and source IP; hash files, restrict access, and log chain of custody."
+    before_step: "Any role-based scope reduction or access review change."
+  - artifact: "Workstation state and Wazuh endpoint telemetry for the nurse's clinical workstation."
+    method: "Collect available remote process, session, login, network and EDR records without reboot, interactive login, visible scan or device seizure; record collection time and hashes."
+    before_step: "Any workstation or access-control change."
+  - artifact: "Relevant email and organizational messaging archives."
+    method: "Have authorized administrators preserve targeted mailbox and message records under Legal Liaison direction, using approved eDiscovery/retention methods without user notification where lawful."
+    before_step: "Any mailbox rule, account permission or access change."
+  - artifact: "Care-team assignments, authorized coverage records and existing role permissions."
+    method: "Export roster, shift, consultation, and Epic role records for the exposure period; limit patient data to investigation needs."
+    before_step: "Any role-based scope reduction or access review change."
+
+containment_actions:
+  - step: "Perform confidential access review and validate whether each unusual chart access had an authorized care or workflow basis."
+    owner: IR_Commander
+    decision_point: "Legal Liaison authorizes investigation scope; involve the minimum necessary clinical supervisor only for roster verification, not an accusation."
+    trade_off: "Preserves normal patient care and discretion; potentially unauthorized access may continue during review."
+  - step: "Reduce Epic role-based patient-record scope to the least privilege needed for assigned duties, only if the change can be made without alerting the nurse or interrupting care."
+    owner: Technical_Lead
+    decision_point: "IR Commander (up to SEV2) and clinical system owner approve after Legal review; if change generates visible warnings or disrupts care, defer and increase monitoring instead."
+    trade_off: "Limits further access while retaining the account; the change may affect legitimate chart access or be noticed despite precautions."
+  - step: "Apply elevated, restricted monitoring of Epic chart access and possible export/printing, with alerts sent only to the IR team."
+    owner: Technical_Lead
+    decision_point: "IR Commander approves monitoring duration and Legal Liaison confirms privacy and workforce-policy constraints."
+    trade_off: "Maintains evidence and avoids immediate disruption; does not itself prevent misuse."
+  - step: "If active exfiltration or immediate harm is confirmed, request urgent higher-severity approval for proportionate access restriction, even if covert posture cannot be maintained."
+    owner: IR_Commander
+    decision_point: "Escalate to Executive Sponsor for SEV1; coordinate with Legal Liaison and clinical operations before disruptive action."
+    trade_off: "Stops ongoing harm but may alert the subject and disrupt legitimate clinical work; preserve evidence first when safe."
+
+eradication_actions:
+  - "After Legal/HR review confirms misuse, remove unnecessary Epic permissions and correct role or care-team assignment defects through approved change control."
+  - "If account takeover rather than insider misuse is found, switch to the credential-exposure playbook for session revocation and credential resets."
+  - "Apply proportionate workforce actions only through HR and Legal; do not let SOC independently confront, suspend, or discipline the nurse."
+
+recovery_validation:
+  - check: "Review post-change Epic chart access against current assigned care duties."
+    criterion: "No further unauthorized records accessed; legitimate clinical workflows remain available."
+  - check: "Verify restricted monitoring, retained evidence, and audit integrity."
+    criterion: "Logs are complete and time-correlated; chain of custody and monitoring owners are documented."
+  - check: "Confirm case outcome and privacy follow-up with Legal Liaison."
+    criterion: "Documented conclusion distinguishes justified workflow, unauthorized access, and unresolved findings; HIPAA decision recorded."
+
+communication_plan:
+  - audience: IR_Commander
+    trigger: "On initial SEV3 detection; technical findings and time-stamped updates delivered privately."
+    template: "templates/ir_internal_status.md"
+  - audience: Legal_Liaison
+    trigger: "Immediately at SEV3 for preservation/privacy advice; mandatory on confirmed unauthorized access at SEV2."
+    template: "templates/legal_privacy_assessment.md"
+  - audience: "HR representative (not part of the six-role IR team)"
+    trigger: "Legal Liaison privately involves HR when evidence supports workforce misconduct or personnel action, normally at SEV2 confirmation; no broad HR notification at suspected SEV3."
+    template: "templates/restricted_hr_referral.md"
+  - audience: Executive_Sponsor
+    trigger: "SEV1 evidence of broad exposure or patient-safety risk; also notify if case expands beyond SEV2 authority."
+    template: "templates/executive_incident_brief.md"
+  - audience: Communications_Lead
+    trigger: "Only when Legal Liaison determines external or workforce messaging is needed; do not issue general notices during covert investigation."
+    template: "templates/approved_breach_notice.md"
+  - audience: "Affected patients and HHS (and applicable state authorities)"
+    trigger: "If Legal Liaison determines a reportable breach of unsecured PHI, follow HIPAA Breach Notification Rule and applicable state-law deadlines; notify without unreasonable delay and no later than 60 calendar days where HIPAA requires."
+    template: "templates/hipaa_breach_notification.md"
+
+escalation_triggers:
+  - "SEV3 to SEV2: unauthorized patient-record access is confirmed, even if no export is found; notify Legal Liaison and privately engage HR if workforce action may be needed."
+  - "SEV2 to SEV1: confirmed broad disclosure, multiple insiders, or high patient-safety impact; notify Executive Sponsor immediately."
+  - "New evidence of export, printing, external sharing, identity theft, or continued access after approved restrictions requires immediate scope review."
+  - "Escalate SEV3 after 120 minutes without investigative progress and SEV2 after 60 minutes without progress, per IR team escalation rules."
+  - "Do not notify or confront the subject, her peers, or a broad clinical distribution list during preliminary investigation; only Legal-approved, need-to-know contacts."
+
+post_incident_tasks:
+  - "Document whether the 47 accesses were justified, unauthorized, or inconclusive, including rationale, actions, approvals, and chain of custody."
+  - "Legal Liaison documents HIPAA breach risk assessment (nature of PHI, recipient, actual acquisition/viewing, and mitigation); if reportable, coordinate notices to individuals, HHS, and any other required recipients, with dates tracked."
+  - "Review Epic minimum-necessary permissions, float-nurse workflows, audit rules, and false-positive patterns; assign owners and dates for improvements."
+  - "Conduct lessons learned with IR, Legal, HR if involved, and clinical operations; restrict distribution of employee and patient details."
+
+
