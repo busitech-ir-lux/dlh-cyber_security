@@ -1,0 +1,170 @@
+# MedDefense IR-2026-0414-01 — eradication plan, not execution evidence.
+# All actions require authorization, preserved evidence, and verification.
+# Powershell commands run in elevated sessions on the named host unless specified.
+# "pending" does not mean the operation occurred. Use the incident timeline for execution records.
+items:
+  - id: ERAD-001
+    category: malware_artifact
+    target_host: WST-WS-031
+    description: Remove the confirmed dropped XML and executable after forensic acquisition.
+    command_or_action: 'Remove-Item -LiteralPath "C:\Users\dmarsh\AppData\Local\Temp\update.xml","C:\Users\dmarsh\AppData\Local\Temp\update.exe" -Force'
+    verification_command: 'Test-Path -LiteralPath "C:\Users\dmarsh\AppData\Local\Temp\update.xml"; Test-Path -LiteralPath "C:\Users\dmarsh\AppData\Local\Temp\update.exe"'
+    expected_verification_result: 'False and False; independently confirm via EDR live-response inventory.'
+    status: pending
+    executed_at: null
+    executed_by: null
+
+  - id: ERAD-002
+    category: malware_artifact
+    target_host: WST-WS-031
+    description: Remove the scheduled task observed launching update.exe at user logon.
+    command_or_action: 'schtasks.exe /Delete /TN "{7B4F2D81-19E2-4A8C-9E67-A1F0DE2C7B3A}" /F'
+    verification_command: 'schtasks.exe /Query /TN "{7B4F2D81-19E2-4A8C-9E67-A1F0DE2C7B3A}"'
+    expected_verification_result: 'Task not found; corroborate with EDR persistence inventory.'
+    status: pending
+    executed_at: null
+    executed_by: null
+
+  - id: ERAD-003
+    category: malware_artifact
+    target_host: WST-WS-031
+    description: Remove the WindowsUpdateSvc HKCU Run persistence value in the affected user hive.
+    command_or_action: 'Run in dmarsh user context or mount the user hive, then: Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "WindowsUpdateSvc"'
+    verification_command: 'Get-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "WindowsUpdateSvc" -ErrorAction SilentlyContinue'
+    expected_verification_result: 'No WindowsUpdateSvc value returned from the affected user hive.'
+    status: pending
+    executed_at: null
+    executed_by: null
+
+  - id: ERAD-004
+    category: malware_artifact
+    target_host: WST-WS-031
+    description: Remove the suspicious downloaded archive after acquisition; inspect other persistence locations for unrecognized entries.
+    command_or_action: 'Remove-Item -LiteralPath "C:\Users\dmarsh\Downloads\update.zip" -Force; inspect services, startup folders, and scheduled tasks using EDR or Autoruns before removing additional items.'
+    verification_command: 'Test-Path -LiteralPath "C:\Users\dmarsh\Downloads\update.zip"; Get-ScheduledTask | Where-Object { $_.Actions.Execute -match "update[.]exe" }'
+    expected_verification_result: 'False for archive; no scheduled-task actions matching update.exe; investigate other suspicious autoruns separately.'
+    status: pending
+    executed_at: null
+    executed_by: null
+
+  - id: ERAD-005
+    category: process
+    target_host: WST-WS-031
+    description: Stop the identified malicious process lineage (update.exe PID 7204, powershell.exe PID 7812, MSBuild.exe PID 8104); do not ban legitimate Microsoft binaries globally.
+    command_or_action: 'After memory capture, isolate or rebuild the host; if performing live cleanup, confirm command lines and terminate only the malicious PIDs with Stop-Process -Id 8104,7812,7204 -Force.'
+    verification_command: 'Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match "update[.]xml|AppData\\Local\\Temp\\update[.]exe" }'
+    expected_verification_result: 'No unauthorized process matching identified payload paths; no recurrence after restart or rebuild.'
+    status: pending
+    executed_at: null
+    executed_by: null
+
+  - id: ERAD-006
+    category: malware_artifact
+    target_host: WST-WS-017
+    description: Investigate and eradicate second-host malicious artifacts; exact filenames and persistence are not established in the expansion evidence. Prefer clean reimage if trust cannot be restored.
+    command_or_action: 'Preserve disk and memory; review EDR findings and rebuild WST-WS-017 from approved baseline if compromised. Do not assume update.xml or the same scheduled-task GUID exists here.'
+    verification_command: 'Query EDR process-tree and persistence inventory for WST-WS-017; verify image build ID and scan results.'
+    expected_verification_result: 'No suspicious MSBuild-to-91.234.99.107 processes or unauthorized persistence; approved rebuild/scan results recorded.'
+    status: pending
+    executed_at: null
+    executed_by: null
+
+  - id: ERAD-007
+    category: malware_artifact
+    target_host: LIS-WSIDE-01
+    description: Preserve the forensic evidence of patient-report access and determine whether host remediation or rebuild is necessary.
+    command_or_action: 'Acquire relevant evidence, examine logons, process tree, persistence and patient-report access; remove only confirmed malicious artifacts or rebuild if integrity cannot be established.'
+    verification_command: 'Query EDR process-tree and persistence inventory for LIS-WSIDE-01; confirm clean scan and LIS access-control review.'
+    expected_verification_result: 'No identified malicious processes or persistence; patient-data access investigation documented and system integrity approved.'
+    status: pending
+    executed_at: null
+    executed_by: null
+
+  - id: ERAD-008
+    category: credential
+    target_host: 'MEDDEFENSE domain / Microsoft Entra ID'
+    description: Disable dmarsh while investigating, reset the compromised AD password, revoke cloud sessions/refresh tokens, and re-register MFA if compromise is suspected.
+    command_or_action: 'On authorized AD admin host: Disable-ADAccount -Identity dmarsh; Set-ADAccountPassword -Identity dmarsh -Reset -NewPassword (Read-Host "New temporary password" -AsSecureString). For Entra ID: Revoke-MgUserSignInSession -UserId "dmarsh@meddefense.local". Re-enable only after approval.'
+    verification_command: 'Get-ADUser dmarsh -Properties Enabled,PasswordLastSet | Select-Object Enabled,PasswordLastSet; Get-MgAuditLogSignIn -Filter "userPrincipalName eq ''dmarsh@meddefense.local''" -Top 20'
+    expected_verification_result: 'AD account disabled during response, PasswordLastSet advances; Entra revocation succeeds and no unauthorized successful session reuse appears afterward.'
+    status: pending
+    executed_at: null
+    executed_by: null
+
+  - id: ERAD-009
+    category: credential
+    target_host: 'MEDDEFENSE domain / scoped Windows endpoints'
+    description: Invalidate remaining dmarsh Kerberos tickets/sessions on affected machines and investigate further ticket use; password reset alone does not instantly revoke every issued Kerberos ticket.
+    command_or_action: 'After capturing ticket evidence, terminate exposed logon sessions and restart/rebuild affected workstations as approved; use klist purge in each relevant logon context (not just the administrator session). Investigate tickets/hosts identified from DC logs.'
+    verification_command: 'klist sessions; klist tickets; correlate DC 4768/4769/4624 events for dmarsh with endpoint sessions after reset.'
+    expected_verification_result: 'No unauthorized dmarsh sessions or usable old tickets on remediated hosts; subsequent ticket requests are investigated.'
+    status: pending
+    executed_at: null
+    executed_by: null
+
+  - id: ERAD-010
+    category: machine_account
+    target_host: WST-WS-031
+    description: Rotate the workstation domain machine-account password after compromise, with AD coordination and trust validation.
+    command_or_action: 'On the restored domain-joined host using authorized credentials: Reset-ComputerMachinePassword -Server <approved-domain-controller> -Credential (Get-Credential)'
+    verification_command: 'Test-ComputerSecureChannel -Verbose'
+    expected_verification_result: 'True; machine trust works and updated secret is accepted by AD.'
+    status: pending
+    executed_at: null
+    executed_by: null
+
+  - id: ERAD-011
+    category: machine_account
+    target_host: WST-WS-017
+    description: Rotate WST-WS-017 machine-account password after investigation/rebuild.
+    command_or_action: 'On the restored domain-joined host: Reset-ComputerMachinePassword -Server <approved-domain-controller> -Credential (Get-Credential)'
+    verification_command: 'Test-ComputerSecureChannel -Verbose'
+    expected_verification_result: 'True; fresh secure-channel trust verified.'
+    status: pending
+    executed_at: null
+    executed_by: null
+
+  - id: ERAD-012
+    category: machine_account
+    target_host: LIS-WSIDE-01
+    description: Rotate LIS-WSIDE-01 machine-account password if compromise investigation supports host trust exposure, coordinating with the clinical service owner.
+    command_or_action: 'After authorization: Reset-ComputerMachinePassword -Server <approved-domain-controller> -Credential (Get-Credential)'
+    verification_command: 'Test-ComputerSecureChannel -Verbose'
+    expected_verification_result: 'True; secure channel and approved LIS operations remain functional.'
+    status: pending
+    executed_at: null
+    executed_by: null
+
+  - id: ERAD-013
+    category: krbtgt
+    target_host: 'MEDDEFENSE Active Directory domain'
+    description: Assess whether a controlled double reset of krbtgt is necessary; do not execute solely because lateral movement or use of valid Kerberos tickets occurred.
+    rationale: 'The supplied TGS and network logon events support credential misuse/lateral movement, not confirmed forged tickets, KRBTGT secret theft, or a Golden Ticket. A domain-wide double reset is disruptive and requires evidence of krbtgt compromise or equivalent domain-level ticket-forgery risk plus formal AD/IR approval.'
+    command_or_action: 'Conditional only: AD/IR leadership approves Microsoft-supported krbtgt double-reset procedure; reset once, verify full replication and required ticket-lifetime interval, then reset again. Do not run two immediate Set-ADAccountPassword calls.'
+    verification_command: 'Review AD replication status (repadmin /replsummary), krbtgt password version/rotation audit, TGT issuance, and authentication errors across domain controllers.'
+    expected_verification_result: 'If required, both approved rotations replicate successfully and no unauthorized forged/old TGT authentication remains; otherwise documented decision not to reset.'
+    status: pending
+    executed_at: null
+    executed_by: null
+
+  - id: ERAD-014
+    category: network
+    target_host: 'perimeter firewall'
+    description: Maintain egress deny rules for original C2 185.220.101.47 and additional 91.234.99.107.
+    command_or_action: 'In firewall console, create/confirm two outbound deny policies for destinations 185.220.101.47/32 and 91.234.99.107/32, with rule IDs and change ticket recorded.'
+    verification_command: 'Query firewall rule status and SIEM netflow for both destination IPs after enforcement; inspect denied attempts and any permitted flows.'
+    expected_verification_result: 'Both denies enabled; zero permitted packets/bytes to either C2 IP during the verified post-change window.'
+    status: pending
+    executed_at: null
+    executed_by: null
+
+  - id: ERAD-015
+    category: network
+    target_host: 'quarantine VLAN / internal segmentation'
+    description: Maintain isolation of scoped hosts and restrict SMB/remote administration to prevent additional lateral movement while eradication is verified.
+    command_or_action: 'Via switch/firewall/EDR console, apply quarantine ACLs for WST-WS-031, WST-WS-017 and LIS-WSIDE-01; allow only approved forensic jumpbox and required management channels.'
+    verification_command: 'Confirm switch VLAN assignments and firewall ACLs; test connection from IR jumpbox (allowed) and user VLAN (denied); review internal SMB netflow.'
+    expected_verification_result: 'Only approved forensic access works; unapproved east-west traffic is denied; clinical disruption reviewed.'
+    status: pending
+    executed_at: null
+    executed_by: null
