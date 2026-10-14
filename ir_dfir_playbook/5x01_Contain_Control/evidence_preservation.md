@@ -121,75 +121,104 @@ cp -p -- "$LAB/alert_A-20260414-9841.json" "$STORE/siem/alert_A-20260414-9841.js
 - **Hash algorithm and command (SHA-256):** `(cd "$STORE" && sha256sum siem/alert_A-20260414-9841.json >> hashes.txt)`
 - **Ordering rationale:** Secure original SIEM record before retention/changes; server-side alert remains accessible independently of host isolation. Do not paraphrase or reformat the original bytes.
 
-## 6. Proxy logs — Daniel Marsh (24 hours)
+## 6. Complete identity and web activity preservation — Daniel Marsh, 24h before alert
 
-- **What:** Original proxy export `proxy_24h_dmarsh.log` for `2026-04-13T02:47:00Z`–`2026-04-14T02:47:00Z`, including the suspicious `POST /auth/submit`, `update.zip` download and outbound CONNECT entries.
-- **How (exact command, Linux evidence server):**
+**Required lookback (UTC):** `2026-04-13T02:47:11Z` through `2026-04-14T02:47:11Z`, anchored to alert `A-20260414-9841` at `02:47:11Z`. **Scope:** user `MEDDEFENSE\dmarsh` / `dmarsh@meddefense.local`, and workstation `WST-WS-031` / `10.42.118.31`. Preserve the original source exports without filtering or modifying them. The supplied proxy and auth exports specify `02:47:00Z`–`02:47:00Z`, offset by 11 seconds: **they are the provided 24-hour baseline, but not an exact 24-hour interval ending at alert time**. A supplemental collection is required to close that 11-second boundary difference where available.
+
+The four required evidence types are separate, with a defined acquisition, destination, SHA-256 entry, and collection order. AD and Azure AD are present within **one supplied, original combined auth export**; preserve it once and additionally make separate, clearly labelled derived copies for independent inspection without altering the original.
+
+### 6A. Proxy — 24-hour user web requests
+
+- **What:** `dmarsh` HTTP/HTTPS requests in `proxy_24h_dmarsh.log`, including suspicious `POST /auth/submit`, ZIP download, and CONNECT to `185.220.101.47:443`.
+- **How (exact command):**
 
 ```bash
 cp -p -- "$LAB/proxy_24h_dmarsh.log" "$STORE/proxy_dns/proxy_24h_dmarsh.log"
 ```
 
-- **Where (evidence store path):** `/evidence/IR-2026-0414-01/proxy_dns/proxy_24h_dmarsh.log`.
-- **Hash algorithm and command:** `SHA-256`; run from the evidence server:
+- **Where:** `/evidence/IR-2026-0414-01/proxy_dns/proxy_24h_dmarsh.log`.
+- **Hash command (SHA-256):** `(cd "$STORE" && sha256sum proxy_dns/proxy_24h_dmarsh.log >> hashes.txt)`.
+- **Ordering:** Capture centrally retained proxy history immediately after volatile host captures (or concurrently via another analyst), before log retention/rotation; it can normally be copied after host isolation if retention is assured.
+- **24h validation:** `grep -F '# Window: 2026-04-13T02:47:00Z to 2026-04-14T02:47:00Z' "$STORE/proxy_dns/proxy_24h_dmarsh.log"` checks the supplied coverage. Request the 11-second boundary supplement from the proxy system when an exact alert-anchored interval is required. Do not infer missing events.
+
+### 6B. DNS — 24-hour workstation DNS queries linked to dmarsh
+
+- **What:** Resolver query/response events for `10.42.118.31` (the alert-confirmed IP of Daniel Marsh's host), from `2026-04-13T02:47:11Z` to `2026-04-14T02:47:11Z`. Preserve raw timestamps, queried FQDN, record type, answers, and client IP. DNS events are normally attributable to the host, not directly to a user; join with host/user logs.
+- **How (exact command or tool invocation):** Export the complete time range using Splunk Search Export REST API, **if the SOC's DNS logs are stored in Splunk**. Configure the actual index, base URL and read-only token; the file is a collection destination, not a generated reconstruction:
 
 ```bash
-(cd "$STORE" && sha256sum proxy_dns/proxy_24h_dmarsh.log >> hashes.txt)
-```
+: "${SPLUNK_URL:?Set the authorized Splunk management URL}"
+: "${SPLUNK_TOKEN:?Set a read-only Splunk token}"
+: "${DNS_INDEX:?Set the index that actually contains resolver logs}"
 
-- **Ordering rationale:** Copy and hash promptly to protect against central log retention/rotation and preserve the original bytes. Central proxy logs normally survive workstation isolation, so their acquisition need not block urgent containment if source retention is assured.
-
-## 7. DNS query/response logs — workstation used by Daniel Marsh (24 hours)
-
-- **What:** DNS query and response records for `WST-WS-031` (`10.42.118.31`) for `2026-04-13T02:47:00Z`–`2026-04-14T02:47:11Z`, including timestamps, client IP, query name, response, and original Splunk event fields. Correlate to `dmarsh` using host/IP attribution; DNS logs alone may not include usernames.
-- **How (exact command, Linux evidence server):** The supplied files contain **no separate DNS log**; obtain a fresh export using the organization's **Splunk REST API**, assuming DNS telemetry is indexed there. Run the following with read access, HTTPS, and a Splunk service account. Set `DNS_INDEX` to the actual DNS index after checking the lab's index inventory. This is an executable collection procedure, **not a claim that a DNS export already exists**.
-
-```bash
-# Splunk service URL and token must be supplied by the lab / SOC.
-: "${SPLUNK_URL:?Set SPLUNK_URL, e.g. https://splunk.example:8089}"
-: "${SPLUNK_TOKEN:?Set SPLUNK_TOKEN to a read-only bearer token}"
-: "${DNS_INDEX:?Set DNS_INDEX to the actual DNS-events index}"
-
-# Store the exact unmodified JSON export response as evidence.
-# The address is taken from alert_A-20260414-9841.json.
 curl --fail --silent --show-error \
   -H "Authorization: Bearer ${SPLUNK_TOKEN}" \
   --get "${SPLUNK_URL%/}/services/search/jobs/export" \
   --data-urlencode "search=search index=${DNS_INDEX} (src_ip=10.42.118.31 OR client_ip=10.42.118.31 OR src=10.42.118.31) | sort 0 _time" \
-  --data-urlencode "earliest_time=2026-04-13T02:47:00" \
-  --data-urlencode "latest_time=2026-04-14T02:47:12" \
+  --data-urlencode "earliest_time=2026-04-13T02:47:11Z" \
+  --data-urlencode "latest_time=2026-04-14T02:47:12Z" \
   --data-urlencode "output_mode=json" \
   -o "$STORE/proxy_dns/dns_24h_dmarsh.jsonl"
 
-# Confirm this is a real, nonempty export with valid JSON records;
-# an empty successful response is not proof that DNS collection succeeded.
 test -s "$STORE/proxy_dns/dns_24h_dmarsh.jsonl"
-jq -e -s 'length > 0 and all(.[]; (has("result") or has("_raw")))' \
+jq -e -s 'length > 0 and all(.[]; has("result"))' \
   "$STORE/proxy_dns/dns_24h_dmarsh.jsonl" >/dev/null
 ```
 
-- **Where (evidence store path):** `/evidence/IR-2026-0414-01/proxy_dns/dns_24h_dmarsh.jsonl`.
-- **Hash algorithm and command:** `SHA-256`; hash the unchanged exported file:
+  Note: Splunk uses an exclusive upper bound; `02:47:12Z` includes the alert's second. Adapt the query field names and time-bound syntax to the real DNS sourcetype if different; confirm every returned event is inside the requested window. If the organization uses a different DNS collector, execute its equivalent authenticated raw-event export instead.
+- **Where:** `/evidence/IR-2026-0414-01/proxy_dns/dns_24h_dmarsh.jsonl`.
+- **Hash command (SHA-256):** `(cd "$STORE" && sha256sum proxy_dns/dns_24h_dmarsh.jsonl >> hashes.txt)` **after validating the export**.
+- **Ordering:** Secure central resolver records promptly before rotation; do not delay urgent host containment if source logs are safely retained. Preserve DNS alongside proxy so phishing-domain lookup can be correlated.
+- **Source availability:** **The five supplied lab files do not include actual DNS records or Splunk credentials/index details.** This command specifies how to preserve them; a completed DNS acquisition cannot truthfully be certified until the real export is obtained and hashed.
 
-```bash
-(cd "$STORE" && sha256sum proxy_dns/dns_24h_dmarsh.jsonl >> hashes.txt)
-```
+### 6C. Active Directory — 24-hour domain authentication
 
-- **Ordering rationale:** Secure DNS logs promptly before retention expiry, then correlate domains queried by the workstation with the proxy and process evidence. Centrally stored DNS events generally remain accessible after endpoint isolation, so preserving critical live process/network evidence should take precedence if time is limited. **Never report DNS evidence as collected unless the export, format check, and hash succeed.** If the lab does not provide a Splunk DNS index/API, mark acquisition blocked in the timeline and obtain the resolver's supported export command rather than inventing DNS results.
-
-## 8. Authentication: Active Directory and Azure AD (Entra ID)
-
-- **What:** Original `auth_24h_dmarsh.json`, which explicitly lists `ad_domain_controller_ms-dc01`, `ad_domain_controller_ms-dc02`, and `azure_ad_signin_log` as sources. Preserve all events and MFA/device-risk fields; notably, an Azure AD sign-in from `45.63.9.88` was marked `impossibleTravel` at `2026-04-13T18:14:41Z`, and the record contains successful workstation authentication around `02:44Z`. This is a risk indicator, not conclusive attribution to an attacker.
-- **How (exact command):**
+- **What:** Kerberos ticket requests and Windows logons for `MEDDEFENSE\dmarsh` from domain controllers `ms-dc01` and `ms-dc02`, in the supplied `auth_24h_dmarsh.json`; window recorded by source `2026-04-13T02:47:00Z` to `2026-04-14T02:47:00Z`.
+- **How (exact commands, Linux evidence server):** Keep the complete original export, and write a clearly marked **derived AD view** for quick review:
 
 ```bash
 cp -p -- "$LAB/auth_24h_dmarsh.json" "$STORE/authentication/auth_24h_dmarsh.json"
-(cd "$STORE" && sha256sum authentication/auth_24h_dmarsh.json >> hashes.txt)
+jq '{export_id,window_start,window_end,user_principal,sources,
+     events: [.events[] | select(.source | startswith("ad_"))]}' \
+  "$LAB/auth_24h_dmarsh.json" > "$STORE/authentication/ad_24h_dmarsh_derived.json"
 ```
 
-- **Where (evidence store path):** `$STORE/authentication/auth_24h_dmarsh.json`.
-- **Hash algorithm and command (SHA-256):** `(cd "$STORE" && sha256sum authentication/auth_24h_dmarsh.json >> hashes.txt)`
-- **Ordering rationale:** Retained central identity events normally survive workstation isolation; preserve quickly before log rollover or credential/session remediation. A supplementary post-alert sign-in export may be necessary for full scope, but the lab supplies no live domain controller/Entra extraction tool or credentials.
+- **Where:** `/evidence/IR-2026-0414-01/authentication/auth_24h_dmarsh.json` (unmodified original); `/evidence/IR-2026-0414-01/authentication/ad_24h_dmarsh_derived.json` (derived subset).
+- **Hash commands (SHA-256):**
+
+```bash
+(cd "$STORE" && sha256sum authentication/auth_24h_dmarsh.json >> hashes.txt)
+(cd "$STORE" && sha256sum authentication/ad_24h_dmarsh_derived.json >> hashes.txt)
+```
+
+- **Ordering:** Preserve before password changes, ticket revocation or retention rollover. Domain logs reside off-host, so they ordinarily survive workstation isolation. Collect supplemental 11-second boundary events if obtainable.
+
+### 6D. Azure AD (Microsoft Entra ID) — 24-hour cloud sign-ins
+
+- **What:** `dmarsh@meddefense.local` sign-ins, IP/location, MFA result, risk flags and device compliance from the supplied **same original** `auth_24h_dmarsh.json` (source `azure_ad_signin_log`); specifically preserve the `impossibleTravel` flagged event.
+- **How (exact command, Linux evidence server):** Generate a separate review copy from the already preserved combined authentication export (do not overwrite the original):
+
+```bash
+jq '{export_id,window_start,window_end,user_upn,sources,
+     events: [.events[] | select(.source == "azure_ad")]}' \
+  "$STORE/authentication/auth_24h_dmarsh.json" \
+  > "$STORE/authentication/azure_ad_24h_dmarsh_derived.json"
+```
+
+- **Where:** `/evidence/IR-2026-0414-01/authentication/azure_ad_24h_dmarsh_derived.json` plus the unmodified original `authentication/auth_24h_dmarsh.json`.
+- **Hash command (SHA-256):** `(cd "$STORE" && sha256sum authentication/azure_ad_24h_dmarsh_derived.json >> hashes.txt)`; the source file hash is recorded in 6C.
+- **Ordering:** Copy before revoking cloud sessions or refresh tokens and before sign-in-log retention expires. The source is centrally stored and generally remains accessible after host isolation; request supplemental boundary records if available.
+
+### Unified 24-hour coverage check (run before containment handoff)
+
+| Required stream | Original evidence | Preserved-store path | Status at runbook creation |
+|---|---|---|---|
+| Proxy | `proxy_24h_dmarsh.log` | `proxy_dns/proxy_24h_dmarsh.log` | Supplied source; capture and hash required |
+| DNS | Resolver export (not in lab uploads) | `proxy_dns/dns_24h_dmarsh.jsonl` | Collection command provided; **not acquired** |
+| Active Directory | AD events in `auth_24h_dmarsh.json` | `authentication/auth_24h_dmarsh.json` and `ad_24h_dmarsh_derived.json` | Supplied source; capture and hash required |
+| Azure AD / Entra | Azure AD events in `auth_24h_dmarsh.json` | `authentication/auth_24h_dmarsh.json` and `azure_ad_24h_dmarsh_derived.json` | Supplied source; capture and hash required |
+
+All streams must cover the actual **24 hours immediately preceding the alert**, not merely contain a few relevant events. The supplied exports end 11 seconds before the alert; investigate and supplement that discrepancy. **Do not mark the full four-stream bundle complete without actual DNS acquisition, boundary coverage confirmation, successful SHA-256 hashes, and a custody entry for each artifact.**
 
 ## 9. Verification and integrity handoff
 
