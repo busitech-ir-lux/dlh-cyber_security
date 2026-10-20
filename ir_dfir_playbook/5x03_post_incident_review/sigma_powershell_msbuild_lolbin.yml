@@ -1,0 +1,36 @@
+# High severity: script-host parent plus developer-utility child strongly matches observed execution chain.
+title: PowerShell Spawning Trusted Developer Utility (LOLBin Proxy Execution)
+id: 56366973-e2fb-41f7-9431-2692198b753e
+status: test
+description: Detects Windows PowerShell or script host starting MSBuild or a compiler utility, as observed
+  in IR-2026-0414-01.
+references:
+- https://attack.mitre.org/techniques/T1127/001/
+- https://lolbas-project.github.io/
+author: MedDefense SOC / 5x03
+date: '2026-10-20'
+tags:
+- attack.execution
+- attack.defense-evasion
+- attack.t1127.001
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_parent:
+    ParentImage|endswith:
+    - \powershell.exe
+    - \pwsh.exe
+    - \wscript.exe
+    - \cscript.exe
+  selection_child:
+    Image|endswith:
+    - \MSBuild.exe
+    - \csc.exe
+    - \vbc.exe
+    - \jsc.exe
+  condition: selection_parent and selection_child
+falsepositives:
+- Developer build scripts legitimately invoke csc.exe from PowerShell.
+- Administrative automation may run MSBuild from a PowerShell build wrapper.
+level: high

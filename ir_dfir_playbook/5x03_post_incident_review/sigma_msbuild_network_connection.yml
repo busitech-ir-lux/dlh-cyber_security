@@ -1,0 +1,50 @@
+# Medium (versus high for script-host -> MSBuild): ordinary builds make external HTTPS connections.
+# Correlate both rule hits on one host within 5 minutes for higher confidence.
+# RFC1918 CIDRs are exact; DO NOT use prefix '172.16.' alone (misses 172.17-172.31).
+# Known NuGet domains are excluded; the observed baseline destination 168.62.42.37 is excluded
+# only WITH api.nuget.org hostname to avoid overly broad IP-based suppression.
+# Caveat: allowlisted destinations can be abused; investigate anomalous volumes separately.
+title: MSBuild Initiating Outbound Network Connection
+id: f684bf15-dfdd-4c5f-af78-618aaed4bfdd
+status: test
+description: Detects MSBuild-originated public network connections, excluding local/RFC1918 and known
+  NuGet restore destinations.
+references:
+- https://attack.mitre.org/techniques/T1127/001/
+- https://lolbas-project.github.io/
+author: MedDefense SOC / 5x03
+date: '2026-10-20'
+tags:
+- attack.command-and-control
+- attack.t1071.001
+- attack.t1127.001
+logsource:
+  category: network_connection
+  product: windows
+detection:
+  selection:
+    Image|endswith: \MSBuild.exe
+    Initiated: true
+  filter_rfc1918:
+    DestinationIp|cidr:
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+  filter_localhost:
+    DestinationIp:
+    - 127.0.0.1
+    - ::1
+  filter_nuget_host:
+    DestinationHostname|endswith:
+    - .nuget.org
+    - .nugetstatic.com
+  filter_nuget_exact:
+    DestinationHostname:
+    - api.nuget.org
+    - globalcdn.nuget.org
+    DestinationIp: 168.62.42.37
+  condition: selection and not 1 of filter_*
+falsepositives:
+- Legitimate Visual Studio MSBuild restores packages through NuGet public CDNs.
+- MSBuild extensions or build targets may legitimately contact external documentation or build services.
+level: medium

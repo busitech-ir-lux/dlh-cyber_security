@@ -1,0 +1,49 @@
+entries:
+- risk_id: RSK-2026-031
+  category: endpoint_execution
+  title: LOLBin proxy execution enables C2
+  description: Unrestricted developer utilities can execute attacker-authored inline tasks
+  trigger: 'Incident IR-2026-0414-01: ART-002-M01; ART-002-M02; ART-003-M01'
+  likelihood: 5
+  impact: 5
+  risk_score: 25
+  current_treatment: Endpoint monitoring without evidenced specific MSBuild restriction
+  updated_treatment: Deploy HRD-002 and Sigma rules T3/T4
+  owner_role: Endpoint Security Lead
+  review_date: '2026-11-20'
+- risk_id: RSK-2026-032
+  category: identity_access
+  title: Credential theft enables foreign-origin access
+  description: Phishing and weak geographic sign-in policy let stolen credentials reach enterprise resources
+  trigger: 'Incident IR-2026-0414-01: Summary phishing IOC and Azure AD conditional-access open item'
+  likelihood: 5
+  impact: 5
+  risk_score: 25
+  current_treatment: Credential controls with risk-signal suppression under investigation
+  updated_treatment: Deploy HRD-003 and update PB-UPD-001
+  owner_role: Identity Security Lead
+  review_date: '2026-11-20'
+- risk_id: RSK-2026-033
+  category: lateral_movement
+  title: Kerberos-based lateral movement between clinical hosts
+  description: Reused identity moved from WST-WS-031 to WST-WS-017
+  trigger: 'Incident IR-2026-0414-01: ART-003-M01; ART-002-M04'
+  likelihood: 4
+  impact: 5
+  risk_score: 20
+  current_treatment: Existing Kerberos and endpoint telemetry; effectiveness not yet proven
+  updated_treatment: Deploy HRD-004; detect unusual logons; PB-UPD-002
+  owner_role: Active Directory Lead
+  review_date: '2026-11-20'
+- risk_id: RSK-2026-034
+  category: phi_exposure
+  title: Uncontrolled clinical share access exposes PHI
+  description: 14 PHI-bearing PDFs read via LIS_REPORTS$; external transfer remains unconfirmed
+  trigger: 'Incident IR-2026-0414-01: AD-LOG-01; summary open DLP item'
+  likelihood: 5
+  impact: 5
+  risk_score: 25
+  current_treatment: Clinical share ACL and DLP effectiveness unverified
+  updated_treatment: Apply HRD-005; perform DLP review and HIPAA assessment
+  owner_role: Clinical Systems Security Lead
+  review_date: '2026-11-20'

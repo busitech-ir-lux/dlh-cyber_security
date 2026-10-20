@@ -1,0 +1,663 @@
+
+### 1. Audit Control Effectiveness
+
+**Goal:** Map every phase of the incident against the controls that should have acted and assess whether they did.
+
+---
+
+**Context:** You cannot close a gap you have not measured. The audit is the measurement.
+
+---
+
+**Instructions:** Create `control_effectiveness.yaml`. For each phase of the incident, document the controls expected, the controls that fired, the controls that missed, and the gap severity.
+
+- Use `forensic_findings_summary.md` from the lab materials as the source evidence for the incident phases, observed attacker actions, missed controls, and findings.
+
+Structure:
+
+```makefile
+phase: <incident phase name>
+att_ck_technique: <T-number>
+controls_expected: [list of controls that should exist for this phase]
+controls_fired: [controls that triggered or acted during the incident]
+controls_missed: [controls that should have acted but did not, or did not exist]
+gap_severity: <critical | high | medium | low>
+gap_reason: <one-line explanation>
+```
+
+Cover at minimum these six phases drawn from the incident:
+
+1. Credential phishing and submission (`T1566.002` + `T1078`)
+    
+2. VPN access using stolen credentials from a foreign IP
+    
+3. PowerShell → MSBuild LOLBin execution (`T1127.001`)
+    
+4. C2 beaconing to external IPs (`T1071.001`)
+    
+5. LSASS credential access and Kerberos ticket extraction (`T1003.001` + `T1558.003`)
+    
+6. Lateral movement and PHI access (`T1550.003` + `T1078`)
+    
+
+**Expected output**
+
+```yaml
+- phase: <incident phase name>
+  att_ck_technique:  <T-number>
+  controls_expected:
+    - [list of controls that should exist for this phase]
+    - [list of controls that should exist for this phase]
+    - [list of controls that should exist for this phase]
+  controls_fired:
+    - [controls that triggered or acted during the incident]
+  controls_missed:
+    - [controls that should have acted but did not, or did not exist]
+    - [controls that should have acted but did not, or did not exist]
+    - [controls that should have acted but did not, or did not exist]
+  gap_severity:  <critical | high | medium | low>
+  gap_reason: <one-line explanation>
+
+- phase: <incident phase name>
+  att_ck_technique:  <T-number>
+  controls_expected:
+    - [list of controls that should exist for this phase]
+    - [list of controls that should exist for this phase]
+    - [list of controls that should exist for this phase]
+  controls_fired:
+    - [controls that triggered or acted during the incident]
+  controls_missed:
+    - [controls that should have acted but did not, or did not exist]
+    - [controls that should have acted but did not, or did not exist]
+    - [controls that should have acted but did not, or did not exist]
+  gap_severity:  <critical | high | medium | low>
+  gap_reason: <one-line explanation>
+```
+
+---
+
+### 2. Gap Analysis
+
+**Goal:** Translate the control audit into a prioritized list of improvements, each bounded enough to assign and track.
+
+---
+
+**Context:** A gap that cannot be assigned to an owner and measured is not a gap analysis. It is a wishlist.
+
+---
+
+**Instructions:** Create `gap_analysis.md` with a structured table and a priority summary.
+
+- Use `control_effectiveness.yaml` plus `forensic_findings_summary.md`.
+
+**The table must have these columns:**
+
+- `Gap ID` (GAP-001 through GAP-N)
+    
+- `Phase` (from Task 1)
+    
+- `Gap description` (what is absent or broken)
+    
+- `Control category` (preventive / detective / corrective)
+    
+- `Recommended improvement` (specific, actionable, not generic)
+    
+- `Priority` (P1 critical / P2 high / P3 medium)
+    
+- `Linked findings` (evidence or task reference)
+    
+
+After the table, add a **Priority summary** section listing only the P1 gaps with a one-line rationale for each.
+
+**Constraints:**
+
+- Descriptions must be specific to MedDefense, not generic.
+    
+- Recommendations must name the specific control, tool, or configuration change, not a category.
+    
+- At minimum eight gaps derived from the Task 1 audit.
+    
+
+**Expected output**
+
+```shell
+# Gap Analysis: IR-2026-0414-01
+
+## Gap Register
+```
+
+|Gap ID|Phase|Gap Description|Control Category|Recommended Improvement|Priority|Linked Findings|
+|---|---|---|---|---|---|---|
+|GAP-001|`<incident phase name>`|`< description>`|`<preventive / detective / corrective>`|`<actionable action>`|`<P1/P2/P3>`|control_eff phase 1|
+|GAP-002|`<incident phase name>`|`< description>`|`<preventive / detective / corrective>`|`<actionable action>`|`<P1/P2/P3>`|control_eff phase 2|
+|GAP-003|`<incident phase name>`|`< description>`|`<preventive / detective / corrective>`|`<actionable action>`|`<P1/P2/P3>`|ART-001-F01|
+|…|…|…|…|…|…|…|
+
+```markdown
+## Priority summary
+
+- **GAP-001** (P1): Credential theft went fully undetected; a proxy alert rule would have flagged the harvesting attempt at the earliest stage of the attack.
+- **GAP-002** (P1): Foreign-IP VPN access is the point where a single control — conditional MFA — would have stopped the entire intrusion chain.
+- ...
+```
+
+---
+
+### 3. Write the Sigma Rule: PowerShell LOLBin Proxy Execution
+
+**Goal:** Encode the initial execution technique as a detection rule that fires on the next attempt.
+
+---
+
+**Context:** The attacker used `msbuild.exe` spawned by PowerShell to execute malicious inline C# without dropping a traditional executable. The detection did not exist before this incident.
+
+---
+
+**Instructions:** Write a valid Sigma rule `sigma_powershell_msbuild_lolbin.yml` that detects `msbuild.exe` (or other trusted developer utilities) spawned by PowerShell or script host processes.
+
+Required rule fields:
+
+- `title`, `id` (UUID v4), `status` (test), `description`, `references`, `author`, `date`, `tags`
+    
+- `logsource.category: process_creation` and `logsource.product: windows`
+    
+- `detection` using `ParentImage|endswith` for PowerShell variants and `Image|endswith` for MSBuild and related LOLBins (reference the LOLBAS project for the full list)
+    
+- `falsepositives`: at least two specific, realistic false positive scenarios
+    
+- `level: high`
+    
+
+Validate syntax with `sigma-cli check` or `yamllint`. Document the ATT&CK technique in the `tags` field.
+
+**Expected output**
+
+```vbnet
+title: PowerShell Spawning Trusted Developer Utility (LOLBin Proxy Execution)
+id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+status: test
+description: ...
+references:
+  - ...
+  - ...
+author: <your_name>
+date: <YYYY-MM-DD>
+tags:
+  - ...
+  -...
+  - ...
+logsource:
+  category: ...
+  product:...
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+  selection_child:
+    Image|endswith:
+      - '\MSBuild.exe'
+      - '\csc.exe'
+      - '\vbc.exe'
+      - '\jsc.exe'
+  condition: selection_parent and selection_child
+falsepositives:
+  - ...
+  - ...
+level: ...
+```
+
+
+---
+
+
+### 4. Write the Sigma Rule: MSBuild C2 Beaconing
+
+#advanced
+
+**Goal:** Detect the C2 communication channel opened by the LOLBin at the network level.
+
+---
+
+**Context:** Writing two complementary rules for the same attack chain is how detection teams build layered coverage. If the process creation rule is evaded, the network rule catches the next step.
+
+---
+
+**Instructions:** Write a valid Sigma rule `sigma_msbuild_network_connection.yml` that detects `msbuild.exe` initiating an outbound network connection.
+
+Required fields: same structure as Task 3.
+
+- `logsource.category: network_connection` and `logsource.product: windows`
+    
+- `detection` targeting `Image|endswith: '\MSBuild.exe'` with `Initiated: 'true'`
+    
+- Add a filter to reduce false positives from legitimate build activity: exclude connections to private RFC 1918 address ranges and to known NuGet/package manager CDN ranges (document your exclusion logic in comments)
+    
+- `falsepositives`: at minimum two specific scenarios involving legitimate MSBuild network activity
+    
+- `level: medium` (slightly lower than T3 because legitimate build systems generate similar events)
+    
+
+Document in a comment block at the top of the file why this rule is `medium` while the process creation rule is `high`.
+
+**Expected output**
+
+```yaml
+# Rule: MSBuild C2 Network Connection
+# Level rationale: Set to medium because MSBuild legitimately makes network connections
+# during NuGet restore and package manager operations from developer workstations.
+# This rule should be deployed alongside sigma_powershell_msbuild_lolbin.yml for layered coverage.
+# A medium + high correlation (both rules firing for the same host within 5 minutes)
+# should be escalated as high confidence.
+
+title: MSBuild Initiating Outbound Network Connection
+id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+status: test
+description: ...
+...
+detection:
+  selection:
+    Image|endswith: '\MSBuild.exe'
+    Initiated: 'true'
+  filter_rfc1918:
+    DestinationIp|startswith:
+      - '10.'
+      - '172.16.'
+      - '192.168.'
+  filter_localhost:
+    DestinationIp:
+      - '127.0.0.1'
+      - '::1'
+  condition: selection and not filter_rfc1918 and not filter_localhost
+falsepositives:
+  - ...
+  - ...
+level: ...
+```
+
+
+---
+
+### 5. Validate Your Detection Rules Against Real and Clean Data
+
+**Goal:** Prove your rules fire on the attack, do not flood the queue on normal traffic, and tune any false positives before production.
+
+---
+
+**Context:** A rule that was never tested is not a detection. It is a hypothesis. This task is where hypotheses become deployable rules.
+
+---
+
+**Instructions:** Write `validate_rules.sh`. The script tests both Sigma rules from Tasks 3 and 4 against two provided log samples using `sigma-cli` or a compatible log matching tool.
+
+Provided samples:
+
+- `incident_sysmon.jsonl`: Sysmon process creation and network connection events from `WST-WS-031` and `WST-WS-017` during the incident window (02:40Z to 04:00Z on 2026-04-14)
+    
+- `clean_sysmon.jsonl`: 30-day Sysmon baseline from a representative clinical workstation class at MedDefense (no known incidents; includes developers running legitimate builds via Visual Studio and MSBuild)
+    
+
+For each rule and each sample, the script reports:
+
+- Number of events matched
+    
+- Match rate as a percentage of total events in the sample
+    
+- For the clean sample only: a list of matched events summarizing the false positive pattern (if any)
+    
+
+After running the script, document your findings and any tuning decisions in `rule_validation_report.md`:
+
+- Did the rule fire on the incident data? (expected: yes)
+    
+- What was the false positive rate on the clean baseline? (target: under 0.1 percent of total events)
+    
+- If the false positive rate exceeded the target, document what you changed in the rule and why
+    
+
+The tuned versions of the Sigma files replace the originals. Every change is noted in the report.
+
+**Expected output**
+
+```yaml
+$ ./validate_rules.sh
+
+  [incident_sysmon.jsonl]
+  Total events: 4,812
+  Matches: 2
+  Match rate: 0.042%
+  Verdict: PASS (expected matches on PID 8104 at 02:46:58Z and PID 9201 at 03:27:13Z)
+
+  [clean_sysmon.jsonl]
+  Total events: 287,341
+  Matches: 0
+  False positive rate: 0.000%
+  Verdict: PASS
+
+  [incident_sysmon.jsonl]
+  Total events: 4,812
+  Matches: 2
+  Match rate: 0.042%
+  Verdict: PASS
+
+  [clean_sysmon.jsonl]
+  Total events: 287,341
+  Matches: 14
+  False positive rate: 0.005%
+  Verdict: REVIEW : 14 matches are MSBuild NuGet restore connections to api.nuget.org
+  Action: adding filter for DestinationHostname|endswith '.nuget.org'; re-running
+
+  [clean_sysmon.jsonl after tuning]
+  Matches: 0
+  False positive rate: 0.000%
+  Verdict: PASS
+```
+
+---
+
+### 6. Update the Hardening Specification
+
+**Goal:** Translate incident findings into specific, deployable configuration changes.
+
+---
+
+**Context:** Hardening changes driven by evidence are the ones that survive budget reviews. Each change here links to a finding that justifies it.
+
+---
+
+**Instructions:** Create `hardening_updates.md`. For each recommended change, specify: the control, the exact configuration, the gap it closes (by Gap ID from Task 2), and the validation test that confirms the change is in effect.
+
+- Use Gap IDs from Task 2 and incident evidence from `forensic_findings_summary.md`.
+
+Cover at minimum these four controls:
+
+- **PowerShell Constrained Language Mode** for non-administrative user accounts: blocks `[System.Management.Automation.ScriptBlock]::Create` and `.NET` type loading that LOLBin techniques depend on. Document the GPO path and registry key.
+    
+- **AppLocker or Windows Defender Application Control rule for MSBuild.exe**: restrict execution of `MSBuild.exe` to members of `BUILTIN\Administrators` and named CI/CD service accounts. Document the rule XML structure.
+    
+- **Conditional access policy for VPN authentication from new geographies**: block or require step-up MFA when a VPN login originates from a country not previously seen for that account in the prior 30 days. Document the policy logic.
+    
+- **Windows Credential Guard**: prevents LSASS credential extraction by isolating credential material in a hypervisor-protected memory region. Document the enablement path and which Windows versions support it.
+    
+
+For each control, close with: the Gap IDs it addresses and a one-line validation test (a command or observable that confirms the control is active).
+
+**Expected output**
+
+```yaml
+# Hardening Updates: IR-2026-0414-01
+
+## HRD-001: PowerShell Constrained Language Mode
+
+**Closes:** GAP-003, GAP-004
+**Configuration:**
+- GPO: Computer Configuration > Preferences > Windows Settings > Registry
+- Key: HKLM\System\CurrentControlSet\Control\Session Manager\Environment
+- Value name: __PSLockdownPolicy
+- Value type: REG_SZ
+- Value data: 4
+
+**Effect:** Restricts PowerShell to Constrained Language Mode for standard users; blocks .NET type instantiation, COM object creation, and script block execution used in LOLBin proxy techniques.
+
+**Applies to:** Non-administrative accounts on all clinical and administrative workstations.
+
+**Validation:** Run `$ExecutionContext.SessionState.LanguageMode` as a standard user; expected output: ConstrainedLanguage
+
+---
+
+## HRD-002: AppLocker rule restricting MSBuild.exe
+...
+```
+
+
+---
+
+### 7. Update the Risk Register
+
+#advanced
+
+**Goal:** Revise the organizational risk register to reflect what the incident revealed about real likelihood and impact.
+
+---
+
+**Context:** A risk that has actually occurred is no longer hypothetical. Its likelihood score changes, and its treatment urgency changes with it.
+
+---
+
+**Instructions:** Create `risk_register_updates.yaml` with an `entries` array. Each entry represents either a new risk surfaced by the incident or an existing risk whose score must be revised.
+
+- Use incident findings from `forensic_findings_summary.md`.
+
+Each entry has: `risk_id`, `category`, `title`, `description`, `trigger` (what incident finding supports this entry), `likelihood` (1-5), `impact` (1-5), `risk_score` (likelihood × impact), `current_treatment`, `updated_treatment`, `owner_role`, `review_date`.
+
+Document at minimum four risk entries derived from the incident findings:
+
+1. LOLBin proxy execution via trusted developer utilities
+    
+2. Credential theft enabling persistent external access
+    
+3. Lateral movement through Kerberos ticket reuse in a clinical network
+    
+4. PHI exposure through uncontrolled lateral access to clinical workstations
+    
+
+**Expected output**
+
+```yaml
+entries:
+  - risk_id: RSK-2026-031
+    category: endpoint_execution
+    title: LOLBin proxy execution enabling C2 on clinical workstations
+    description: <description>
+    trigger: Incident IR-2026-0414-01; msbuild.exe C2 channel on WST-WS-031 and WST-WS-017 (ART-001-F01, ART-002-M01)
+    likelihood: ...
+    impact: ...
+    risk_score: ...
+    current_treatment: Endpoint detection (EDR) only; no application control
+    updated_treatment: Deploy AppLocker rule restricting MSBuild.exe (HRD-002); deploy Sigma rule sigma_powershell_msbuild_lolbin.yml (T3)
+    owner_role: <role>
+    review_date: <timestamp>
+
+  - risk_id: RSK-2026-032
+    ...
+```
+
+
+---
+
+### 8. Threat Intelligence Enrichment
+
+#advanced
+
+**Goal:** Turn the incident IOCs and TTPs into forward-looking intelligence that answers what this actor does next.
+
+---
+
+**Context:** Knowing what happened is forensics. Knowing what to expect next is intelligence. This task is the bridge.
+
+---
+
+**Instructions:** Create `threat_intel_brief.md` by enriching the incident IOCs and TTP cluster through open-source intelligence sources.
+
+- Use the offline enrichment snapshots under `ioc_enrichment_snapshot/` for VirusTotal, OTX, AbuseIPDB and URLhaus results. Live API access is optional; the provided snapshots are sufficient for completing the task.
+
+Work through three stages:
+
+**Stage 1: IOC enrichment.** For each IOC below, query at minimum two open sources (VirusTotal, OTX AlienVault, AbuseIPDB, URLhaus, Shodan) and document: first seen, last seen, reputation tags, associated campaigns or reports.
+
+IOCs from the incident:
+
+- C2 IP: `185.220.101.47`
+    
+- C2 IP: `91.234.99.107`
+    
+- Phishing domain: `ms0365-support[.]login-verification[.]click`
+    
+- Malicious file hash (update.xml): document the hash you computed in the forensic phase
+    
+
+**Stage 2: TTP cluster analysis.** Map the observed TTPs to the ATT&CK Groups database. Which known threat actor profiles use this combination of Initial Access via credential phishing, LOLBin execution via MSBuild, LSASS credential access, and Kerberos Pass-the-Ticket? Document the closest matching profiles with confidence levels.
+
+**Stage 3: Forward-looking assessment.** Based on the TTP cluster, actor profile, and targeting context (healthcare organization), answer:
+
+- What does this actor typically do after establishing an initial foothold and conducting reconnaissance?
+    
+- What second-stage tooling (implants, C2 frameworks) is associated with this actor class?
+    
+- What proactive hunting queries would detect second-stage tooling if it was deployed but not yet triggered?
+    
+
+**Required structure for the brief:**
+
+- IOC enrichment table (one row per IOC)
+    
+- TTP cluster match (table: technique, actor profile, confidence)
+    
+- Actor profile summary (two to three paragraphs)
+    
+- Predicted next steps (bullet list)
+    
+- Recommended proactive hunting rules (three to five, in plain language)
+    
+
+Length cap: 3 pages.
+
+**Expected output**
+
+```ruby
+# Threat Intelligence Brief:  <ID>
+
+**Classification:** Internal TLP:AMBER
+**Date:** <timestamp>
+**Author:** <your_name>
+
+## IOC Enrichment
+```
+
+|IOC|Type|First Seen|Last Seen|Reputation Tags|Associated Reports|
+|---|---|---|---|---|---|
+|185.220.101.47|IP|`<YYYY-MM>`|`<YYYY-MM>`|`<tag>`, `<tag>`|Listed in 14 threat intel feeds|
+|91.234.99.107|IP|`<YYYY-MM>`|`<YYYY-MM>`|`<tag>`, `<tag>`, `<tag>`|Associated with eCrime infrastructure|
+|ms0365-support[.]login-verification[.]|Domain|`<YYYY-MM-DD>`|`<YYYY-MM>`|`<tag>`, `<tag>`|Newly registered; typosquat pattern|
+|…|…|…|…|…|…|
+
+```python-repl
+## TTP Cluster Match
+...
+
+## Actor Profile Summary
+...
+
+## Predicted Next Steps
+...
+
+## Recommended Proactive Hunting
+...
+```
+
+
+---
+
+
+### 9. Update the IR Playbooks
+
+**Goal:** Close the gaps the real incident exposed in the procedures the team ran.
+
+---
+
+**Context:** A playbook that has survived an actual incident and not been updated is less accurate than it was before the incident. Every gap discovered during response must come back into the playbook as a fix.
+
+---
+
+**Instructions:** Create `playbook_updates.md`. For each change to an existing playbook, document the section changed, the original text (abbreviated), the replacement text, and the reason linked to a Gap ID or finding reference.
+
+- Use Task 2 gaps and `forensic_findings_summary.md`.
+
+Cover at minimum these four changes:
+
+1. **Credential exposure playbook: add VPN impossible-travel as a trigger condition**: the existing playbook did not include foreign-IP VPN login as an independent trigger; it only covered direct credential compromise alerts.
+    
+2. **Credential exposure playbook; add scope expansion checklist when lateral movement is detected**: the playbook had no structured step for expanding containment to newly identified hosts when Pass-the-Ticket indicators surface.
+    
+3. **Credential exposure playbook: add krbtgt double-reset as a mandatory step for confirmed Pass-the-Ticket**: the original playbook said "reset compromised account password" but did not specify the krbtgt rotation required to invalidate forged Kerberos tickets.
+    
+4. **Credential exposure playbook: add HIPAA four-factor assessment as a decision node when ePHI systems are in the blast radius**: the original playbook had no branch for clinical system involvement.
+    
+
+**Format for each change:**
+
+```markdown
+### Change PB-UPD-001
+
+**Playbook:** playbook_credential_exposure.yaml
+**Section:** applies_to.triggers
+**Gap closed:** GAP-002
+**Finding reference:** control_effectiveness.yaml phase 2
+
+**Before:**
+triggers:
+  - Alert: credential submitted to external domain
+
+**After:**
+triggers:
+  - Alert: credential submitted to external domain
+  - Alert: VPN authentication from country not seen for this account in 30 days
+  - Alert: impossible-travel detected on account (two logins from geographically inconsistent IPs within 2 hours)
+
+**Reason:** The incident entry point was a foreign-IP VPN login that matched no existing trigger; this gap allowed the intrusion to proceed for over eight hours without a playbook activation.
+```
+
+**Expected output**
+
+A `playbook_updates.md` file with a change entry for each of the four required updates, following the format above.
+
+
+---
+
+### 10. Build the Improvement Implementation Package
+
+#advanced
+
+**Goal:** Assemble every improvement into a single executable package with owners, deadlines, and validation methods.
+
+---
+
+**Context:** A list of improvements without owners is a list of wishes. This package is what James Chen hands to the team on Monday morning.
+
+---
+
+**Instructions:** Create `implementation_package.md` with two sections.
+
+**Section 1: Implementation table.** One row per improvement. Columns: Improvement ID, Type (detection / hardening / playbook / risk), Title, Source (Gap ID or task reference), Owner Role, Target Deadline (days from today, not a calendar date), Success Criterion, Validation Method, Status.
+
+Improvements must include every significant output from Tasks 3 through 9. Do not invent improvements not supported by prior tasks.
+
+**Section 2: Deployment sequence.** List the improvements in recommended deployment order, with a one-line rationale for why each must precede the next. The sequence must account for dependencies (for example: harden before deploying detection to avoid hardening breaking the rule's log sources).
+
+Length cap: 2 pages.
+
+**Expected output**
+
+```bash
+# Improvement Implementation Package: IR-2026-0414-01
+
+## Implementation Table
+```
+
+|ID|Type|Title|Source|Owner Role|Deadline (days)|Success Criterion|Validation Method|Status|
+|---|---|---|---|---|---|---|---|---|
+|IMP-001|detection|Deploy sigma_powershell_msbuild_lolbin.yml|GAP-003|SOC Lead|7|Rule active in SIEM; fires on synthetic test event|sigma-cli + synthetic Sysmon EID 1 event injection|pending|
+|IMP-002|detection|Deploy sigma_msbuild_network_connection.yml|GAP-004|SOC Lead|7|Rule active; FP rate below 0.1% on 7-day baseline|review_validation_report.md + 7-day alert queue review|pending|
+|IMP-003|hardening|Enable PowerShell Constrained Language Mode|GAP-003|Infrastructure Lead|14|PSLockdownPolicy=4 verified on all clinical hosts|GPO compliance report; spot-check via PowerShell query|pending|
+|…|…|…|…|…|…|…|…|…|
+
+```markdown
+## Deployment Sequence
+
+1. **IMP-001 and IMP-002** (detection rules) - deploy first so new hardening does not change log sources before rules are baselined.
+2. **IMP-003** (PowerShell CLM) - deploy after detection rules confirm logging is working; CLM will change PowerShell event patterns.
+3. **IMP-004** (AppLocker for MSBuild) - deploy after CLM is confirmed stable; test on pilot group first.
+4. ...
+```

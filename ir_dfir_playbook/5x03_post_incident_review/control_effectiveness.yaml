@@ -1,0 +1,87 @@
+# IR-2026-0414-01; forensic observations are not proof that an alert fired.
+# 'controls_fired' lists observable telemetry/forensic controls only.
+- phase: Credential phishing and submission
+  att_ck_technique: T1566.002, T1078
+  controls_expected:
+  - Secure web filtering for lookalike Microsoft 365 domains
+  - Phishing-resistant MFA and sign-in risk detection
+  - Proxy/DNS alerting for credential-harvesting URLs
+  controls_fired:
+  - Phishing domain visit and subsequent credential compromise were reconstructed in forensic evidence
+  controls_missed:
+  - Phishing URL not blocked before credential submission
+  - No evidenced immediate alert or containment of compromised account
+  gap_severity: critical
+  gap_reason: Credential harvesting succeeded before protective or responsive controls stopped account abuse.
+- phase: Foreign-origin access using stolen credentials
+  att_ck_technique: T1078
+  controls_expected:
+  - VPN MFA with geographic risk-based conditions
+  - Identity sign-in risk alerts for unfamiliar countries
+  - VPN sign-in logging with immediate SOC escalation
+  controls_fired:
+  - Identity and case evidence permitted reconstruction of suspicious external sign-in activity
+  controls_missed:
+  - Conditional access compliant-device exception suppressed Azure AD risk signals
+  - No evidenced foreign-origin VPN block or independent high-risk login escalation
+  gap_severity: critical
+  gap_reason: Compromised credentials remained usable; the identity risk signal suppression requires verification.
+- phase: PowerShell to MSBuild LOLBin execution
+  att_ck_technique: T1059.001, T1127.001
+  controls_expected:
+  - Sysmon EID 1 process-tree telemetry
+  - EDR rule for PowerShell spawning MSBuild
+  - Application control limiting MSBuild use
+  - PowerShell script and command-line monitoring
+  controls_fired:
+  - Sysmon process creation recorded PowerShell parent and MSBuild child
+  - Disk and memory artifacts established inline XML task execution
+  controls_missed:
+  - No evidenced SOC alert for PowerShell-to-MSBuild chain
+  - No evidenced execution prevention or MSBuild allowlist
+  gap_severity: high
+  gap_reason: MSBuild execution from PowerShell was captured but not shown to have been blocked or escalated.
+- phase: MSBuild outbound C2 beaconing
+  att_ck_technique: T1071.001, T1090.003
+  controls_expected:
+  - Sysmon EID 3 outbound network telemetry
+  - Egress policy restricting developer utilities
+  - SIEM detection of MSBuild outbound public-IP traffic
+  controls_fired:
+  - Sysmon network events and memory evidence captured MSBuild outbound TCP/443 connections
+  controls_missed:
+  - No evidenced outbound connection block to either C2 IP
+  - No evidenced process-aware C2 alert
+  gap_severity: high
+  gap_reason: Compromised workstations established C2 connections without evidenced interdiction.
+- phase: LSASS credential access and Kerberos ticket abuse
+  att_ck_technique: T1003.001, T1558.003
+  controls_expected:
+  - Credential Guard / LSASS protection
+  - EDR credential-access monitoring
+  - Kerberos auditing and ticket anomaly detection
+  controls_fired:
+  - Memory forensics identified NTLM material present in LSASS
+  controls_missed:
+  - No evidenced prevention or alert for credential access
+  - Kerberos ticket extraction is listed in technique summary but not independently demonstrated by a specific
+    finding
+  gap_severity: critical
+  gap_reason: Credential material was exposed in memory; the exact ticket-extraction mechanism remains unverified.
+- phase: Kerberos-based lateral movement and PHI access
+  att_ck_technique: T1550.003, T1078, T1005
+  controls_expected:
+  - Detection of unusual Kerberos logons and cross-host activity
+  - Network segmentation of clinical workstations and report shares
+  - Least-privilege access controls on LIS_REPORTS$
+  - PHI read auditing and DLP monitoring
+  controls_fired:
+  - Memory evidence linked WST-WS-017 access to Kerberos logon from WST-WS-031
+  - AD logs recorded 14 PDF reads on LIS-WSIDE-01
+  controls_missed:
+  - No evidenced block of unauthorized cross-host movement
+  - No evidenced timely PHI access escalation
+  - DLP evidence unavailable to establish or exclude exfiltration
+  gap_severity: critical
+  gap_reason: Movement reached a clinical report share and 14 PHI-bearing PDFs were accessed; exfiltration
+    is not confirmed.
