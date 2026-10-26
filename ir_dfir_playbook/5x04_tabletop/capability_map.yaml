@@ -1,0 +1,69 @@
+capabilities:
+- capability_id: CAP-01
+  name: supply_chain_detection
+  expected_behavior: Declare and scope incident, examine signed vendor update and agent telemetry, preserve evidence.
+  gap_hypothesis: Team trusts the signing certificate and treats traffic as a generic endpoint problem.
+  tested_by_inject:
+  - INJ-00
+  - INJ-01
+  evaluation_owner: SOC evaluator
+- capability_id: CAP-02
+  name: vendor_communication
+  expected_behavior: Use 24x7 Nexus SecOps, log request/time/response, invoke BAA escalation and independent verification.
+  gap_hypothesis: Untested contact path leads to delays or reliance on account executive.
+  tested_by_inject:
+  - INJ-01
+  - INJ-02
+  evaluation_owner: Vendor-risk evaluator
+- capability_id: CAP-03
+  name: business_continuity_decision
+  expected_behavior: Joint security/clinical decision on isolation with authority, fallback, safety controls, review
+    point.
+  gap_hypothesis: No owner has authority or manual workflow across three sites.
+  tested_by_inject:
+  - INJ-01
+  - INJ-06
+  evaluation_owner: Continuity evaluator
+- capability_id: CAP-04
+  name: phi_exposure_assessment
+  expected_behavior: Inventory affected data, time window, flows, vendor exports and affected individuals; preserve
+    uncertainty.
+  gap_hypothesis: Team assumes absence of proven exfiltration equals no PHI impact.
+  tested_by_inject:
+  - INJ-02
+  - INJ-03
+  evaluation_owner: Privacy evaluator
+- capability_id: CAP-05
+  name: hipaa_notification_posture
+  expected_behavior: Distinguish contractual 24h BA notice from HIPAA BA legal limit; document risk assessment and
+    potential covered-entity duties.
+  gap_hypothesis: Team starts an invented automatic 24h federal clock or waits for vendor to decide.
+  tested_by_inject:
+  - INJ-02
+  - INJ-03
+  evaluation_owner: Legal evaluator
+- capability_id: CAP-06
+  name: data_integrity_response
+  expected_behavior: Reconcile appointments against trusted Epic/audit baselines, identify affected patients and
+    clinical follow-up.
+  gap_hypothesis: Team restores service before validating schedule integrity.
+  tested_by_inject:
+  - INJ-03
+  - INJ-06
+  evaluation_owner: Clinical evaluator
+- capability_id: CAP-07
+  name: crisis_communications
+  expected_behavior: Route media inquiries to one authorized spokesperson and release approved factual holding statement.
+  gap_hypothesis: Unverified breach claims leak into public messaging.
+  tested_by_inject:
+  - INJ-04
+  evaluation_owner: Communications evaluator
+- capability_id: CAP-08
+  name: executive_briefing_under_pressure
+  expected_behavior: Board brief separates known/unknown, risk, decisions, owners and next update within 90-minute
+    deadline.
+  gap_hypothesis: Leadership gives technical speculation without a decision request.
+  tested_by_inject:
+  - INJ-05
+  - INJ-06
+  evaluation_owner: Executive evaluator

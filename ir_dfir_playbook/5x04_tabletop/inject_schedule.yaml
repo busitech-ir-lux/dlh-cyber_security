@@ -1,0 +1,123 @@
+injects:
+- id: INJ-00
+  time_minutes: 0
+  delivery: Facilitator reads aloud
+  situation: The SOC has flagged unusual outbound traffic from Main scheduling server SCHED-SVR-01 to 193.42.100.77. The alert
+    fired 45 minutes ago; EDR records outbound connections every four hours. Scheduling is still operating. Host names for
+    the other two sites are not yet confirmed.
+  capability_tested:
+  - CAP-01
+  decision_point: Declare incident/severity; identify first notifications and preserve telemetry.
+  roles_challenged:
+  - James Chen
+  - Sarah Park
+  expected_response: Declare at least SEV2 provisionally with reasons, notify incident leadership and technical owner, preserve
+    EDR/network evidence, investigate shared vendor access.
+- id: INJ-01
+  time_minutes: 20
+  delivery: Facilitator reads aloud
+  situation: 'Nexus posts a verified advisory: its build pipeline was compromised three days ago, and a malicious component
+    was included in a digitally signed automatic agent update. No safe patch exists yet. Main has the update; Nexus cannot
+    immediately confirm the other two sites. The clinical director reports two time-sensitive appointments could be missed
+    if scheduling stops, and one appointment time already conflicts with a printed clinic list. Sarah recommends isolation;
+    clinical leadership objects to a total shutdown.'
+  capability_tested:
+  - CAP-01
+  - CAP-02
+  - CAP-03
+  decision_point: Choose isolate/limit/continue with accountable clinical and IT approval, safe fallback and review time;
+    contact Nexus.
+  roles_challenged:
+  - Sarah Park
+  - Clinical Director representative
+  - Robert Kim
+  - Dr. Patricia Morales
+  expected_response: Make and log proportional isolation decision, preserve forensic evidence, implement manual confirmation/triage
+    of urgent patients, set 15-minute review and vendor case.
+- id: INJ-02
+  time_minutes: 35
+  delivery: Facilitator reads aloud
+  situation: Nexus SecOps acknowledges the event but has no complete affected-customer list. It says possible access to patient
+    names, dates of birth, contact details, appointment times, and insurance data. Nexus has not sent formal BAA breach notice
+    and cannot yet prove exfiltration. The first security email was sent to the account executive, who has not replied.
+  capability_tested:
+  - CAP-02
+  - CAP-04
+  - CAP-05
+  decision_point: Escalate vendor contact; start exposure scoping and contractual/legal notice assessment without claiming
+    breach is confirmed.
+  roles_challenged:
+  - Helena Reyes
+  - James Chen
+  - Dr. Patricia Morales
+  expected_response: Call 24x7 SecOps, demand written facts/discovery timestamp, use BAA 24h contractual term, open documented
+    HIPAA assessment with scope and decision owners.
+- id: INJ-03
+  time_minutes: 50
+  delivery: Facilitator reads aloud
+  situation: Epic audit comparisons show 46 appointments have mismatched times or statuses in the past 72 hours across all
+    three sites; eight involve patients with time-sensitive care. The mismatch origin is not known. Nexus admits the malicious
+    code could read outbound FHIR payloads, but it has not confirmed data theft.
+  capability_tested:
+  - CAP-04
+  - CAP-05
+  - CAP-06
+  decision_point: Prioritize clinical verification and isolate corrupted scheduling updates; determine whether and how to
+    assess ePHI breach risk.
+  roles_challenged:
+  - Clinical Director representative
+  - Robert Kim
+  - Helena Reyes
+  - Sarah Park
+  expected_response: Suspend untrusted schedule synchronization, preserve original records, reconcile 46 records with Epic/clinic
+    confirmation, urgently contact eight patients through approved clinical channels, perform documented PHI risk assessment.
+- id: INJ-04
+  time_minutes: 65
+  delivery: Facilitator reads aloud
+  situation: 'A local reporter emails: “We hear patients at MedDefense had their appointments changed after a vendor hack.
+    Has health data been stolen? Please respond in 15 minutes.” A staff member has already drafted a social post saying “No
+    patient records were compromised.”'
+  capability_tested:
+  - CAP-07
+  decision_point: Approve holding statement and internal speaking rules, without unsupported assertions.
+  roles_challenged:
+  - Marcus Webb
+  - Helena Reyes
+  - Dr. Patricia Morales
+  expected_response: Stop unapproved post, route response via Communications and Legal, acknowledge investigation and patient
+    continuity action, set approved update channel and time.
+- id: INJ-05
+  time_minutes: 80
+  delivery: Facilitator reads aloud
+  situation: The board chair requests a concise decision brief in 90 minutes. It must say what is confirmed, what remains
+    unknown, patient safety impact, HIPAA posture, vendor exposure, and which leadership decisions are needed. CFO asks if
+    all 3,500 weekly patients are affected.
+  capability_tested:
+  - CAP-08
+  decision_point: Assign a board brief with clear risk, uncertainty, recommendations and accountable authors.
+  roles_challenged:
+  - Dr. Patricia Morales
+  - Sarah Park
+  - Helena Reyes
+  - Marcus Webb
+  expected_response: CISO owns brief; report 3,500 as weekly volume not affected count; show safety steps, incident status,
+    legal assessment, decisions and next update.
+- id: INJ-06
+  time_minutes: 100
+  delivery: Facilitator reads aloud
+  situation: Nexus proposes re-enabling signed automatic updates immediately after reinstalling the agent but cannot prove
+    its signing infrastructure is clean. Patient clinics want normal scheduling restored tomorrow. Reviewers still cannot
+    determine which FHIR payloads were read or whether 46 changed appointments were malicious or operational.
+  capability_tested:
+  - CAP-03
+  - CAP-06
+  - CAP-08
+  decision_point: Decide recovery conditions and board recommendation with unresolved questions, owner and next checkpoint.
+  roles_challenged:
+  - Sarah Park
+  - Robert Kim
+  - Clinical Director representative
+  - Dr. Patricia Morales
+  - Helena Reyes
+  expected_response: Do not blindly re-enable; require trustworthy build evidence, credential review, monitored test and clinical
+    integrity sign-off; make conditional recovery plan and record unresolved PHI scope.

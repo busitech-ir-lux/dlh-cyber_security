@@ -1,0 +1,108 @@
+scoring_rule: Score each C01-C03 PASS only when spoken or written evidence appears within the inject window; otherwise FAIL.
+  Record time and verbatim evidence. Each FAIL requires separately traceable corrective action.
+criteria:
+- inject_id: INJ-00
+  capability_tested:
+  - CAP-01
+  pass_criteria:
+  - 'C01: Within 5 minutes declare provisional incident severity with rationale'
+  - 'C02: Name two notified leadership/technical roles'
+  - 'C03: Preserve EDR/network records before disruptive changes'
+  fail_indicators:
+  - 'C01: No incident severity announced'
+  - 'C02: Fewer than two notifications named'
+  - 'C03: Evidence preservation absent before isolation'
+  finding_if_fail: For each failed criterion, document the corresponding observed gap with inject and criterion ID; assign
+    corrective control to SOC Lead within 14 days, and validate by reviewing the updated procedure plus a focused tabletop
+    re-test.
+- inject_id: INJ-01
+  capability_tested:
+  - CAP-01
+  - CAP-02
+  - CAP-03
+  pass_criteria:
+  - 'C01: Make or escalate isolation decision to named authority'
+  - 'C02: Clinical role identifies fallback and urgent-patient impact'
+  - 'C03: Escalate using verified 24x7 Nexus security contact'
+  fail_indicators:
+  - 'C01: Isolation authority or decision missing'
+  - 'C02: No patient-safety fallback defined'
+  - 'C03: No verified security contact initiated'
+  finding_if_fail: For each failed criterion, document the corresponding observed gap with inject and criterion ID; assign
+    corrective control to IT Director within 21 days, and validate by reviewing the updated procedure plus a focused tabletop
+    re-test.
+- inject_id: INJ-02
+  capability_tested:
+  - CAP-02
+  - CAP-04
+  - CAP-05
+  pass_criteria:
+  - 'C01: Contact Nexus SecOps and request written timeline/discovery time'
+  - 'C02: Identify possible ePHI fields and unknown affected individuals'
+  - 'C03: Distinguish BAA 24h from HIPAA outer 60-day BA rule'
+  fail_indicators:
+  - 'C01: Vendor communication has no tracked request'
+  - 'C02: Team declares PHI unaffected despite uncertainty'
+  - 'C03: Contractual/regulatory clock confused'
+  finding_if_fail: For each failed criterion, document the corresponding observed gap with inject and criterion ID; assign
+    corrective control to General Counsel within 14 days, and validate by reviewing the updated procedure plus a focused tabletop
+    re-test.
+- inject_id: INJ-03
+  capability_tested:
+  - CAP-04
+  - CAP-05
+  - CAP-06
+  pass_criteria:
+  - 'C01: Name owner and process for checking all 46 mismatches'
+  - 'C02: Prioritize eight urgent patients for verification'
+  - 'C03: Record PHI risk assessment and unresolved exfiltration evidence'
+  fail_indicators:
+  - 'C01: No named reconciliation process'
+  - 'C02: Urgent patients not triaged'
+  - 'C03: Exposure investigation or documentation absent'
+  finding_if_fail: For each failed criterion, document the corresponding observed gap with inject and criterion ID; assign
+    corrective control to Clinical Director representative within 21 days, and validate by reviewing the updated procedure
+    plus a focused tabletop re-test.
+- inject_id: INJ-04
+  capability_tested:
+  - CAP-07
+  pass_criteria:
+  - 'C01: Prevent publication of unapproved no-breach statement'
+  - 'C02: Produce counsel-approved factual holding statement'
+  - 'C03: Name one spokesperson and next update time'
+  fail_indicators:
+  - 'C01: Unverified no-breach statement allowed'
+  - 'C02: No approved media response'
+  - 'C03: No channel owner or update time'
+  finding_if_fail: For each failed criterion, document the corresponding observed gap with inject and criterion ID; assign
+    corrective control to Communications Director within 14 days, and validate by reviewing the updated procedure plus a focused
+    tabletop re-test.
+- inject_id: INJ-05
+  capability_tested:
+  - CAP-08
+  pass_criteria:
+  - 'C01: Assign brief owner and 90-minute delivery time'
+  - 'C02: Separate known, unknown and 3,500 weekly volume from affected total'
+  - 'C03: Include patient impact, legal posture, decisions, and next update'
+  fail_indicators:
+  - 'C01: No owner or delivery deadline'
+  - 'C02: Affected patient count fabricated'
+  - 'C03: Brief omits material executive decision'
+  finding_if_fail: For each failed criterion, document the corresponding observed gap with inject and criterion ID; assign
+    corrective control to CISO within 14 days, and validate by reviewing the updated procedure plus a focused tabletop re-test.
+- inject_id: INJ-06
+  capability_tested:
+  - CAP-03
+  - CAP-06
+  - CAP-08
+  pass_criteria:
+  - 'C01: Block automatic update trust until vendor assurance independently checked'
+  - 'C02: Document clinical integrity sign-off and monitored staged restart'
+  - 'C03: Record unresolved PHI questions, owner and next checkpoint'
+  fail_indicators:
+  - 'C01: Signed update accepted without assurance'
+  - 'C02: No clinical sign-off or monitored verification'
+  - 'C03: Unresolved questions have no owner or next review'
+  finding_if_fail: For each failed criterion, document the corresponding observed gap with inject and criterion ID; assign
+    corrective control to IT Director within 30 days, and validate by reviewing the updated procedure plus a focused tabletop
+    re-test.
