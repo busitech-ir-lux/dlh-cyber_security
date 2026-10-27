@@ -1,0 +1,560 @@
+# Eradication checklist — IR-2026-0420-01
+# This is a PLANNED checklist. No actions have been executed or verified.
+# Based on sample log indicators; verify on full evidence before acting.
+# Four workstations + FILE-SVR-01 are primary scope; SCHED-SVR-01 is precautionary additional scope.
+# Only change status to complete after storing command output and evidence ID in IR case records.
+incident_id: IR-2026-0420-01
+scope:
+- CS-WS-101
+- CS-WS-104
+- CS-WS-107
+- CS-WS-112
+- FILE-SVR-01
+- SCHED-SVR-01
+source_status: sample logs only; full forensic artifacts and operational evidence unavailable
+actions:
+- id: ER-001
+  category: beacon_process
+  target_host: CS-WS-101
+  description: Preserve forensic acquisition, then terminate malicious masquerading process and rebuild host from
+    trusted image if compromise confirmed.
+  command_or_action: EDR isolate CS-WS-101; collect process evidence; terminate C:\ProgramData\Microsoft\svchost32.exe;
+    reimage from trusted baseline after approval
+  verification_command: EDR query running processes and 24h history on CS-WS-101 for svchost32.exe / lsass32.exe
+    and suspicious PowerShell lineage
+  expected_verification_result: No malicious process running; no matching events in complete last-24-hour telemetry.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-002
+  category: persistence
+  target_host: CS-WS-101
+  description: Inspect and remove attacker service persistence only after forensic recording; check whether present.
+  command_or_action: Record configuration and hashes on CS-WS-101; remove verified malicious WinHealthSvc using
+    approved EDR/PowerShell; rebuild if trust uncertain
+  verification_command: 'On CS-WS-101: Get-CimInstance Win32_Service; Get-ItemProperty Run keys; Get-ScheduledTask;
+    review against authorized baseline'
+  expected_verification_result: Malicious service entry absent; approved baseline entries retained.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-003
+  category: persistence
+  target_host: CS-WS-101
+  description: Inspect and remove attacker registry_run_key persistence only after forensic recording; check whether
+    present.
+  command_or_action: Record configuration and hashes on CS-WS-101; remove verified malicious HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run
+    and HKCU equivalent using approved EDR/PowerShell; rebuild if trust uncertain
+  verification_command: 'On CS-WS-101: Get-CimInstance Win32_Service; Get-ItemProperty Run keys; Get-ScheduledTask;
+    review against authorized baseline'
+  expected_verification_result: Malicious registry_run_key entry absent; approved baseline entries retained.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-004
+  category: persistence
+  target_host: CS-WS-101
+  description: Inspect and remove attacker scheduled_task persistence only after forensic recording; check whether
+    present.
+  command_or_action: Record configuration and hashes on CS-WS-101; remove verified malicious Task Scheduler suspicious
+    tasks using approved EDR/PowerShell; rebuild if trust uncertain
+  verification_command: 'On CS-WS-101: Get-CimInstance Win32_Service; Get-ItemProperty Run keys; Get-ScheduledTask;
+    review against authorized baseline'
+  expected_verification_result: Malicious scheduled_task entry absent; approved baseline entries retained.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-005
+  category: staged_payload
+  target_host: CS-WS-101
+  description: Record hashes then remove ransomware staging scripts; check expected paths and other discovered staging
+    locations.
+  command_or_action: Forensic capture then remove confirmed-malicious encryption_staging.ps1 and other attributed
+    payloads under C:\Windows\System32 and C:\ProgramData (or rebuild).
+  verification_command: EDR file inventory on CS-WS-101, recursive suspicious *.ps1/*.bat scan plus hash comparison
+    against clean baseline
+  expected_verification_result: No identified ransomware staging files; legitimate scripts not deleted.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-006
+  category: machine_account
+  target_host: CS-WS-101
+  description: Rotate domain machine account secret after host rebuilt and verified; coordinate domain trust and
+    clinical downtime.
+  command_or_action: AD administrator resets/rejoins CS-WS-101 machine trust using approved domain procedure after
+    rebuild
+  verification_command: 'On CS-WS-101: Test-ComputerSecureChannel; check recent AD machine account password update'
+  expected_verification_result: Trust healthy; new machine secret confirmed in AD; no stale authentications.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-007
+  category: beacon_process
+  target_host: CS-WS-104
+  description: Preserve forensic acquisition, then terminate malicious masquerading process and rebuild host from
+    trusted image if compromise confirmed.
+  command_or_action: EDR isolate CS-WS-104; collect process evidence; terminate C:\ProgramData\Microsoft\svchost32.exe;
+    reimage from trusted baseline after approval
+  verification_command: EDR query running processes and 24h history on CS-WS-104 for svchost32.exe / lsass32.exe
+    and suspicious PowerShell lineage
+  expected_verification_result: No malicious process running; no matching events in complete last-24-hour telemetry.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-008
+  category: persistence
+  target_host: CS-WS-104
+  description: Inspect and remove attacker service persistence only after forensic recording; check whether present.
+  command_or_action: Record configuration and hashes on CS-WS-104; remove verified malicious WinHealthSvc using
+    approved EDR/PowerShell; rebuild if trust uncertain
+  verification_command: 'On CS-WS-104: Get-CimInstance Win32_Service; Get-ItemProperty Run keys; Get-ScheduledTask;
+    review against authorized baseline'
+  expected_verification_result: Malicious service entry absent; approved baseline entries retained.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-009
+  category: persistence
+  target_host: CS-WS-104
+  description: Inspect and remove attacker registry_run_key persistence only after forensic recording; check whether
+    present.
+  command_or_action: Record configuration and hashes on CS-WS-104; remove verified malicious HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run
+    and HKCU equivalent using approved EDR/PowerShell; rebuild if trust uncertain
+  verification_command: 'On CS-WS-104: Get-CimInstance Win32_Service; Get-ItemProperty Run keys; Get-ScheduledTask;
+    review against authorized baseline'
+  expected_verification_result: Malicious registry_run_key entry absent; approved baseline entries retained.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-010
+  category: persistence
+  target_host: CS-WS-104
+  description: Inspect and remove attacker scheduled_task persistence only after forensic recording; check whether
+    present.
+  command_or_action: Record configuration and hashes on CS-WS-104; remove verified malicious Task Scheduler suspicious
+    tasks using approved EDR/PowerShell; rebuild if trust uncertain
+  verification_command: 'On CS-WS-104: Get-CimInstance Win32_Service; Get-ItemProperty Run keys; Get-ScheduledTask;
+    review against authorized baseline'
+  expected_verification_result: Malicious scheduled_task entry absent; approved baseline entries retained.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-011
+  category: staged_payload
+  target_host: CS-WS-104
+  description: Record hashes then remove ransomware staging scripts; check expected paths and other discovered staging
+    locations.
+  command_or_action: Forensic capture then remove confirmed-malicious encryption_staging.ps1 and other attributed
+    payloads under C:\Windows\System32 and C:\ProgramData (or rebuild).
+  verification_command: EDR file inventory on CS-WS-104, recursive suspicious *.ps1/*.bat scan plus hash comparison
+    against clean baseline
+  expected_verification_result: No identified ransomware staging files; legitimate scripts not deleted.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-012
+  category: machine_account
+  target_host: CS-WS-104
+  description: Rotate domain machine account secret after host rebuilt and verified; coordinate domain trust and
+    clinical downtime.
+  command_or_action: AD administrator resets/rejoins CS-WS-104 machine trust using approved domain procedure after
+    rebuild
+  verification_command: 'On CS-WS-104: Test-ComputerSecureChannel; check recent AD machine account password update'
+  expected_verification_result: Trust healthy; new machine secret confirmed in AD; no stale authentications.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-013
+  category: beacon_process
+  target_host: CS-WS-107
+  description: Preserve forensic acquisition, then terminate malicious masquerading process and rebuild host from
+    trusted image if compromise confirmed.
+  command_or_action: EDR isolate CS-WS-107; collect process evidence; terminate C:\ProgramData\Microsoft\svchost32.exe;
+    reimage from trusted baseline after approval
+  verification_command: EDR query running processes and 24h history on CS-WS-107 for svchost32.exe / lsass32.exe
+    and suspicious PowerShell lineage
+  expected_verification_result: No malicious process running; no matching events in complete last-24-hour telemetry.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-014
+  category: persistence
+  target_host: CS-WS-107
+  description: Inspect and remove attacker service persistence only after forensic recording; check whether present.
+  command_or_action: Record configuration and hashes on CS-WS-107; remove verified malicious WinHealthSvc using
+    approved EDR/PowerShell; rebuild if trust uncertain
+  verification_command: 'On CS-WS-107: Get-CimInstance Win32_Service; Get-ItemProperty Run keys; Get-ScheduledTask;
+    review against authorized baseline'
+  expected_verification_result: Malicious service entry absent; approved baseline entries retained.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-015
+  category: persistence
+  target_host: CS-WS-107
+  description: Inspect and remove attacker registry_run_key persistence only after forensic recording; check whether
+    present.
+  command_or_action: Record configuration and hashes on CS-WS-107; remove verified malicious HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run
+    and HKCU equivalent using approved EDR/PowerShell; rebuild if trust uncertain
+  verification_command: 'On CS-WS-107: Get-CimInstance Win32_Service; Get-ItemProperty Run keys; Get-ScheduledTask;
+    review against authorized baseline'
+  expected_verification_result: Malicious registry_run_key entry absent; approved baseline entries retained.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-016
+  category: persistence
+  target_host: CS-WS-107
+  description: Inspect and remove attacker scheduled_task persistence only after forensic recording; check whether
+    present.
+  command_or_action: Record configuration and hashes on CS-WS-107; remove verified malicious Task Scheduler suspicious
+    tasks using approved EDR/PowerShell; rebuild if trust uncertain
+  verification_command: 'On CS-WS-107: Get-CimInstance Win32_Service; Get-ItemProperty Run keys; Get-ScheduledTask;
+    review against authorized baseline'
+  expected_verification_result: Malicious scheduled_task entry absent; approved baseline entries retained.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-017
+  category: staged_payload
+  target_host: CS-WS-107
+  description: Record hashes then remove ransomware staging scripts; check expected paths and other discovered staging
+    locations.
+  command_or_action: Forensic capture then remove confirmed-malicious encryption_staging.ps1 and other attributed
+    payloads under C:\Windows\System32 and C:\ProgramData (or rebuild).
+  verification_command: EDR file inventory on CS-WS-107, recursive suspicious *.ps1/*.bat scan plus hash comparison
+    against clean baseline
+  expected_verification_result: No identified ransomware staging files; legitimate scripts not deleted.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-018
+  category: machine_account
+  target_host: CS-WS-107
+  description: Rotate domain machine account secret after host rebuilt and verified; coordinate domain trust and
+    clinical downtime.
+  command_or_action: AD administrator resets/rejoins CS-WS-107 machine trust using approved domain procedure after
+    rebuild
+  verification_command: 'On CS-WS-107: Test-ComputerSecureChannel; check recent AD machine account password update'
+  expected_verification_result: Trust healthy; new machine secret confirmed in AD; no stale authentications.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-019
+  category: beacon_process
+  target_host: CS-WS-112
+  description: Preserve forensic acquisition, then terminate malicious masquerading process and rebuild host from
+    trusted image if compromise confirmed.
+  command_or_action: EDR isolate CS-WS-112; collect process evidence; terminate C:\ProgramData\Microsoft\svchost32.exe;
+    reimage from trusted baseline after approval
+  verification_command: EDR query running processes and 24h history on CS-WS-112 for svchost32.exe / lsass32.exe
+    and suspicious PowerShell lineage
+  expected_verification_result: No malicious process running; no matching events in complete last-24-hour telemetry.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-020
+  category: persistence
+  target_host: CS-WS-112
+  description: Inspect and remove attacker service persistence only after forensic recording; check whether present.
+  command_or_action: Record configuration and hashes on CS-WS-112; remove verified malicious WinHealthSvc using
+    approved EDR/PowerShell; rebuild if trust uncertain
+  verification_command: 'On CS-WS-112: Get-CimInstance Win32_Service; Get-ItemProperty Run keys; Get-ScheduledTask;
+    review against authorized baseline'
+  expected_verification_result: Malicious service entry absent; approved baseline entries retained.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-021
+  category: persistence
+  target_host: CS-WS-112
+  description: Inspect and remove attacker registry_run_key persistence only after forensic recording; check whether
+    present.
+  command_or_action: Record configuration and hashes on CS-WS-112; remove verified malicious HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run
+    and HKCU equivalent using approved EDR/PowerShell; rebuild if trust uncertain
+  verification_command: 'On CS-WS-112: Get-CimInstance Win32_Service; Get-ItemProperty Run keys; Get-ScheduledTask;
+    review against authorized baseline'
+  expected_verification_result: Malicious registry_run_key entry absent; approved baseline entries retained.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-022
+  category: persistence
+  target_host: CS-WS-112
+  description: Inspect and remove attacker scheduled_task persistence only after forensic recording; check whether
+    present.
+  command_or_action: Record configuration and hashes on CS-WS-112; remove verified malicious Task Scheduler suspicious
+    tasks using approved EDR/PowerShell; rebuild if trust uncertain
+  verification_command: 'On CS-WS-112: Get-CimInstance Win32_Service; Get-ItemProperty Run keys; Get-ScheduledTask;
+    review against authorized baseline'
+  expected_verification_result: Malicious scheduled_task entry absent; approved baseline entries retained.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-023
+  category: staged_payload
+  target_host: CS-WS-112
+  description: Record hashes then remove ransomware staging scripts; check expected paths and other discovered staging
+    locations.
+  command_or_action: Forensic capture then remove confirmed-malicious encryption_staging.ps1 and other attributed
+    payloads under C:\Windows\System32 and C:\ProgramData (or rebuild).
+  verification_command: EDR file inventory on CS-WS-112, recursive suspicious *.ps1/*.bat scan plus hash comparison
+    against clean baseline
+  expected_verification_result: No identified ransomware staging files; legitimate scripts not deleted.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-024
+  category: machine_account
+  target_host: CS-WS-112
+  description: Rotate domain machine account secret after host rebuilt and verified; coordinate domain trust and
+    clinical downtime.
+  command_or_action: AD administrator resets/rejoins CS-WS-112 machine trust using approved domain procedure after
+    rebuild
+  verification_command: 'On CS-WS-112: Test-ComputerSecureChannel; check recent AD machine account password update'
+  expected_verification_result: Trust healthy; new machine secret confirmed in AD; no stale authentications.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-025
+  category: beacon_process
+  target_host: FILE-SVR-01
+  description: Preserve forensic acquisition, then terminate malicious masquerading process and rebuild host from
+    trusted image if compromise confirmed.
+  command_or_action: EDR isolate FILE-SVR-01; collect process evidence; terminate C:\ProgramData\Microsoft\svchost32.exe;
+    reimage from trusted baseline after approval
+  verification_command: EDR query running processes and 24h history on FILE-SVR-01 for svchost32.exe / lsass32.exe
+    and suspicious PowerShell lineage
+  expected_verification_result: No malicious process running; no matching events in complete last-24-hour telemetry.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-026
+  category: persistence
+  target_host: FILE-SVR-01
+  description: Inspect and remove attacker service persistence only after forensic recording; check whether present.
+  command_or_action: Record configuration and hashes on FILE-SVR-01; remove verified malicious WinHealthSvc using
+    approved EDR/PowerShell; rebuild if trust uncertain
+  verification_command: 'On FILE-SVR-01: Get-CimInstance Win32_Service; Get-ItemProperty Run keys; Get-ScheduledTask;
+    review against authorized baseline'
+  expected_verification_result: Malicious service entry absent; approved baseline entries retained.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-027
+  category: persistence
+  target_host: FILE-SVR-01
+  description: Inspect and remove attacker registry_run_key persistence only after forensic recording; check whether
+    present.
+  command_or_action: Record configuration and hashes on FILE-SVR-01; remove verified malicious HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run
+    and HKCU equivalent using approved EDR/PowerShell; rebuild if trust uncertain
+  verification_command: 'On FILE-SVR-01: Get-CimInstance Win32_Service; Get-ItemProperty Run keys; Get-ScheduledTask;
+    review against authorized baseline'
+  expected_verification_result: Malicious registry_run_key entry absent; approved baseline entries retained.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-028
+  category: persistence
+  target_host: FILE-SVR-01
+  description: Inspect and remove attacker scheduled_task persistence only after forensic recording; check whether
+    present.
+  command_or_action: Record configuration and hashes on FILE-SVR-01; remove verified malicious Task Scheduler suspicious
+    tasks using approved EDR/PowerShell; rebuild if trust uncertain
+  verification_command: 'On FILE-SVR-01: Get-CimInstance Win32_Service; Get-ItemProperty Run keys; Get-ScheduledTask;
+    review against authorized baseline'
+  expected_verification_result: Malicious scheduled_task entry absent; approved baseline entries retained.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-029
+  category: staged_payload
+  target_host: FILE-SVR-01
+  description: Record hashes then remove ransomware staging scripts; check expected paths and other discovered staging
+    locations.
+  command_or_action: Forensic capture then remove confirmed-malicious encryption_staging.ps1 and other attributed
+    payloads under C:\Windows\System32 and C:\ProgramData (or rebuild).
+  verification_command: EDR file inventory on FILE-SVR-01, recursive suspicious *.ps1/*.bat scan plus hash comparison
+    against clean baseline
+  expected_verification_result: No identified ransomware staging files; legitimate scripts not deleted.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-030
+  category: machine_account
+  target_host: FILE-SVR-01
+  description: Rotate domain machine account secret after host rebuilt and verified; coordinate domain trust and
+    clinical downtime.
+  command_or_action: AD administrator resets/rejoins FILE-SVR-01 machine trust using approved domain procedure after
+    rebuild
+  verification_command: 'On FILE-SVR-01: Test-ComputerSecureChannel; check recent AD machine account password update'
+  expected_verification_result: Trust healthy; new machine secret confirmed in AD; no stale authentications.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-031
+  category: beacon_process
+  target_host: SCHED-SVR-01
+  description: Preserve forensic acquisition, then terminate malicious masquerading process and rebuild host from
+    trusted image if compromise confirmed.
+  command_or_action: EDR isolate SCHED-SVR-01; collect process evidence; terminate C:\ProgramData\Microsoft\svchost32.exe;
+    reimage from trusted baseline after approval
+  verification_command: EDR query running processes and 24h history on SCHED-SVR-01 for svchost32.exe / lsass32.exe
+    and suspicious PowerShell lineage
+  expected_verification_result: No malicious process running; no matching events in complete last-24-hour telemetry.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-032
+  category: persistence
+  target_host: SCHED-SVR-01
+  description: Inspect and remove attacker service persistence only after forensic recording; check whether present.
+  command_or_action: Record configuration and hashes on SCHED-SVR-01; remove verified malicious WinHealthSvc using
+    approved EDR/PowerShell; rebuild if trust uncertain
+  verification_command: 'On SCHED-SVR-01: Get-CimInstance Win32_Service; Get-ItemProperty Run keys; Get-ScheduledTask;
+    review against authorized baseline'
+  expected_verification_result: Malicious service entry absent; approved baseline entries retained.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-033
+  category: persistence
+  target_host: SCHED-SVR-01
+  description: Inspect and remove attacker registry_run_key persistence only after forensic recording; check whether
+    present.
+  command_or_action: Record configuration and hashes on SCHED-SVR-01; remove verified malicious HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run
+    and HKCU equivalent using approved EDR/PowerShell; rebuild if trust uncertain
+  verification_command: 'On SCHED-SVR-01: Get-CimInstance Win32_Service; Get-ItemProperty Run keys; Get-ScheduledTask;
+    review against authorized baseline'
+  expected_verification_result: Malicious registry_run_key entry absent; approved baseline entries retained.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-034
+  category: persistence
+  target_host: SCHED-SVR-01
+  description: Inspect and remove attacker scheduled_task persistence only after forensic recording; check whether
+    present.
+  command_or_action: Record configuration and hashes on SCHED-SVR-01; remove verified malicious Task Scheduler suspicious
+    tasks using approved EDR/PowerShell; rebuild if trust uncertain
+  verification_command: 'On SCHED-SVR-01: Get-CimInstance Win32_Service; Get-ItemProperty Run keys; Get-ScheduledTask;
+    review against authorized baseline'
+  expected_verification_result: Malicious scheduled_task entry absent; approved baseline entries retained.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-035
+  category: staged_payload
+  target_host: SCHED-SVR-01
+  description: Record hashes then remove ransomware staging scripts; check expected paths and other discovered staging
+    locations.
+  command_or_action: Forensic capture then remove confirmed-malicious encryption_staging.ps1 and other attributed
+    payloads under C:\Windows\System32 and C:\ProgramData (or rebuild).
+  verification_command: EDR file inventory on SCHED-SVR-01, recursive suspicious *.ps1/*.bat scan plus hash comparison
+    against clean baseline
+  expected_verification_result: No identified ransomware staging files; legitimate scripts not deleted.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-036
+  category: machine_account
+  target_host: SCHED-SVR-01
+  description: Rotate domain machine account secret after host rebuilt and verified; coordinate domain trust and
+    clinical downtime.
+  command_or_action: AD administrator resets/rejoins SCHED-SVR-01 machine trust using approved domain procedure
+    after rebuild
+  verification_command: 'On SCHED-SVR-01: Test-ComputerSecureChannel; check recent AD machine account password update'
+  expected_verification_result: Trust healthy; new machine secret confirmed in AD; no stale authentications.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-037
+  category: credential
+  target_host: MEDDEFENSE\jdoe
+  description: Disable compromised coordinator account, revoke sessions and rotate password; confirm authorized
+    replacement for clinical scheduling.
+  command_or_action: Identity administrator disables MEDDEFENSE\jdoe; reset password from clean admin host; revoke
+    sessions, remove attacker-created delegations; restore only on approved clean device.
+  verification_command: Check AD enabled state, password last set, active sessions and successful authentications
+    after revoke
+  expected_verification_result: Account disabled until approved; no lingering successful logons attributable to
+    compromised sessions.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-038
+  category: credential
+  target_host: ALL-72H-ACCOUNTS
+  description: Enumerate ALL 72-hour exposed service, clinical and admin accounts from AD, logs and IR notes; revoke
+    and rotate individually without breaking clinical services.
+  command_or_action: IR+IAM export full dwell-period identity list; reset passwords/tokens; reissue service secrets
+    and update dependencies with clinical owner approval.
+  verification_command: Compare resolved account list to AD logon events / LSASS exposure and verify password resets,
+    token revocation and service sign-in tests
+  expected_verification_result: Every affected identity has a named closure record and valid new credentials; services
+    healthy.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-039
+  category: kerberos
+  target_host: AD-REALM
+  description: Invalidate tickets for affected identities, including service-ticket exposure and cross-host cache;
+    password change alone does not immediately revoke all issued tickets.
+  command_or_action: Reset credentials; run klist purge on remediated hosts and end sessions; for high-risk krbtgt
+    exposure assess domain-wide krbtgt rotation through approved AD IR procedure.
+  verification_command: klist sessions on clean hosts; inspect Kerberos 4768/4769/4771 and post-reset access; verify
+    no stale ticket replay
+  expected_verification_result: Old tickets no longer accepted by affected apps; no unauthorized authentication
+    seen.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-040
+  category: network
+  target_host: EGRESS-FIREWALL
+  description: Block malicious command-and-control destination at egress for affected VLANs; retain logs.
+  command_or_action: Firewall operator adds deny rule for staging.office365-cdn.net and 45.152.66.114 including
+    direct IP outbound; record change ticket.
+  verification_command: Review firewall policy ordering and denied-flow events for destination from all six hosts;
+    repeat connection tests
+  expected_verification_result: Rule active; attempted connections denied; no successful egress to C2.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-041
+  category: network
+  target_host: DNS-RESOLVERS
+  description: Sinkhole known malicious lookalike domain while maintaining forensic DNS logs.
+  command_or_action: DNS administrator configures monitored sinkhole for staging.office365-cdn.net; flush resolver
+    caches after approval.
+  verification_command: Query internal resolvers from all affected network segments; check sinkhole logs and resolver
+    policy
+  expected_verification_result: Lookalike resolves only to approved sinkhole; no bypass via external DNS.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-042
+  category: network
+  target_host: FILE-SVR-01
+  description: Review outbound communications and restrict server egress while preserving clinical read access as
+    authorized.
+  command_or_action: Apply temporary allowlisted egress for FILE-SVR-01; review service integrity and clinical availability.
+  verification_command: EDR and proxy review for suspicious child processes and attempted/successful C2 egress;
+    verify clinician file access
+  expected_verification_result: No malicious connections; authorized clinical documentation access remains available.
+  status: pending
+  executed_at: null
+  executed_by: null
+- id: ER-043
+  category: network
+  target_host: SCHED-SVR-01
+  description: Scope and isolate suspicious scheduling-server process without interrupting clinical scheduling unnecessarily.
+  command_or_action: Acquire evidence; place SCHED-SVR-01 in approved restricted network or fail over to clean standby
+    after clinical owner authorizes.
+  verification_command: Review EDR process lineage, network flows, and approved scheduling service synthetic tests
+  expected_verification_result: Suspicious process eradicated; scheduling clinical test succeeds.
+  status: pending
+  executed_at: null
+  executed_by: null
