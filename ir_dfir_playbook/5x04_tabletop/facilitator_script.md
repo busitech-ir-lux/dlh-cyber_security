@@ -131,3 +131,5 @@ Private facilitator notes — do not distribute
 - CAP-08: The executive board brief must request decisions, not just summarize security telemetry.
 Wrap-up (15 minutes)
 Ask, without grading individuals: “Which coordination worked?” “Where did we lack authority or information?” “Which patient-safety decision was most uncomfortable?” “What would you change in the first hour?” “Which unresolved item needs an owner tomorrow?” Capture proposed fixes separately from observed evidence. Thank participants; say the after-action report will use inject/criterion references, owners and validation tests.
+
+Facilitator note: The malicious update installed a backdoor on the Nexus agent.
