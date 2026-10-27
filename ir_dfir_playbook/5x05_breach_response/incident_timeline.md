@@ -22,3 +22,8 @@
 ## Task 2 — planning note (not an executed incident action)
 
 The decision and execution worksheets in `containment_decision.md` and `containment_execution.md` are **plans**. No ACTION event has been appended because no containment action, UTC execution time, or observed outcome was supplied. A review of *sample* Sysmon/proxy logs suggests a sixth asset, `SCHED-SVR-01`, and unexpected `FILE-SVR-01` network activity. This is a **scope-review lead** pending verification in the full logs, not proof of a completed response or an on-incident observation at a stated time.
+
+
+## Task 4 — forensic review note (not a verified historical incident event)
+
+Sample-based leads have been documented in `forensic_findings.md`, including possible additional compromise of `FILE-SVR-01` and `SCHED-SVR-01`. The original five investigation artifacts were not available, so no retrospective timestamped EVIDENCE entries have been invented. Append individual EVIDENCE rows after each original artifact is acquired, hashed, and analyzed; cite the evidence ID and exact observation UTC time.
