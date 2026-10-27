@@ -128,6 +128,6 @@ Private facilitator notes — do not distribute
 - CAP-05: BAA says 24 hours after discovery for Nexus notice. HIPAA BA notice must be without unreasonable delay and within 60 days; covered-entity notification depends on breach assessment and relevant thresholds.
 - CAP-06: Verify patients' real appointments from trusted records, preserving chain of evidence before reconciliation.
 - CAP-07: A statement should not turn a suspicion into confirmed breach or confirmed safety.
-- CAP-08: The executive brief must request decisions, not just summarize security telemetry.
+- CAP-08: The executive board brief must request decisions, not just summarize security telemetry.
 Wrap-up (15 minutes)
 Ask, without grading individuals: “Which coordination worked?” “Where did we lack authority or information?” “Which patient-safety decision was most uncomfortable?” “What would you change in the first hour?” “Which unresolved item needs an owner tomorrow?” Capture proposed fixes separately from observed evidence. Thank participants; say the after-action report will use inject/criterion references, owners and validation tests.
