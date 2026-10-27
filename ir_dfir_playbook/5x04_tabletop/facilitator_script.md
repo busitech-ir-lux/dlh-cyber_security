@@ -31,7 +31,7 @@ Non-engagement flag: If James Chen has not made a decision, ask that person whic
 
 Transition: “We will record that decision and any unresolved questions. The next update is INJ-01.”
 INJ-01 (T+20 minutes)
-Read aloud verbatim: “Nexus posts a verified advisory: its build pipeline was compromised three days ago, and a malicious component was included in a digitally signed automatic agent update. No safe patch exists yet. Main has the update; Nexus cannot immediately confirm the other two sites. The clinical director reports two time-sensitive appointments could be missed if scheduling stops, and one appointment time already conflicts with a printed clinic list. Sarah recommends isolation; clinical leadership objects to a total shutdown.”
+Read aloud verbatim: “Nexus posts a verified advisory: its build pipeline was compromised three days ago, and a malicious component was included in a digitally signed automatic agent update. No safe patch exists yet. Main has the update; Nexus cannot immediately confirm the other two sites. The clinical director reports two time-sensitive appointments could be missed if patient scheduling stops, and one appointment time already conflicts with a printed clinic list. Sarah recommends isolation; clinical leadership objects to a total shutdown.”
 
 Delivery: T+20; allow 15 minutes before next phase, noting that INJ-05 includes planning for a simulated 90-minute board deadline.
 
