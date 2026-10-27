@@ -1,0 +1,42 @@
+title: Suspicious Service-Like Executable Spawned by Script Interpreter
+id: b7a8ec6c-3bca-4e66-9800-0d2ccad658d1
+status: experimental
+description: >-
+  Detects the MedDefense incident pattern in which PowerShell or WScript
+  starts svchost32.exe or lsass32.exe outside the normal Windows system path.
+  Observed example is C:\ProgramData\Microsoft\svchost32.exe launched by PowerShell.
+references:
+  - https://attack.mitre.org/techniques/T1036/005/
+  - https://attack.mitre.org/techniques/T1059/001/
+  - https://attack.mitre.org/techniques/T1543/003/
+author: MedDefense IR Team
+date: 2026-04-20
+tags:
+  - attack.defense-evasion
+  - attack.t1036.005
+  - attack.execution
+  - attack.t1059.001
+  - attack.persistence
+  - attack.t1543.003
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_name:
+    Image|endswith:
+      - '\svchost32.exe'
+      - '\lsass32.exe'
+  selection_parent:
+    ParentImage|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\wscript.exe'
+  filter_standard_windows_directory:
+    Image|startswith:
+      - 'C:\Windows\System32\'
+      - 'C:\Windows\SysWOW64\'
+  condition: selection_name and selection_parent and not filter_standard_windows_directory
+falsepositives:
+  - Approved in-house administrative script launches a custom executable named svchost32.exe from a non-system directory.
+  - Legacy vendor support or installation script launches a similarly named unsigned helper with PowerShell.
+level: high
