@@ -2,57 +2,59 @@
 
 **Owner:** Awareness Lead  
 **Approver:** CISO  
-**Status:** Reusable templates; all current results intentionally blank
+**Status:** Board briefing based on available evidence, with reusable quarterly tracking tools
 
-## 1. Six-Month Board Brief Template
+## 1. Six-Month Board Effectiveness Brief
 
-Editorial target: two rendered pages after replacing prompts with concise actual findings. The quarterly dashboard and methodology below are supporting material, not part of those two pages. No six-month performance data exists in the supplied materials.
+**Prepared for:** MedDefense Board Risk Committee  
+**Presented by:** Dr. Patricia Morales, CISO  
+**Evidence available:** March 2026 incident and proposed program; six-month results have not been supplied
 
-### Page 1: Program Summary and Results
+### Program Summary
 
-**Reporting period:** [DATES] · **Prepared:** [DATE] · **Overall status:** [Green/Yellow/Red]  
-**Decision required:** [SPECIFIC ACTION, OWNER, COST AND DEADLINE]
+MedDefense's previous phishing incident showed a significant weakness in how employees respond to convincing requests. Of 41 delivered attack emails, 23 recipients clicked and only six reported the messages. Reporting took an average of 74 minutes, leaving the organization dependent on technical detection while employees were still uncertain about what to do. Credentials were exposed and malicious software activity was detected. Patient information theft was not confirmed.
 
-MedDefense's prior incident delivered 41 phishing emails; 23 were clicked (56%) and six reported (15%). Average reporting delay was 74 minutes. Those are small incident-sample figures, not a representative pre-program workforce simulation. At six months, [N] people in [SEGMENTS] received [N] controlled messages, [N] attended phone practice and [N] completed assigned training within 72 hours. [DESCRIBE DELIVERY AND ANY RESTRICTED PERIODS]. Individual results are protected and excluded from performance reviews.
+The proposed awareness program addresses the decisions behind those results. Employees practice checking unexpected requests through known contacts, reporting suspicious messages and recognizing pressure tied to their own work. A nurse receives guidance about Epic access, while finance staff practice verifying executive and payment requests. Anyone who clicks a simulation receives a short explanation based on that message. Individual results remain protected and cannot be used in performance reviews.
 
-The program combines practical verification, reporting practice and immediate instruction. [STATE WHETHER EMPLOYEES CLICK LESS, REPORT MORE OR VERIFY MORE OFTEN USING COUNTS AND COMPARABLE COHORTS]. Reporting after clicking is counted and encouraged. [STATE MATERIAL PRIVACY, WELFARE OR PATIENT-CARE ISSUES AND THEIR RESOLUTION].
+### Results, Targets and Comparison
 
-Six-month targets below are **proposed review thresholds**, not values in the source CSV. The supplied day-90/year-1 targets remain visible in supporting reports.
+The available evidence establishes the need for this program, but does not yet show whether it has worked. No six-month campaign results, completed-exercise counts or actual program spending were supplied. The board should therefore treat effectiveness as **not yet demonstrated**, rather than infer improvement from the program's design.
 
-| Measure | Baseline | Current: count/denominator, value and 95% interval where applicable | Six-month target | Supplied course comparison |
-| --- | --- | --- | --- | --- |
-| Clicks | 23/41, 56% | [n/N, %, interval] | ≤30% | Kickoff healthcare 32%; source methods absent |
-| Reports | 6/41, 15% | [n/N, %, interval] | ≥40% | Kickoff 61% after 18 months; different maturity |
-| Mean report delay | 74 min | [sum minutes/reporters, mean; median/p90] | ≤20 min | No comparable industry latency supplied |
-| Repeat clickers | Unknown | [n/matched-pair N, %, interval] | <10% | No industry value supplied |
-| Timely training | Not measured | [n/assigned N, %] | ≥95% within 72 h | No industry value supplied |
-| Clinical clicks | 10/15, 67% | [n/N, %, interval] | ≤33% | No equivalent segment comparator supplied |
-| Finance verification | Unknown | [verified/eligible BEC N, %] | ≥60% | No industry value supplied |
-| Phone verification | Unknown | [full passes/assessed N, %; mode] | ≥60% | No industry value supplied |
-| Benign-mail reports | Not measured | [legitimate reports/legitimate deliveries, %; hours] | Baseline +≤0.5 pp and SOC capacity | No industry value supplied |
-| Manager confidence | Unknown | [mean/5, respondents; baseline] | Establish comparable baseline | No industry value supplied |
+The six-month targets below are proposed checkpoints between the supplied 90-day and annual goals; they require approval. The current-result column can be replaced with verified counts and plain-language findings at the six-month review without changing the briefing structure.
 
-The kickoff also quotes 38% clicking without active simulations and 8% after 18 months. Present these as course comparisons without independent verification, not matched healthcare control groups. Do not claim exceeding a benchmark based on a different lure difficulty or sample. Financial/document willingness remains a separate BEC risk despite lower clicks.
-
-### Page 2: Findings, Decisions and Next Six Months
-
-**Are we safer?** [STATE AN OBSERVED BEHAVIORAL CHANGE WITH COUNTS AND ITS LIMIT: e.g. N OF M VERIFIED REQUESTS; DO NOT INSERT INVENTED VALUES]. [STATE WHAT REMAINS EXPOSED]. Simulations measure practice behavior; real incident data and control changes must be reviewed separately.
-
-**Are we improving?** [COMPARE SAME SEGMENT/TEMPLATE TIER BETWEEN PERIODS, WITH PERCENTAGE-POINT CHANGE AND INTERVALS]. [EXPLAIN EXCLUSIONS, MISSING DATA, SCANNERS, SEASONALITY AND ANY SMALL SAMPLES]. Overall rates may change simply because recipient or lure mix changes. Reporting delay describes reporters only; also show the reporting rate.
-
-**What changes next?** [SELECT TWO OR THREE ACTIONS TIED TO THE WEAKEST METRICS, WITH OWNER, DUE DATE AND EXPECTED MEASURE]. Preserve clinical restricted windows. [STATE WHETHER TO CONTINUE, REFRESH OR PAUSE A TEMPLATE AND WHY]. [SHOW ACTUAL SPEND VS APPROVED BUDGET; DO NOT CALL THE $84,000 ESTIMATE ACTUAL SPEND].
-
-**Incident context and confidence:** [REAL PHISHING EXPOSURE, CONFIRMED HUMAN-INITIATED INCIDENTS, SEVERITY AND CONCURRENT EMAIL/IAM/EDR CHANGES]. The program's contribution is [CONSISTENT WITH/NOT CLEAR FROM] the observed trend; [EXPLAIN ALTERNATIVE CAUSES]. Do not claim awareness alone caused fewer incidents or assign a financial return without evidence.
-
-**Decision table:**
-
-| Requested action | Owner/deadline and cost | Expected measurable change | Risk if deferred |
+| What the board needs to know | Before the program | Six-month evidence available | Proposed six-month checkpoint |
 | --- | --- | --- | --- |
-| [ACTION] | [OWNER/DATE/$] | [METRIC/TARGET] | [SPECIFIC EXPOSURE] |
+| Are employees opening fewer suspicious links? | 23 of 41 recipients clicked: 56% | No follow-up results supplied | No more than 30 of every 100 recipients click: 30% |
+| Are more employees warning Security? | Six of 41 recipients reported: 15% | No follow-up results supplied | At least 40 of every 100 recipients report: 40% |
+| Are warnings arriving sooner? | Reports took 74 minutes on average | No follow-up results supplied | Average reporting time of 20 minutes or less |
+| Is additional help changing repeated behavior? | Consecutive-wave clicking was not measured | No matched-wave results supplied | Fewer than 10 of every 100 employees receiving both waves click in both: below 10% |
+| Are employees receiving the follow-up lesson? | Timely completion was not measured | No completion records supplied | At least 95 of every 100 assigned employees complete it within 72 hours: 95% |
 
-**Bottom-line sentence to complete:** “Employee [BEHAVIOR] is [IMPROVING/UNCHANGED/WORSENING], while [REMAINING RISK] requires [DECISION].”
+The course briefing gives a healthcare click-rate comparison of 32%, or about 32 clicks per 100 recipients. MedDefense's incident rate of 56% was 24 percentage points higher. That comparison indicates a concern, but the incident involved only 41 messages and the course provides no matching information about message difficulty or workforce composition. It cannot establish how the entire workforce would perform.
 
-**Resolution:** The Board Risk Committee acknowledges receipt of the MedDefense Security Awareness Program Report dated [DATE] and authorizes [SPECIFIC ACTION].
+The briefing also describes programs running for 18 months with an 8% click rate and a 61% report rate: about eight clicks and 61 reports per 100 recipients. These are longer-term course comparisons, not six-month promises. The MedDefense planning materials set their own 18-month goals of no more than 12 clicks and at least 65 reports per 100 recipients. A lower click count must still be accompanied by independent verification of financial and confidential-document requests, because those requests can cause harm without a clicked link.
+
+### Key Findings and Their Meaning
+
+The clearest finding is that training must fit the work employees are trying to complete. Ten of 15 clinical floor recipients clicked during the incident. The review describes fear of losing Epic access and uncertainty about reporting after a click. Repeating a general annual course would not directly resolve those decisions; staff need a known verification route and reassurance that reporting a mistake helps protect patient care.
+
+Reporting is a separate weakness. Six reports among 41 recipients and a 74-minute average delay show that recognizing something suspicious did not reliably produce a quick warning. The program should therefore reward reporting, including after a click, and make the reporting route easy to use. A reduction in clicks alone would leave this early-warning gap unresolved.
+
+There is no evidence yet that repeated risky behavior, caller verification or coaching outcomes have improved. Those measures need to be collected before the board can judge the program's effectiveness. Any later reduction in real incidents must also be considered alongside improvements to email filtering, account security and endpoint protection; the awareness program cannot automatically take credit for their combined effect.
+
+### Recommendations for the Next Six Months
+
+The CISO should require the Awareness Lead to present verified campaign counts, reporting times and training completion at the next quarterly review. The report should compare similar employee groups receiving messages of similar difficulty, explain exclusions and identify whether reporting after a click has increased. This will establish whether practical decisions are improving rather than simply whether training was delivered.
+
+Clinical Operations and HR should review employee feedback before further clinical exercises, preserve accreditation and flu-season restrictions, and arrange private support where needed. Finance should continue independent-verification practice, with results reported separately from link clicking. These actions address the high clinical exposure and the potentially serious consequences of executive impersonation.
+
+The board should request actual spending against the approved budget before considering expansion. The supplied $84,000 annual estimate describes planned services, not money already spent or losses already avoided. Workforce time and other additional assumptions are identified separately in the annual plan. Further funding should be tied to validated delivery, behavioral evidence and acceptable effects on staff and patient care.
+
+### Decision Requested
+
+Authorize the CISO to proceed through the program's documented approval gates and require a quarterly evidence report before any expansion decision. This recommendation does not assert that funding or deployment has already been approved. Where follow-up evidence remains unavailable, the next report should state what is missing, who will provide it and when the board will receive it.
+
+**Bottom line:** The incident demonstrates a need for practical verification and faster reporting, but six-month results are required before the board can conclude that the awareness program has reduced risk.
 
 ## 2. Quarterly Dashboard Template
 
@@ -77,6 +79,34 @@ Copy this section each year. Preserve numerator/denominator and difficulty/segme
 | Overall program | N/A | [G/Y/R] | [G/Y/R] | [reason] | [G/Y/R] | [reason] | [G/Y/R] | [reason] | [decision] | [ ] |
 
 Positive delta means increase, not automatically improvement: clicks, repeats, latency and excess burden should fall; reports, verification and completion should rise. Percentage points = current percentage − previous percentage, never relative percentage change. Confidence row reports relative improvement from the fixed baseline mean; show underlying survey mean and respondent count too. No new quarterly survey means carry prior observation with date, not a fabricated fresh result.
+
+### Target Register and Quarterly Sign-Off
+
+The following register fixes the first-year targets so the program manager does not need to redesign them each quarter. Q1 corresponds to the first 90 days, Q2 to six months and Q4 to 12 months. Q3 retains the Q2 thresholds. Six-month thresholds are proposed; annual targets follow the annual plan and supplied baseline. The operating training target is the stricter 95% within 72 hours described in the campaign plan.
+
+| Metric | Q1 | Q2 and Q3 | Q4 |
+| --- | --- | --- | --- |
+| Overall click rate | ≤35% | ≤30% | ≤25% |
+| Report rate | ≥35% | ≥40% | ≥50% |
+| Mean reporting time | ≤25 minutes | ≤20 minutes | ≤15 minutes |
+| Repeat clicker rate | Establish baseline and <12% | <10% | <8% |
+| Training within 72 hours | ≥95% | ≥95% | ≥95% |
+| Clinical click rate | ≤40% | ≤33% | ≤25% |
+| Finance verification | Establish baseline | ≥60% | ≥80% |
+| Phone verification | Establish baseline | ≥60% | ≥75% |
+| Manager confidence | Baseline survey | Establish comparable baseline | ≥25% relative improvement |
+| Legitimate-message reporting | Establish baseline and workload capacity | ≤baseline +0.5 percentage points and within capacity | Same operating ceiling and capacity |
+
+Definitions and denominators are fixed in the [campaign metrics dictionary](phishing_campaign_plan.md). Record zero denominators as N/A. For each dashboard row, enter a separate status for Q1, Q2, Q3 and Q4 in the final column. Verify all proposed targets with CISO approval before operational use.
+
+| Quarterly closure field | Entry |
+| --- | --- |
+| Quarter and date finalized | [quarter; date] |
+| Data validated by Awareness Lead and SOC Manager | [names; date; unresolved limitations] |
+| Overall status and main reason | [Green/Yellow/Red; plain-language reason] |
+| Corrective action, accountable owner and due date | [action; owner; date] |
+| Welfare/safety pause and restart decision, if any | [scope; authority; clearance; dates] |
+| CISO approval and board reporting date | [approval reference; date] |
 
 ### Status Rules (Proposed)
 
