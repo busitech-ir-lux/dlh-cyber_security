@@ -97,6 +97,21 @@ def main():
         times = {r['event']: r['epoch_ns'] for r in journal if r.get('condition') == condition}
         duration = (times['resolved'] - times['discovered']) / 60e9
         require(duration >= 0 and f'{duration:.6f} minutes' in record, condition + ': numeric handling time agrees with contemporaneous journal')
+    condition3 = record.split('### Condition 3: Row count check', 1)[1].split('### Condition 4:', 1)[0]
+    for field in ['Discovered at', 'Category', 'What was wrong', 'Resolution', 'Time added',
+                  'Query', 'Expected', 'Actual', 'Outcome', 'Deviation status', 'Failure handling']:
+        require('**' + field + ':**' in condition3, 'Condition 3 deviation field: ' + field)
+    require('missing row-count checkpoint' in condition3 and '**Category:** Documentation Gap' in condition3,
+            'Condition 3 identifies the missing runbook checkpoint as the deviation')
+    row_start = next(r['epoch_ns'] for r in journal if r['event'] == 'step_start' and r['step'] == 6)
+    row_end = next(r['epoch_ns'] for r in journal if r['event'] == 'step_end' and r['step'] == 6)
+    row_minutes = (row_end - row_start) / 60e9
+    require('**Time added:** ' + format(row_minutes, '.6f') + ' minutes' in condition3,
+            'Condition 3 time added agrees with the observed checkpoint interval')
+    executed = (ev / '6.command.sh').read_text().split('RECOVERY_WORKSPACE=./tmp/meddefense-dr-test\n', 1)[1].strip()
+    require(executed in condition3, 'Condition 3 contains the exact executed row-count command body')
+    require(all(value in condition3 for value in ['**Expected:** 5', '**Actual:** 5', '**Outcome:** PASS']),
+            'Condition 3 retains the genuine passing result without inventing a mismatch')
     require((ev / '6.stdout.txt').read_text() == '5\n', 'Exact row-count stdout is five')
     expected = 'MRN-10043|BMP|K+: 6.1 mEq/L|1\nMRN-10045|TROPONIN|0.08 ng/mL|1\n'
     require((ev / 'critical_records.txt').read_text() == expected and expected in record, 'Both required critical records match exactly')

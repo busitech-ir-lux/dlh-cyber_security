@@ -114,14 +114,44 @@ cat evidence/retest/recovered_database_ls.txt
 
 ### Condition 3: Row count check
 
-**Discovered at:** 2026-11-10T11:50:18.336991+01:00  
+**Discovered at:** 2026-11-10T11:50:18.336991+01:00, during Step 6.  
+**Category:** Documentation Gap.  
+**What was wrong:** The old LIS runbook has a missing row-count checkpoint: it
+requires a user-login check but does not verify the number of restored orders.
+An incomplete restore could therefore be accepted without detecting missing orders.
+`old_lis_recovery_runbook.md` explicitly lists the lack of row-count validation
+under Known Problems. This procedural omission is the deviation recorded here.
+
+**Resolution:** Add the missing checkpoint to the recovery procedure and execute
+it against the recovered database before acceptance. Compare the returned count
+with the fixture's configured `EXPECTED_ROW_COUNT=5`, and retain the exact output.
+The repeat test executed these commands with
+`RECOVERY_DB=./tmp/meddefense-dr-test/recovery/lis_recovered.db`:
+
+```bash
+count=$(sqlite3 -readonly "$RECOVERY_DB" "SELECT COUNT(*) FROM patient_orders;") || exit 1
+printf '%s\n' "$count"
+test "$count" = "$EXPECTED_ROW_COUNT"
+```
+
+**Time added:** 0.144710 minutes, approximately 8.683 seconds, to execute and review
+the checkpoint added to address the runbook omission. This is the observed Step 6
+start-to-completion interval in `evidence/retest/journal.jsonl`, including output
+review. It is already included in the total recovery time and must not be added
+again; it is not a measured difference against an error-free baseline.
+
 **Query:** `SELECT COUNT(*) FROM patient_orders;`  
 **Expected:** 5  
 **Actual:** 5  
 **Outcome:** PASS  
-**Validation time:** 0.144710 minutes including output review; not a fault or added recovery delay.
+**Deviation status:** RESOLVED in the revised procedure: the missing checkpoint
+was performed and the recovered row count matched the expected value.
 
-Exact stdout:
+**Failure handling:** If the query fails or the count is not 5, record FAIL,
+preserve the database and error output, investigate the selected backup and import,
+and withhold recovery acceptance. No row-count mismatch occurred in this test.
+
+Exact recorded stdout:
 
 ```text
 5
@@ -168,7 +198,9 @@ sha256sum -c evidence/retest/backup_manifest.local.sha256
 The numeric “time added” values measure discovery-to-resolution handling
 intervals recorded during this repeat test. They include review between commands;
 they are not an estimate of patient harm or a causal comparison with an unobserved
-error-free baseline. Row count is a successful required validation, not a failure.
+error-free baseline. Condition 3 records the old runbook's missing validation
+checkpoint as a procedural deviation; its successful query resolves that gap
+without claiming that the recovered row count failed.
 The timer continued throughout all corrections.
 
 ## Recovery Validation

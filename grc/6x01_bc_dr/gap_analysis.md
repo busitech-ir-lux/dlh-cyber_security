@@ -27,8 +27,15 @@ causal estimates against an unmeasured error-free baseline.
 | --- | --- | --- | --- | --- |
 | Old staging path | Runbook Error | Retired runbook names /recovery/lis_dump.sql rather than the configured local workspace. | 0.100069 | Each extra minute extends manual specimen and result tracking, risking delayed critical results. |
 | Production hostname | Configuration Drift | The fixture retains a production DB_HOST without a local SQLite validation rule. | 0.083495 | An uncorrected endpoint assumption may waste outage time or direct checks at the wrong system. |
-| Missing row-count checkpoint in old procedure | Documentation Gap | The old runbook treats login as sufficient without checking the recovered dataset. | 0.144710, required validation time, not a fault | Missing orders could go unnoticed; count and critical-record checks prevent false release. |
+| Missing row-count checkpoint in old procedure | Documentation Gap | The old runbook treats login as sufficient without checking the recovered dataset. | 0.144710, observed execution and review time for the added checkpoint | Missing orders could go unnoticed; count and critical-record checks prevent false release. |
 | Manifest encoding and location | Environment Assumption | A UTF-8 marker prevents checksum parsing and its filename points to the original absolute workspace. | 0.082224 | Bypassing the check risks an untrusted restore; correcting it consumes part of the recovery window. |
+
+Condition 3 is a documentation deviation: the old runbook omits a row-count
+checkpoint. The repeat test added and executed it, taking 0.144710 minutes including
+review, and recorded expected 5, actual 5, and outcome PASS. The procedural gap is
+resolved by the revised checkpoint; no failed query or missing row is invented.
+The test record includes the discovery time, exact commands, resolution, time
+added, and the FAIL branch to use if a future check differs.
 
 The proposed BIA describes growing manual-work risk at one hour, strained
 reconciliation at four hours, and severe continuity risk at 24 hours. Its two-hour
