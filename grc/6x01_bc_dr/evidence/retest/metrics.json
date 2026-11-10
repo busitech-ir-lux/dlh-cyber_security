@@ -1,0 +1,21 @@
+{
+  "elapsed_ns": 35571540306,
+  "elapsed_seconds": 35.571540306,
+  "elapsed_minutes": 0.5928590051,
+  "display": "0m 36s",
+  "conditions": {
+    "path": {
+      "discovered_at": "2026-11-10T11:50:12.039986+01:00",
+      "handling_minutes": 0.10006904008333334
+    },
+    "config": {
+      "discovered_at": "2026-11-10T11:50:27.334437+01:00",
+      "handling_minutes": 0.0834951482
+    },
+    "manifest": {
+      "discovered_at": "2026-11-10T11:50:06.736224+01:00",
+      "handling_minutes": 0.08222364233333333
+    }
+  },
+  "row_validation_minutes": 0.14470972915
+}

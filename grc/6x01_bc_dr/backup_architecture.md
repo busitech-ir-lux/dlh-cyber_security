@@ -1,6 +1,6 @@
 # MedDefense Backup Architecture
 
-**Version:** 1.0 | **Date:** 2026-11-10 | **Status:** Proposed design, not deployed
+**Version:** 1.1 | **Date:** 2026-11-10 | **Status:** Proposed design, not deployed
 
 ## Strategy Overview
 
@@ -40,16 +40,16 @@ invalidate the simple bound and require intervention.
 
 | System | Proposed RPO, min | Current evidence | Proposed point interval, min | Max delivery/verification lag, min | Designed worst age, min | Result if bound is met |
 | --- | --- | --- | --- | --- | --- | --- |
-| Active Directory | 1 | Snapshots 8h; system state daily: 480/1440 min > 15. | 5 | 5 | 10 | 10 ≤ 1; unverified design. |
-| Epic EHR | 1 | Replication 15 min leaves no lag allowance at 15-min RPO. | 5 | 5 | 10 | 10 ≤ 1; unverified design. |
-| Laboratory Information System | 1 | Nightly: up to 1440 min > 60. | 30 | 15 | 45 | 45 ≤ 1; unverified design. |
-| PACS/RIS | 2 | Snapshots 240 min > 60. | 30 | 15 | 45 | 45 ≤ 2; unverified design. |
-| Pharmacy Dispensing System | 1 | Hourly database: 60 min > 15; config daily. | 5 | 5 | 10 | 10 ≤ 1; unverified design. |
-| Medical Device Integration Gateway | 1 | Daily config: 1440 min > 60; no geographic copy. | 30 | 15 | 45 | 45 ≤ 1; unverified design. |
-| Network Core | 1 | Config 360 min > 15. | 5 | 5 | 10 | 10 ≤ 1; unverified design. |
-| Email and Secure Messaging | 2 | Continuous retention is not proven point-in-time recovery; export daily. | 30 | 15 | 45 | 45 ≤ 2; unverified design. |
-| Backup and DR Infrastructure | 1 | Catalog 240 min > 15; config daily. | 5 | 5 | 10 | 10 ≤ 1; unverified design. |
-| Security Operations Platform | 2 | Index 240 min > 60; config daily. | 30 | 15 | 45 | 45 ≤ 2; unverified design. |
+| Active Directory | 15 | Snapshots 8h; system state daily: 480/1440 min > 15. | 5 | 5 | 10 | 5 + 5 = 10 min <= 15 min RPO: PASS (proposed schedule). |
+| Epic EHR | 15 | Replication 15 min leaves no lag allowance at 15-min RPO. | 5 | 5 | 10 | 5 + 5 = 10 min <= 15 min RPO: PASS (proposed schedule). |
+| Laboratory Information System | 60 | Nightly: up to 1440 min > 60. | 30 | 15 | 45 | 30 + 15 = 45 min <= 60 min RPO: PASS (proposed schedule). |
+| PACS/RIS | 60 | Snapshots 240 min > 60. | 30 | 15 | 45 | 30 + 15 = 45 min <= 60 min RPO: PASS (proposed schedule). |
+| Pharmacy Dispensing System | 15 | Hourly database: 60 min > 15; config daily. | 5 | 5 | 10 | 5 + 5 = 10 min <= 15 min RPO: PASS (proposed schedule). |
+| Medical Device Integration Gateway | 60 | Daily config: 1440 min > 60; no geographic copy. | 30 | 15 | 45 | 30 + 15 = 45 min <= 60 min RPO: PASS (proposed schedule). |
+| Network Core | 15 | Config 360 min > 15. | 5 | 5 | 10 | 5 + 5 = 10 min <= 15 min RPO: PASS (proposed schedule). |
+| Email and Secure Messaging | 60 | Continuous retention is not proven point-in-time recovery; export daily. | 30 | 15 | 45 | 30 + 15 = 45 min <= 60 min RPO: PASS (proposed schedule). |
+| Backup and DR Infrastructure | 15 | Catalog 240 min > 15; config daily. | 5 | 5 | 10 | 5 + 5 = 10 min <= 15 min RPO: PASS (proposed schedule). |
+| Security Operations Platform | 60 | Index 240 min > 60; config daily. | 30 | 15 | 45 | 30 + 15 = 45 min <= 60 min RPO: PASS (proposed schedule). |
 
 The supplied log review says three RPO conflicts exist but specifies a numerical
 one-hour target only for LIS; its other findings include a geographic copy gap
@@ -57,6 +57,12 @@ and identity dependency risk. The additional numerical comparisons above use thi
 BIA's new proposed targets, not supposedly pre-existing approved RPO values.
 For a real outage, calculate actual RPO from the newest restored committed
 transaction and outage time; backup directory names and row counts cannot prove it.
+
+The RPO column is copied from the BIA summary's **RPO** column, not its priority
+tier. Five systems have a 15-minute RPO and five have a 60-minute RPO. Every
+proposed schedule passes the interval-plus-lag comparison above. The current
+schedules remain deficient as shown; a passing proposed design does not establish
+that these schedules have been implemented.
 
 ## Per-System Backup Specifications
 
@@ -226,8 +232,8 @@ that cold backup imports can complete at these times.
 | --- | --- | --- |
 | 0–5 min | Network Engineering activates redundant core/alternate network using offline configuration and independent credentials. | Routing, protected DNS/time access, segregation, and recovery-site reachability checked. |
 | 5–15 min | Systems Administrator activates healthy identity/DNS services; Infrastructure retrieves catalog and keys in parallel through protected break-glass access. | New authentication and service-account tests pass; no dependency on failed DC01 alone. |
-| 15–20 min | Infrastructure completes backup-platform recovery; clinical teams activate warmed application resources in parallel. | Catalog and off-site copy readable; no unverified or quarantined copy selected. |
-| 15–25 min | Vendor and Clinical Applications restore/fail over Epic core. | Approved test user verifies core records and order workflow. |
+| 15–20 min | Infrastructure completes backup-platform recovery after network and AD acceptance. | Catalog, keys, and verified off-site copies are readable before application data restores. |
+| 20–25 min | After backup access acceptance, Vendor and Clinical Applications restore/fail over Epic core. | Approved test user verifies core records and order workflow before dependent interfaces reconnect. |
 | 20–30 min | LIS team restores its checkpoint, validates records, and reconnects checked interfaces after Epic core; Biomed restores gateway in parallel. | LIS and gateway clinical acceptance by minute 30, not merely database opening. |
 | 25–45 min | Pharmacy restores database/cabinets and reconciles with Epic. | Pharmacist approves safe dispensing and inventory state. |
 | 20–120 min | PACS restores catalog then images; Collaboration restores messaging; SOC restores central visibility. | Each system owner verifies workflows and reports acceptance. |
@@ -237,12 +243,41 @@ formal release. Reduced SOC monitoring starts with local logs at activation rath
 than waiting two hours for central indices. If a dependency misses its gate, report
 the downstream RTO risk immediately; do not restart dependent clocks at zero.
 
+## Verification Required Before a Backup Is Accepted
+
+A completed job is not a verified recovery point. For every system, the executor
+and independent verifier must retain the following evidence:
+
+1. Record the capture time, dataset scope, consistency method, chain/catalog references, and
+   destination.
+2. Verify SHA-256 after delivery and again before restore, using a protected manifest; stop on
+   mismatch.
+3. Restore an isolated copy, including every required increment or matching snapshot/catalog
+   component.
+4. Perform the system-specific data and application checks in its table, not merely a process-start
+   check.
+5. Record recovery-point age, restore duration, checker identity, actual output, and unresolved
+   errors.
+6. Publish the usable recovery point only after verification; failed or incomplete checks require
+   escalation and another trusted copy.
+
+For LIS, checks include `PRAGMA integrity_check`, a row count of five for the supplied
+fixture, and exact matches for MRN-10043 and MRN-10045. The repeat test's outputs
+are in `evidence/retest/`; other systems' verification remains a required design,
+not a claim that those restores were performed.
+
 ## Dependency Restore Constraints
 
 Keep the bootstrap pack, device configurations, recovery keys, account contacts,
 and independent recovery credentials accessible without AD or the backup console.
 Test those credentials without exposing secrets in documentation. If the pack or
 alternate site is unavailable, the five-minute network target is unsupported.
+
+Application recovery must follow accepted Network Core, AD, and backup-access
+gates. LIS may load its data in parallel with Epic after the foundations are
+ready, but LIS result/order interfaces cannot be accepted until Epic core is
+verified. Pharmacy, PACS, gateway charting, messaging, and SOC services must each
+pass their stated prerequisite gates; parallel work never waives a dependency.
 
 Keep application and database checkpoint consistency groups together. For snapshot
 restores, select a complete verified recovery point; for incremental recovery,

@@ -1,0 +1,77 @@
+PASS: All ten backup schedules match BIA RPOs, lag arithmetic, and per-system cadences: 
+PASS: Regression check rejects the original priority-tier/RPO column error
+PASS: All ten steps have contemporaneous start events
+PASS: All ten steps have recorded completion
+PASS: Actual diagnostic failures and successful corrections retained
+PASS: Record contains unchanged full timer log and summary
+PASS: Full step log contains ten completed steps
+PASS: Timer total agrees with persisted epoch state
+PASS: Actual and displayed times agree with raw state
+PASS: RTO verdict agrees with actual duration
+PASS: path: numeric handling time agrees with contemporaneous journal
+PASS: config: numeric handling time agrees with contemporaneous journal
+PASS: manifest: numeric handling time agrees with contemporaneous journal
+PASS: Exact row-count stdout is five
+PASS: Both required critical records match exactly
+PASS: Recovered database passes SQLite integrity check
+PASS: Submitted recovered database has five rows
+PASS: Repeat checksum manifest verifies the copied archive
+PASS: Published Bash block syntax: recovery_runbooks.md
+PASS: Published Bash block syntax: recovery_runbooks.md
+PASS: Published Bash block syntax: recovery_runbooks.md
+PASS: Published Bash block syntax: recovery_runbooks.md
+PASS: Published Bash block syntax: recovery_runbooks.md
+PASS: Published Bash block syntax: recovery_runbooks.md
+PASS: Published Bash block syntax: recovery_runbooks.md
+PASS: Published Bash block syntax: recovery_runbooks.md
+PASS: Published Bash block syntax: recovery_runbooks.md
+PASS: Published Bash block syntax: recovery_runbooks.md
+PASS: Published Bash block syntax: recovery_runbooks.md
+PASS: Published Bash block syntax: recovery_runbooks.md
+PASS: Published Bash block syntax: gap_analysis.md
+PASS: Published Bash block syntax: gap_analysis.md
+PASS: Published Bash block syntax: gap_analysis.md
+PASS: Published Bash block syntax: gap_analysis.md
+PASS: Published Bash block syntax: gap_analysis.md
+PASS: Published Bash block syntax: gap_analysis.md
+PASS: Published Bash block syntax: gap_analysis.md
+PASS: Published Bash block syntax: gap_analysis.md
+PASS: Published Bash block syntax: gap_analysis.md
+PASS: Published Bash block syntax: gap_analysis.md
+PASS: Published Bash block syntax: gap_analysis.md
+PASS: Published Bash block syntax: gap_analysis.md
+PASS: Timer accepts and logs a failed completed step
+PASS: A fast failed step does not produce an overall PASS
+PASS: Repeated timer summary preserves its result
+PASS: Local link resolves: recovery_test_record.md -> tmp/meddefense-dr-test/recovery/lis_recovered.db
+PASS: Local link resolves: README.md -> quiz_study_notes.md
+PASS: Local link resolves: README.md -> business_impact_analysis.md
+PASS: Local link resolves: README.md -> backup_architecture.md
+PASS: Local link resolves: README.md -> recovery_runbooks.md
+PASS: Local link resolves: README.md -> clinical_downtime_procedures.md
+PASS: Local link resolves: README.md -> recovery_test_record.md
+PASS: Local link resolves: README.md -> recovery_timer.sh
+PASS: Local link resolves: README.md -> recovery_test_log.txt
+PASS: Local link resolves: README.md -> gap_analysis.md
+PASS: Local link resolves: README.md -> dr_plan_master.md
+PASS: Local link resolves: README.md -> ciso_dr_brief.md
+PASS: Local link resolves: README.md -> ../LEARNING_OBJECTIVES.md
+PASS: Local link resolves: README.md -> evidence/retest/
+PASS: Local link resolves: README.md -> evidence/
+PASS: Local link resolves: dr_plan_master.md -> business_impact_analysis.md
+PASS: Local link resolves: dr_plan_master.md -> backup_architecture.md
+PASS: Local link resolves: dr_plan_master.md -> recovery_runbooks.md
+PASS: Local link resolves: dr_plan_master.md -> clinical_downtime_procedures.md
+PASS: Local link resolves: dr_plan_master.md -> recovery_test_record.md
+PASS: Local link resolves: dr_plan_master.md -> gap_analysis.md
+PASS: Local link resolves: backup_architecture.md -> business_impact_analysis.md
+PASS: Local link resolves: LEARNING_OBJECTIVES.md -> tasks/README.md
+PASS: Local link resolves: LEARNING_OBJECTIVES.md -> tasks/business_impact_analysis.md
+PASS: Local link resolves: LEARNING_OBJECTIVES.md -> tasks/backup_architecture.md
+PASS: Local link resolves: LEARNING_OBJECTIVES.md -> tasks/recovery_runbooks.md
+PASS: Local link resolves: LEARNING_OBJECTIVES.md -> tasks/recovery_test_record.md
+PASS: Local link resolves: LEARNING_OBJECTIVES.md -> tasks/gap_analysis.md
+PASS: Local link resolves: LEARNING_OBJECTIVES.md -> tasks/clinical_downtime_procedures.md
+PASS: Local link resolves: LEARNING_OBJECTIVES.md -> tasks/ciso_dr_brief.md
+PASS: Local link resolves: LEARNING_OBJECTIVES.md -> tasks/dr_plan_master.md
+Markdownlint and the external task checker were not run; the SSH lab requirement remains unverified.

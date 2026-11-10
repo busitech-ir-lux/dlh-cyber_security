@@ -1,6 +1,6 @@
 # MedDefense Disaster Recovery Master Plan
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Classification:** Confidential  
 **Prepared:** 2026-11-10  
 **Program owner:** Infrastructure Manager with IT Security  
@@ -140,11 +140,11 @@ Dates below describe submitted versions, not approval of source materials.
 | Document | Filename | Version | Last Updated | Last Tested |
 | --- | --- | --- | --- | --- |
 | Business Impact Analysis | [business_impact_analysis.md](business_impact_analysis.md) | 1.0 | 2026-11-10 | N/A; approval pending |
-| Backup Architecture | [backup_architecture.md](backup_architecture.md) | 1.0 | 2026-11-10 | N/A; proposed |
-| Recovery Runbooks | [recovery_runbooks.md](recovery_runbooks.md) | 1.0 | 2026-11-10 | 2026-11-10 LIS locally; AD not tested |
+| Backup Architecture | [backup_architecture.md](backup_architecture.md) | 1.1 | 2026-11-10 | N/A; proposed |
+| Recovery Runbooks | [recovery_runbooks.md](recovery_runbooks.md) | 1.1 | 2026-11-10 | 2026-11-10 LIS locally; AD not tested |
 | Clinical Downtime Procedures | [clinical_downtime_procedures.md](clinical_downtime_procedures.md) | 1.0 | 2026-11-10 | N/A; drill pending |
-| Recovery Test Record (LIS) | [recovery_test_record.md](recovery_test_record.md) | 1.0 | 2026-11-10 | 2026-11-10, limited local fixture |
-| Gap Analysis | [gap_analysis.md](gap_analysis.md) | 1.0 | 2026-11-10 | N/A; revised workflow needs full retest |
+| Recovery Test Record (LIS) | [recovery_test_record.md](recovery_test_record.md) | 1.1 | 2026-11-10 | 2026-11-10, limited local fixture |
+| Gap Analysis | [gap_analysis.md](gap_analysis.md) | 1.1 | 2026-11-10 | N/A; revised workflow uses repeat evidence, production retest pending |
 
 ## HIPAA evidence alignment
 

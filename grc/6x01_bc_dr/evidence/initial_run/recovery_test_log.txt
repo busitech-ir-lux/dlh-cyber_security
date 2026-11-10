@@ -1,0 +1,10 @@
+[STEP 01] Identify recovery target         | Start: 11:11:09 | End: 11:11:09 | Duration: 0m 00s | PASS
+[STEP 02] Verify backup integrity          | Start: 11:11:09 | End: 11:11:09 | Duration: 0m 00s | PASS
+[STEP 03] Create recovery workspace        | Start: 11:11:09 | End: 11:11:09 | Duration: 0m 00s | PASS
+[STEP 04] Stage SQL at corrected path      | Start: 11:11:09 | End: 11:11:09 | Duration: 0m 00s | PASS
+[STEP 05] Restore SQLite database          | Start: 11:11:09 | End: 11:11:09 | Duration: 0m 00s | PASS
+[STEP 06] Validate row count               | Start: 11:11:09 | End: 11:11:09 | Duration: 0m 00s | PASS
+[STEP 07] Validate critical records        | Start: 11:11:09 | End: 11:11:09 | Duration: 0m 00s | PASS
+[STEP 08] Inspect configuration artifact   | Start: 11:11:09 | End: 11:11:09 | Duration: 0m 00s | PASS
+[STEP 09] Apply local validation override  | Start: 11:11:09 | End: 11:11:09 | Duration: 0m 00s | PASS
+[STEP 10] Record clinical notification     | Start: 11:11:09 | End: 11:11:09 | Duration: 0m 00s | PASS

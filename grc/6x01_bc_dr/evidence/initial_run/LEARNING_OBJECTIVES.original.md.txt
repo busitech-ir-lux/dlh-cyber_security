@@ -1,0 +1,210 @@
+# Learning objectives: Business continuity and disaster recovery
+
+These answers address every objective in the project README. The
+[task index](Cybersecurity_Academy/Defensive%20Path/grc/6x01_bc_dr/tasks/README.md) links the complete deliverables and records the limits
+of the local exercise. Business tolerances, costs, and clinical rules still need
+organizational approval; successful sample restoration does not prove hospital-wide
+readiness.
+
+## Technical objectives
+
+### Conduct a BIA across the clinical environment
+
+A Business Impact Analysis explains what stops working, who is affected, how harm
+grows with time, and which supporting systems must recover first. Assess patient
+safety, regulatory obligations, revenue exposure, and operational dependencies
+separately. An application that produces little direct revenue can still deserve
+the highest priority because other clinical systems depend on it.
+
+The [MedDefense BIA](tasks/business_impact_analysis.md) assesses all ten supplied
+systems at one, four, and 24 hours. It places seven in Tier 1 and three in Tier 2.
+Network Core and Active Directory have high priority because their loss affects
+several clinical services. LIS is Tier 1 because manual specimen tracking and
+critical-result calls are vulnerable to delay and identification errors.
+
+The local notes supply clinical functions and threshold guidance, but no financial
+ledger or approved downtime tolerances. Hourly revenue estimates are therefore
+labeled USD assumptions with sensitivity ranges, not presented as measured losses.
+Shared-service estimates overlap and must not be summed. Proposed targets require
+clinical, Finance, and CISO review; the signature block remains unsigned.
+
+### Design backups that can satisfy RTO and RPO
+
+Start from the BIA, then choose capture frequency, application consistency, recovery
+chain, geographic copies, retention, keys, and verification. RPO requires a usable
+point of the required age; RTO also requires enough capacity, staffing, working
+dependencies, and time to validate the service. A recent backup cannot guarantee
+a quick restore.
+
+In the [architecture](tasks/backup_architecture.md), LIS has a proposed one-hour
+RPO. A 30-minute snapshot interval plus a maximum 15-minute combined delivery and
+verification delay gives a designed off-site point age of 45 minutes, within
+60 minutes. The current nightly copy could be almost 24 hours old, so it cannot
+satisfy that target. This arithmetic assumes successful jobs and bounded delay;
+monitor actual verified-point age and escalate failures.
+
+The design defines schedules and verification for all ten Tier 1 and Tier 2
+systems. Each Tier 1 has a geographically separate copy. All copies use AES-256
+at rest with protected keys, and TLS 1.2 or later with certificate verification
+in transit. Proposed retention and destinations are explicit, while implementation
+and production-sized timing remain unproven. A geographic copy and its keys must
+not share every failure domain with the production system.
+
+### Write command-level runbooks with checks and deviations
+
+A useful recovery step includes an exact command or action, expected output,
+verification, and what to do if the result differs. Define paths from the real
+configuration rather than copying an old environment's assumptions. Separate
+expected output from actual evidence so examples do not look like tests performed.
+
+The [LIS runbook](tasks/recovery_runbooks.md) verifies the archive, stages SQL at
+the configured path, imports into a new SQLite database, checks five rows and both
+required critical records, inspects the production hostname, and validates through
+an explicit local database path. The old `/recovery/lis_dump.sql` reference remains
+visible as a known error. The revised procedure checks the exact UTF-8 marker
+before repairing a manifest copy and never permits a checksum mismatch to be waived.
+
+The AD runbook starts with `netdom query fsmo` and a recovery-branch decision.
+Healthy DC02 normally supports a nonauthoritative recovery or clean replacement
+of DC01. The documented system-state branch includes backup selection, recovery
+mode, `wbadmin`, replication checks, diagnostics, and dependent-login acceptance.
+Authoritative recovery and FSMO seizure require separate criteria; their commands
+must not be applied blindly. AD commands were not executed on this Linux host.
+
+### Execute and document a timed LIS recovery
+
+Begin timing before the first recovery step, keep the clock running through
+diagnosis and correction, and save completed steps immediately. Preserve exact
+commands, stdout, stderr, timestamps, and validation results. State what was staged
+before timing and which real-world activities were excluded.
+
+The [actual local test](tasks/recovery_test_record.md) recovered the supplied
+five-row SQL sample and verified these required records:
+
+```text
+MRN-10043|BMP|K+: 6.1 mEq/L|1
+MRN-10045|TROPONIN|0.08 ng/mL|1
+```
+
+The timer measured 245,711,516 nanoseconds, approximately 0.246 seconds, and
+conservatively displayed one second. All steps fit within the same displayed
+clock second; high-resolution metadata preserves the nonzero duration. The
+original manifest check failed because of a leading text-encoding marker, then
+passed with a separately normalized copy. That error was saved rather than hidden.
+
+The result is CONDITIONAL PASS for local artifact restoration. No prescribed SSH
+container, full LIS service, production dataset, analyzer/interface operation,
+clinical acceptance, or delivered notification was tested. The sample's April
+backup date also cannot demonstrate a current one-hour RPO.
+
+## Conceptual objectives
+
+### Distinguish RTO, RPO, and MTD
+
+These are different business decisions, all expressed in time:
+
+| Measure | Question answered | Proposed LIS value |
+| --- | --- | --- |
+| RTO | How soon must a defined usable service return after interruption? | 30 minutes. |
+| RPO | How old may the restored data be relative to the interruption? | 60 minutes. |
+| MTD | How long can the service remain disrupted before unacceptable business or clinical harm? | 120 minutes, pending clinical approval. |
+
+A 30-minute restore does not mean only 30 minutes of data could be lost. A one-hour
+backup point does not imply the system will restore in one hour. RTO must be below
+MTD, and every dependency must fit inside the end-to-end recovery clock. The gap
+between the LIS target and MTD is 90 minutes, but staff must begin safe downtime
+work immediately, not wait for that margin to expire.
+
+These planning distinctions are consistent with
+[NIST contingency guidance](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-34r1.pdf).
+The proposed values are MedDefense scenario judgments, not NIST-prescribed targets.
+
+### Explain dependency-based restoration order
+
+A restored application can remain unusable because authentication, routing, backup
+catalogs, or another interface is unavailable. Dependency recovery therefore starts
+with facilities and protected connectivity, then identity and backup access,
+then application cores and data, and finally verified interfaces and clinical
+release. Some work can run in parallel; dependent service clocks do not restart
+when a prerequisite finishes.
+
+MedDefense also has a circular risk: backup access depends on identity, while
+identity recovery may require the backup platform. The proposed architecture
+breaks that loop with independent recovery credentials, offline bootstrap
+configuration, and separately recoverable keys/catalogs. The existing materials
+do not prove this design is deployed, so bootstrap testing remains open.
+
+Epic and LIS exchange data in both directions. Restore their cores and databases
+without waiting for every interface, then connect verified endpoints and reconcile
+queues. Restoring systems alphabetically or declaring a database ready before
+its clinical interfaces work would miss these constraints.
+
+### Connect timing gaps to specific deficiencies
+
+A useful finding names the failed assumption and its correction. In this exercise,
+the old staging path was absent, the configuration retained a production hostname,
+and the old procedure lacked dataset acceptance checks. Execution also exposed a
+manifest encoding problem that the condition cards did not list.
+
+The [gap analysis](tasks/gap_analysis.md) connects each issue to measured command
+handling and the BIA's clinical thresholds. It does not invent a causal number of
+minutes lost: the exercise has no equivalent clean baseline that isolates each
+condition's added delay. Five extra minutes would consume 16.7% of the LIS RTO,
+but the materials do not supply patient arrival rates or injury probabilities.
+Additional downtime can therefore be quantified as exposure time, not as invented
+patient harm counts.
+
+Keep the 30-minute target provisionally, improve the workflow, and test full
+service at realistic scale. The tiny sample's fast result supports neither a
+shorter hospital recovery promise nor the conclusion that all dependencies meet
+the current target.
+
+## Transversal objectives
+
+### Write clinical procedures that work without IT knowledge
+
+Clinical staff need short ordered actions: who declares downtime, where forms are,
+how to identify patients and specimens, whom to call, and how to reconcile work
+when service returns. Use familiar role names and telephone extensions; keep
+technical commands in administrator runbooks. Bold the actions whose omission
+would create the greatest risk.
+
+The [clinical references](tasks/clinical_downtime_procedures.md) provide separate
+Epic and LIS procedures, each between 350 and 500 words. They name actual binder,
+drawer, and tray locations from the supplied materials. The LIS reference includes
+direct critical-value calls, read-back, a five-minute charge-nurse escalation, and
+a ten-minute Nursing Supervisor escalation. Both require controlled return to
+service and reconciliation of paper records. Clinical approval and a witnessed
+night-shift drill remain necessary before deployment.
+
+### Translate a recovery result into a board decision
+
+Leadership needs the service risk, what the test established, what remains unknown,
+and a decision with resources and accountability. A failed result must keep its
+actual miss visible. A successful limited test must not be inflated into enterprise
+readiness; both kinds of result can reveal important weaknesses.
+
+The [board brief](tasks/ciso_dr_brief.md) reports the measured local result,
+explains that nightly backups conflict with the proposed data-loss target, and
+asks for a costed investment proposal and allocated technical and clinical
+exercise staff. It lists owners and dates without inventing a budget or approval.
+It presents the test's limited success and remaining production gaps together.
+
+### Produce an independently reviewable HIPAA contingency package
+
+Connect the evidence chain: BIA → backup architecture → runbooks → clinical
+continuity → timed test → gap analysis → master plan. A reviewer should be able
+to trace a recovery objective to its design, execution evidence, limitations,
+and corrective action without relying on verbal reassurance.
+
+The [master plan](tasks/dr_plan_master.md) covers scope, exclusions, roles,
+activation triggers, ordered notifications, recovery gates, document versions,
+testing/revision schedule, and CISO sign-off. It maps the documents to all five
+specifications in the local `hipaa_164_308_a7_reference.md`: backup, recovery,
+emergency-mode operation, testing/revision, and criticality analysis.
+
+The package supports those obligations but does not prove every requirement is
+implemented. Testing and criticality analysis are addressable specifications;
+applicability decisions must still be assessed and documented. Approval, trained
+staff, realistic end-to-end tests, and corrected backup schedules remain necessary.
+See [45 CFR 164.308(a)(7)](https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C/section-164.308).

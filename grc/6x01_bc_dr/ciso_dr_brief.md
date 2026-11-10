@@ -19,7 +19,7 @@ backups than the current nightly copy (`business_impact_analysis.md`).
 ## Recovery Test Result
 
 Against a 30-minute target, the five-row local restore took approximately
-**0.246 seconds**, displayed as **1 second**. All five orders and both critical
+**35.572 seconds**, displayed as **36 seconds**. All five orders and both critical
 records were verified. Old paths and a production hostname needed explicit
 handling; the original checksum file also failed because of its text encoding.
 The result is **CONDITIONAL PASS for the sample**, not a hospital recovery-time

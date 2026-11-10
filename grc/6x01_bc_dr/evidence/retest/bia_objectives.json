@@ -1,0 +1,52 @@
+{
+  "Active Directory": {
+    "rto": 15,
+    "rpo": 15,
+    "mtd": 90
+  },
+  "Epic EHR": {
+    "rto": 25,
+    "rpo": 15,
+    "mtd": 240
+  },
+  "Laboratory Information System": {
+    "rto": 30,
+    "rpo": 60,
+    "mtd": 120
+  },
+  "PACS/RIS": {
+    "rto": 120,
+    "rpo": 60,
+    "mtd": 240
+  },
+  "Pharmacy Dispensing System": {
+    "rto": 45,
+    "rpo": 15,
+    "mtd": 120
+  },
+  "Medical Device Integration Gateway": {
+    "rto": 30,
+    "rpo": 60,
+    "mtd": 120
+  },
+  "Network Core": {
+    "rto": 5,
+    "rpo": 15,
+    "mtd": 60
+  },
+  "Email and Secure Messaging": {
+    "rto": 120,
+    "rpo": 60,
+    "mtd": 480
+  },
+  "Backup and DR Infrastructure": {
+    "rto": 20,
+    "rpo": 15,
+    "mtd": 120
+  },
+  "Security Operations Platform": {
+    "rto": 120,
+    "rpo": 60,
+    "mtd": 480
+  }
+}

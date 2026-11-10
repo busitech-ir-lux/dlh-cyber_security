@@ -1,215 +1,216 @@
 # LIS Recovery Test Record
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Test date:** 2026-11-10  
-**Test conductor:** Local automated project exercise; no named clinician or human witness supplied  
+**Test conductor:** Codex, executing and reviewing commands; no clinical witness  
 **Declared RTO:** 30 minutes  
-**Test environment:** `/tmp/meddefense-dr-test/`, copied from the supplied project fixture  
-**Outcome:** CONDITIONAL PASS for local artifact recovery only
-
-## Scope and preparation
-
-This was an actual local command execution, not a fabricated transcript. The
-prescribed SSH lab was not connected. A copy of the supplied fixture was staged
-at the configured absolute paths before timing; the source files were unchanged.
-The captured environment is therefore a local adaptation, not proof of execution
-inside the named training container. No Docker commands, extra packages, production
-connections, or internet resources were used during the exercise.
-
-The timer begins at Step 1 and ends at completion of Step 10. It includes normal
-command execution, corrections, validation, notification preparation, and timer
-calls between steps. It excludes initial fixture staging, prior document reading,
-and later report writing. The notification was saved as an exercise artifact and
-was not sent. Production recovery would also require full application, interface,
-identity, clinical acceptance, and notification delivery time.
+**Test environment:** `./tmp/meddefense-dr-test/`, relative to the task execution directory  
+**Execution:** Local repeat test using the supplied SQLite fixture
 
 ## Step Timing Log
 
-Exact completed-step log:
+The timer ran from the first START through the last completed step. Commands were
+executed in stages and their output reviewed between steps, with no inserted
+sleeps. Elapsed time includes that review and diagnosis. This five-row fixture is
+not a production-sized workload. Original source backups and application config
+were preserved; a fresh recovery directory was used.
+
+The run took place in `/tmp/6x01_revision/tasks` before its artifacts were copied
+to this project's `tasks` folder. The original config's absolute paths were
+remapped to `./tmp/meddefense-dr-test/` for this local test. The required SSH lab
+was not connected; this record does not claim execution in that container.
+
+Full `recovery_test_log.txt` output:
 
 ```text
-[STEP 01] Identify recovery target         | Start: 11:11:09 | End: 11:11:09 | Duration: 0m 00s | PASS
-[STEP 02] Verify backup integrity          | Start: 11:11:09 | End: 11:11:09 | Duration: 0m 00s | PASS
-[STEP 03] Create recovery workspace        | Start: 11:11:09 | End: 11:11:09 | Duration: 0m 00s | PASS
-[STEP 04] Stage SQL at corrected path      | Start: 11:11:09 | End: 11:11:09 | Duration: 0m 00s | PASS
-[STEP 05] Restore SQLite database          | Start: 11:11:09 | End: 11:11:09 | Duration: 0m 00s | PASS
-[STEP 06] Validate row count               | Start: 11:11:09 | End: 11:11:09 | Duration: 0m 00s | PASS
-[STEP 07] Validate critical records        | Start: 11:11:09 | End: 11:11:09 | Duration: 0m 00s | PASS
-[STEP 08] Inspect configuration artifact   | Start: 11:11:09 | End: 11:11:09 | Duration: 0m 00s | PASS
-[STEP 09] Apply local validation override  | Start: 11:11:09 | End: 11:11:09 | Duration: 0m 00s | PASS
-[STEP 10] Record clinical notification     | Start: 11:11:09 | End: 11:11:09 | Duration: 0m 00s | PASS
+[STEP 01] Identify recovery target         | Start: 11:49:56 | End: 11:50:06 | Duration: 0m 09s | PASS
+[STEP 02] Verify backup integrity          | Start: 11:50:06 | End: 11:50:11 | Duration: 0m 05s | PASS
+[STEP 03] Create recovery workspace        | Start: 11:50:11 | End: 11:50:11 | Duration: 0m 00s | PASS
+[STEP 04] Stage SQL at corrected path      | Start: 11:50:11 | End: 11:50:18 | Duration: 0m 06s | PASS
+[STEP 05] Restore SQLite database          | Start: 11:50:18 | End: 11:50:18 | Duration: 0m 00s | PASS
+[STEP 06] Validate row count               | Start: 11:50:18 | End: 11:50:27 | Duration: 0m 08s | PASS
+[STEP 07] Validate critical records        | Start: 11:50:27 | End: 11:50:27 | Duration: 0m 00s | PASS
+[STEP 08] Inspect configuration artifact   | Start: 11:50:27 | End: 11:50:27 | Duration: 0m 00s | PASS
+[STEP 09] Apply local validation override  | Start: 11:50:32 | End: 11:50:32 | Duration: 0m 00s | PASS
+[STEP 10] Record clinical notification     | Start: 11:50:32 | End: 11:50:32 | Duration: 0m 00s | PASS
 ```
 
-Exact `recovery_timer.sh SUMMARY` output:
+Full `recovery_timer.sh SUMMARY` output:
 
 ```text
-Total elapsed: 0m 01s (245711516 ns; rounded up to seconds)
+Total elapsed: 0m 36s (35571540306 ns; rounded up to seconds)
 RTO (30 minutes): PASS
 Completed step failures: 0
 Overall timer result: PASS
 ```
 
-All steps started and ended within the same displayed second. The timer preserves
-epoch nanoseconds for the total, approximately 0.246 seconds; the displayed total
-is rounded upward to one second. Individual displayed step durations are whole
-seconds rounded down, so they need not add up to the rounded total. Command-only
-nanosecond durations and start timestamps are in `evidence/steps.json`; they exclude
-timer call overhead and are not a second invented set of stopwatch results.
+The timer reports whole-second step durations and rounds the total upward.
+The total includes gaps between steps, so adding the displayed step durations
+is not the total recovery time.
+`evidence/retest/journal.jsonl` preserves start/end events and discovery/resolution
+timestamps at higher precision. Some very short steps correctly show zero whole
+seconds. The original subsecond run remains in `evidence/initial_run/`.
 
 ## Conditions Encountered
 
 ### Condition 1: Path mismatch
 
-**Discovered at:** 11:11:09 CET during Step 4; timestamp resolution one second.  
-**Time added:** Not separately identifiable as causal delay; 0.000089509 minutes of measured command
-handling.
+**Discovered at:** 2026-11-10T11:50:12.039986+01:00  
+**Time added:** 0.100069 minutes of observed diagnosis and correction.
 
 **Runbook specified:** `/recovery/lis_dump.sql`  
-**Actual path:** `/tmp/meddefense-dr-test/recovery/lis_dump.sql`
+**Actual path:** `./tmp/meddefense-dr-test/recovery/lis_dump.sql`
 
-The recorded file-existence check confirmed the old path was absent. No invalid
-write to the filesystem root was attempted. This was an encountered path mismatch,
-not a claim that a failed gzip command was executed. The supplied lab configuration
-provided the correct staging path.
+The old-path check actually failed with exit code 2:
 
-**Resolution, exact commands executed:**
+```text
+ls: cannot access '/recovery/lis_dump.sql': No such file or directory
+```
+
+The SQL was then decompressed to the configured local staging path. No write to
+the incorrect root-level path was attempted.
+
+**Resolution: exact command bodies executed:**
 
 ```bash
-if test -e /recovery/lis_dump.sql; then
-    printf 'Old path exists; it is not the configured recovery target
-'
-else
-    printf 'Old runbook path /recovery/lis_dump.sql is absent
-'
-fi
+printf 'Checking old runbook staging path\n'
+ls -l /recovery/lis_dump.sql
+```
+
+```bash
 test ! -e "$STAGED_SQL" || exit 1
 gzip -dc "$BACKUP_FILE" > "$STAGED_SQL" || exit 1
+test -s "$STAGED_SQL" || exit 1
 ls -l "$STAGED_SQL"
 ```
 
 ### Condition 2: Configuration artifact
 
-**Discovered at:** 11:11:09 CET during Step 8; timestamp resolution one second.  
-**Time added:** Not separately identifiable as causal delay; 0.000070179 minutes of measured command
-handling.
+**Discovered at:** 2026-11-10T11:50:27.334437+01:00  
+**Time added:** 0.083495 minutes of observed diagnosis and correction.
 
-**Expected:** Local recovered SQLite path for validation.  
-**Actual:** `DB_HOST=lis-db-prod.meddefense.internal` remains in the workspace file.
+**Expected:** Validate the local recovered SQLite database.  
+**Actual:** `DB_HOST=lis-db-prod.meddefense.internal` in the supplied config.
 
-The raw workspace configuration was captured in `evidence/step_08.stdout.txt`.
-It was not sourced or edited. The explicit local database path overrides the
-network-database assumption for the validation command; it does not claim to
-reconfigure a working LIS application.
+The config was inspected, not sourced. The explicit SQLite path in Step 9 provides
+the local override; no production database connection was attempted and no source
+configuration was edited.
 
-**Resolution, exact commands executed in Step 9:**
+**Resolution: exact command bodies executed:**
+
+```bash
+cat "$RECOVERY_WORKSPACE/config/app_config.env"
+printf '\n'
+grep '^DB_HOST=' "$RECOVERY_WORKSPACE/config/app_config.env"
+```
 
 ```bash
 RECOVERY_DB_PATH="$RECOVERY_DB"
-printf 'Local override: RECOVERY_DB_PATH=%s
-' "$RECOVERY_DB_PATH"
+printf 'Local override: RECOVERY_DB_PATH=%s\n' "$RECOVERY_DB_PATH"
 sqlite3 -readonly "$RECOVERY_DB_PATH" "PRAGMA integrity_check; SELECT COUNT(*) FROM patient_orders;" || exit 1
-ls -l "$RECOVERY_DB" > evidence/recovered_database_ls.txt
-cat evidence/recovered_database_ls.txt
+ls -l "$RECOVERY_DB" > evidence/retest/recovered_database_ls.txt
+cat evidence/retest/recovered_database_ls.txt
 ```
 
 ### Condition 3: Row count check
 
-**Discovered at:** 11:11:09 CET during Step 6; timestamp resolution one second.  
-**Time added:** Not separately identifiable as causal delay; 0.000082060 minutes of measured command
-handling.
-
+**Discovered at:** 2026-11-10T11:50:18.336991+01:00  
 **Query:** `SELECT COUNT(*) FROM patient_orders;`  
 **Expected:** 5  
 **Actual:** 5  
-**Outcome:** PASS
+**Outcome:** PASS  
+**Validation time:** 0.144710 minutes including output review; not a fault or added recovery delay.
 
-Exact query stdout:
+Exact stdout:
 
 ```text
 5
 ```
 
-This required validation condition succeeded; it is not a recovery fault. A count
-alone cannot prove that patient identifiers and critical results match, so Step 7
-separately compared both required records.
-
 ### Condition 4: Additional finding: manifest encoding
 
-**Discovered at:** 11:11:09 CET during Step 2; timestamp resolution one second.  
-**Time added:** Not separately identifiable as causal delay; 0.000192033 minutes of measured command
-handling.
+**Discovered at:** 2026-11-10T11:50:06.736224+01:00  
+**Time added:** 0.082224 minutes of observed diagnosis and correction.
 
-The original manifest begins with bytes `ef bb bf`. The original verification
-command returned exit code 1 and rejected its format. The check was corrected by
-removing only the UTF-8 marker in a separately saved copy. The archive digest
-remained `ac918cf7ffd5c5cad3fdec178207c684a00bcb02a19fdcf994b22314fdacf0e1`.
+The raw `sha256sum -c` attempt returned exit code 1:
 
-**Resolution, exact commands executed:**
+```text
+sha256sum: ./tmp/meddefense-dr-test/backup/lis/2026-04-21/backup_manifest.sha256: no properly formatted checksum lines found
+```
+
+The original file was saved. A separate copy removes its leading UTF-8 marker,
+and another copy maps its original absolute filename to the local fixture path.
+The digest was not changed. The corrected verification actually printed:
+
+```text
+Manifest marker: efbbbf
+./tmp/meddefense-dr-test/backup/lis/2026-04-21/lis_backup.sql.gz: OK
+```
+
+**Resolution: exact command bodies executed:**
 
 ```bash
-cp "$MANIFEST_FILE" evidence/backup_manifest.original.sha256
+cp "$MANIFEST_FILE" evidence/retest/backup_manifest.original.sha256
 sha256sum -c "$MANIFEST_FILE"
-raw_status=$?
-printf 'Original manifest command exit: %s\n' "$raw_status"
-if [[ $raw_status != 0 ]]; then
-    od -An -tx1 -N3 "$MANIFEST_FILE"
-    LC_ALL=C sed '1s/^\xEF\xBB\xBF//' "$MANIFEST_FILE" > evidence/backup_manifest.normalized.sha256
-    sha256sum -c evidence/backup_manifest.normalized.sha256 || exit 1
-fi
 ```
 
-Exact stderr from the original attempt:
-
-```text
-sha256sum: /tmp/meddefense-dr-test/backup/lis/2026-04-21/backup_manifest.sha256: no properly formatted checksum lines found
+```bash
+marker=$(od -An -tx1 -N3 "$MANIFEST_FILE" | tr -d ' \n')
+printf 'Manifest marker: %s\n' "$marker"
+test "$marker" = efbbbf || exit 1
+LC_ALL=C sed '1s/^\xEF\xBB\xBF//' "$MANIFEST_FILE" > evidence/retest/backup_manifest.normalized.sha256
+# This supplied manifest names the original absolute workspace. Normalize only
+# that location in a separate checked copy, preserving the trusted digest.
+sed "s@/tmp/meddefense-dr-test/@./tmp/meddefense-dr-test/@g" evidence/retest/backup_manifest.normalized.sha256 > evidence/retest/backup_manifest.local.sha256
+sha256sum -c evidence/retest/backup_manifest.local.sha256
 ```
 
-Exact combined command stdout, including the recorded exit and successful retry:
-
-```text
-Original manifest command exit: 1
- ef bb bf
-/tmp/meddefense-dr-test/backup/lis/2026-04-21/lis_backup.sql.gz: OK
-```
-
-The handling durations bound the work done in the affected step; they are not
-proof of extra minutes relative to an unobserved error-free run. For the config
-artifact, Step 9 adds a separately measured validation interval of
-0.000134118 minutes of measured command handling.
-Outputs were written to each step's stdout/stderr files before that step's PASS
-entry was appended. This preserves the observed deviations as the run progressed;
-the human-readable report was assembled afterward.
+The numeric “time added” values measure discovery-to-resolution handling
+intervals recorded during this repeat test. They include review between commands;
+they are not an estimate of patient harm or a causal comparison with an unobserved
+error-free baseline. Row count is a successful required validation, not a failure.
+The timer continued throughout all corrections.
 
 ## Recovery Validation
 
-**Recovered database file:** Exact `ls -l` output from execution:
+**Recovered database file:** Exact `ls -l` output:
 
 ```text
--rw-r--r--. 1 busitech busitech 12288 Nov 10 11:11 /tmp/meddefense-dr-test/recovery/lis_recovered.db
+-rw-r--r--. 1 busitech busitech 12288 Nov 10 11:50 ./tmp/meddefense-dr-test/recovery/lis_recovered.db
 ```
 
-**Critical values accessible:** Exact query output:
+**Critical values accessible:** Exact query stdout:
 
 ```text
 MRN-10043|BMP|K+: 6.1 mEq/L|1
 MRN-10045|TROPONIN|0.08 ng/mL|1
 ```
 
-`PRAGMA integrity_check` returned `ok`; see `evidence/step_09.stdout.txt`.
-The query checks simulated fixture content, not clinical interpretation of these
-values. `evidence/clinical_notification.txt` records the unsent exercise message.
-The restored database is also submitted at
-`../tmp/meddefense-dr-test/recovery/lis_recovered.db`.
+**Integrity and local-path validation:** Exact Step 9 stdout:
+
+```text
+Local override: RECOVERY_DB_PATH=./tmp/meddefense-dr-test/recovery/lis_recovered.db
+ok
+5
+-rw-r--r--. 1 busitech busitech 12288 Nov 10 11:50 ./tmp/meddefense-dr-test/recovery/lis_recovered.db
+```
+
+Each command body, stdout, stderr, and exit status is retained in
+`evidence/retest/`. The recovered database is
+[tmp/meddefense-dr-test/recovery/lis_recovered.db](tmp/meddefense-dr-test/recovery/lis_recovered.db).
+`evidence/retest/clinical_notification.txt` is the required prepared notification;
+it is marked EXERCISE ONLY and was not sent.
 
 ## Test Result
 
-**Actual recovery time:** 245,711,516 ns, approximately 0.246 seconds; timer display 0m 01s.  
-**RTO met:** YES for the limited local artifact exercise.  
+**Actual recovery time:** 35.571540306 seconds (0.592859005 minutes); timer display **0m 36s**.  
+**RTO met:** YES for the local SQLite recovery exercise.  
 **Test outcome:** CONDITIONAL PASS.
 
-All required fixture checks passed after the recorded manifest correction.
-The result is conditional because there was no prescribed SSH-container execution,
-production-sized data, actual LIS service startup, instrument/interface validation,
-clinical acceptance, or notification delivery. The dated April fixture and missing
-transaction-to-outage timestamps cannot demonstrate the production one-hour RPO.
-No production RTO reduction or compliance certification follows from this result.
+All required data checks passed, including five rows, both critical records,
+and `integrity_check=ok`. The condition is the execution scope: no prescribed SSH
+container, real LIS application, instrument/interface validation, or clinical
+acceptance was demonstrated. Those limits do not turn a genuine successful
+fixture restore into production recovery evidence. The April backup cannot prove
+a current one-hour RPO. A container rerun is still required for that environment
+requirement; its evidence must replace neither this run nor its measured time.

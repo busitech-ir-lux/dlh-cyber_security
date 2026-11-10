@@ -1,0 +1,2 @@
+Manifest marker: efbbbf
+./tmp/meddefense-dr-test/backup/lis/2026-04-21/lis_backup.sql.gz: OK

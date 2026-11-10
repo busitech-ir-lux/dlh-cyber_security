@@ -1,0 +1,50 @@
+{"event": "step_start", "epoch_ns": 1794307796990158076, "timestamp": "2026-11-10T11:49:56.990169+01:00", "step": 1, "name": "Identify recovery target"}
+{"event": "command_start", "epoch_ns": 1794307797037189885, "timestamp": "2026-11-10T11:49:57.037200+01:00", "key": "1"}
+{"event": "command_end", "epoch_ns": 1794307797049280906, "timestamp": "2026-11-10T11:49:57.049286+01:00", "key": "1", "exit_code": 0, "duration_ns": 12084057}
+{"event": "step_end", "epoch_ns": 1794307806578474835, "timestamp": "2026-11-10T11:50:06.578491+01:00", "step": 1, "status": "PASS"}
+{"event": "step_start", "epoch_ns": 1794307806631910392, "timestamp": "2026-11-10T11:50:06.631920+01:00", "step": 2, "name": "Verify backup integrity"}
+{"event": "command_start", "epoch_ns": 1794307806682514326, "timestamp": "2026-11-10T11:50:06.682520+01:00", "key": "2check"}
+{"event": "command_end", "epoch_ns": 1794307806691501922, "timestamp": "2026-11-10T11:50:06.691505+01:00", "key": "2check", "exit_code": 1, "duration_ns": 8979481}
+{"event": "discovered", "epoch_ns": 1794307806736219379, "timestamp": "2026-11-10T11:50:06.736224+01:00", "condition": "manifest"}
+{"event": "command_start", "epoch_ns": 1794307811610905814, "timestamp": "2026-11-10T11:50:11.610911+01:00", "key": "2fix"}
+{"event": "command_end", "epoch_ns": 1794307811622345160, "timestamp": "2026-11-10T11:50:11.622350+01:00", "key": "2fix", "exit_code": 0, "duration_ns": 11432422}
+{"event": "resolved", "epoch_ns": 1794307811669637919, "timestamp": "2026-11-10T11:50:11.669643+01:00", "condition": "manifest"}
+{"event": "step_end", "epoch_ns": 1794307811731756670, "timestamp": "2026-11-10T11:50:11.731767+01:00", "step": 2, "status": "PASS"}
+{"event": "step_start", "epoch_ns": 1794307811784223345, "timestamp": "2026-11-10T11:50:11.784229+01:00", "step": 3, "name": "Create recovery workspace"}
+{"event": "command_start", "epoch_ns": 1794307811827766726, "timestamp": "2026-11-10T11:50:11.827772+01:00", "key": "3"}
+{"event": "command_end", "epoch_ns": 1794307811832983844, "timestamp": "2026-11-10T11:50:11.832989+01:00", "key": "3", "exit_code": 0, "duration_ns": 5210164}
+{"event": "step_end", "epoch_ns": 1794307811889405034, "timestamp": "2026-11-10T11:50:11.889412+01:00", "step": 3, "status": "PASS"}
+{"event": "step_start", "epoch_ns": 1794307811943326234, "timestamp": "2026-11-10T11:50:11.943335+01:00", "step": 4, "name": "Stage SQL at corrected path"}
+{"event": "command_start", "epoch_ns": 1794307811985570341, "timestamp": "2026-11-10T11:50:11.985575+01:00", "key": "4check"}
+{"event": "command_end", "epoch_ns": 1794307811990091451, "timestamp": "2026-11-10T11:50:11.990093+01:00", "key": "4check", "exit_code": 2, "duration_ns": 4518074}
+{"event": "discovered", "epoch_ns": 1794307812039980591, "timestamp": "2026-11-10T11:50:12.039986+01:00", "condition": "path"}
+{"event": "command_start", "epoch_ns": 1794307817982171830, "timestamp": "2026-11-10T11:50:17.982177+01:00", "key": "4fix"}
+{"event": "command_end", "epoch_ns": 1794307817989332812, "timestamp": "2026-11-10T11:50:17.989338+01:00", "key": "4fix", "exit_code": 0, "duration_ns": 7154410}
+{"event": "resolved", "epoch_ns": 1794307818044122996, "timestamp": "2026-11-10T11:50:18.044128+01:00", "condition": "path"}
+{"event": "step_end", "epoch_ns": 1794307818099637061, "timestamp": "2026-11-10T11:50:18.099647+01:00", "step": 4, "status": "PASS"}
+{"event": "step_start", "epoch_ns": 1794307818163505832, "timestamp": "2026-11-10T11:50:18.163522+01:00", "step": 5, "name": "Restore SQLite database"}
+{"event": "command_start", "epoch_ns": 1794307818218035306, "timestamp": "2026-11-10T11:50:18.218045+01:00", "key": "5"}
+{"event": "command_end", "epoch_ns": 1794307818227105217, "timestamp": "2026-11-10T11:50:18.227110+01:00", "key": "5", "exit_code": 0, "duration_ns": 9062998}
+{"event": "step_end", "epoch_ns": 1794307818284988556, "timestamp": "2026-11-10T11:50:18.284998+01:00", "step": 5, "status": "PASS"}
+{"event": "step_start", "epoch_ns": 1794307818336983545, "timestamp": "2026-11-10T11:50:18.336991+01:00", "step": 6, "name": "Validate row count"}
+{"event": "command_start", "epoch_ns": 1794307818384462063, "timestamp": "2026-11-10T11:50:18.384468+01:00", "key": "6"}
+{"event": "command_end", "epoch_ns": 1794307818391215279, "timestamp": "2026-11-10T11:50:18.391220+01:00", "key": "6", "exit_code": 0, "duration_ns": 6747024}
+{"event": "step_end", "epoch_ns": 1794307827019567294, "timestamp": "2026-11-10T11:50:27.019577+01:00", "step": 6, "status": "PASS"}
+{"event": "step_start", "epoch_ns": 1794307827074706875, "timestamp": "2026-11-10T11:50:27.074715+01:00", "step": 7, "name": "Validate critical records"}
+{"event": "command_start", "epoch_ns": 1794307827117516676, "timestamp": "2026-11-10T11:50:27.117522+01:00", "key": "7"}
+{"event": "command_end", "epoch_ns": 1794307827126794418, "timestamp": "2026-11-10T11:50:27.126796+01:00", "key": "7", "exit_code": 0, "duration_ns": 9274055}
+{"event": "step_end", "epoch_ns": 1794307827183262857, "timestamp": "2026-11-10T11:50:27.183271+01:00", "step": 7, "status": "PASS"}
+{"event": "step_start", "epoch_ns": 1794307827236520339, "timestamp": "2026-11-10T11:50:27.236532+01:00", "step": 8, "name": "Inspect configuration artifact"}
+{"event": "command_start", "epoch_ns": 1794307827278306446, "timestamp": "2026-11-10T11:50:27.278311+01:00", "key": "8"}
+{"event": "command_end", "epoch_ns": 1794307827284358653, "timestamp": "2026-11-10T11:50:27.284364+01:00", "key": "8", "exit_code": 0, "duration_ns": 6045675}
+{"event": "discovered", "epoch_ns": 1794307827334431689, "timestamp": "2026-11-10T11:50:27.334437+01:00", "condition": "config"}
+{"event": "step_end", "epoch_ns": 1794307827396828694, "timestamp": "2026-11-10T11:50:27.396838+01:00", "step": 8, "status": "PASS"}
+{"event": "step_start", "epoch_ns": 1794307832241471497, "timestamp": "2026-11-10T11:50:32.241498+01:00", "step": 9, "name": "Apply local validation override"}
+{"event": "command_start", "epoch_ns": 1794307832289029374, "timestamp": "2026-11-10T11:50:32.289034+01:00", "key": "9"}
+{"event": "command_end", "epoch_ns": 1794307832299364804, "timestamp": "2026-11-10T11:50:32.299369+01:00", "key": "9", "exit_code": 0, "duration_ns": 10328788}
+{"event": "resolved", "epoch_ns": 1794307832344140581, "timestamp": "2026-11-10T11:50:32.344145+01:00", "condition": "config"}
+{"event": "step_end", "epoch_ns": 1794307832401543246, "timestamp": "2026-11-10T11:50:32.401553+01:00", "step": 9, "status": "PASS"}
+{"event": "step_start", "epoch_ns": 1794307832455108718, "timestamp": "2026-11-10T11:50:32.455115+01:00", "step": 10, "name": "Record clinical notification"}
+{"event": "command_start", "epoch_ns": 1794307832497800257, "timestamp": "2026-11-10T11:50:32.497805+01:00", "key": "10"}
+{"event": "command_end", "epoch_ns": 1794307832503544976, "timestamp": "2026-11-10T11:50:32.503549+01:00", "key": "10", "exit_code": 0, "duration_ns": 5738097}
+{"event": "step_end", "epoch_ns": 1794307832564290546, "timestamp": "2026-11-10T11:50:32.564298+01:00", "step": 10, "status": "PASS"}
