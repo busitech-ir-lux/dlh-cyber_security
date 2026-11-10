@@ -1,0 +1,31 @@
+{
+  "case_id": "CASE-20261110-003",
+  "alert_id": "ALT-20260428-003",
+  "severity": "Low",
+  "title": "Phishing: Benign simulation",
+  "description": "Simulated triage for rule phishing_email_suspicious_sender; source event time 2026-04-28T10:02:19Z",
+  "status": "closed",
+  "created_at": "2026-11-10T10:33:44Z",
+  "updated_at": "2026-11-10T10:33:44Z",
+  "resolution": "no_indicators_of_compromise",
+  "notes": [
+    {
+      "note": "{\"deduplicated\": 2, \"enrichment\": [{\"enriched_at\": \"2026-11-10T10:33:44Z\", \"feed_result\": {\"in_benign_list\": false, \"in_malicious_feed\": false}, \"ioc\": \"10.0.1.25\", \"ip_class\": \"private\", \"note\": \"Private address range; internal network traffic\", \"reverse_dns\": \"NXDOMAIN\", \"score\": 0, \"type\": \"ipv4\", \"verdict\": \"ALLOW\"}, {\"enriched_at\": \"2026-11-10T10:33:44Z\", \"feed_result\": {\"in_benign_list\": true, \"in_malicious_feed\": false}, \"ioc\": \"meddefense.internal\", \"ip_class\": \"N/A\", \"reverse_dns\": \"N/A\", \"score\": 0, \"type\": \"domain\", \"verdict\": \"ALLOW\"}], \"extracted\": 2, \"playbook_verdict\": \"CLOSE\", \"simulation_only\": true, \"warnings\": []}",
+      "created_at": "2026-11-10T10:33:44Z"
+    }
+  ],
+  "iocs": [
+    {
+      "ioc_value": "10.0.1.25",
+      "ioc_type": "ipv4",
+      "verdict": "ALLOW",
+      "score": 0
+    },
+    {
+      "ioc_value": "meddefense.internal",
+      "ioc_type": "domain",
+      "verdict": "ALLOW",
+      "score": 0
+    }
+  ]
+}

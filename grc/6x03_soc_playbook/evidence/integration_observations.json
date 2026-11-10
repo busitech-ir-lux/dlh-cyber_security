@@ -1,0 +1,157 @@
+[
+  {
+    "expected": {
+      "alert_id": "ALT-20260428-001",
+      "playbook": "phishing_triage",
+      "expected_verdict": "ESCALATE",
+      "expected_case_severity": "Critical",
+      "expected_case_status": "escalated",
+      "isolation_queue_expected": "no",
+      "expected_reason": "Known malicious sender IP and typosquat domain"
+    },
+    "command": "python3 playbook_phishing_triage.py alerts/ALT-20260428-001.json",
+    "stdout": "[2026-11-10T10:33:44Z] PHISHING TRIAGE PLAYBOOK\nAlert      : ALT-20260428-001\nRule       : phishing_email_suspicious_sender\nIOCs       : 4 extracted, 2 enriched, 2 dedup skipped\n  198.51.100.42            ipv4    BLOCK       score=95 (c2, cobalt_strike, beacon)\n  meddefense-secure.net    domain  BLOCK       score=97 (typosquat, phishing, credential_harvest, impersonation)\nVerdict    : ESCALATE\nCase       : CASE-20261110-001  Severity: Critical  Status: escalated\nAction     : Escalation recorded; on-call notification delivery is not integrated\n",
+    "stderr": "",
+    "exit_code": 0,
+    "case_json": "{\n  \"case_id\": \"CASE-20261110-001\",\n  \"alert_id\": \"ALT-20260428-001\",\n  \"severity\": \"Critical\",\n  \"title\": \"Phishing: Known indicator escalated\",\n  \"description\": \"Simulated triage for rule phishing_email_suspicious_sender; source event time 2026-04-28T09:14:32Z\",\n  \"status\": \"escalated\",\n  \"created_at\": \"2026-11-10T10:33:44Z\",\n  \"updated_at\": \"2026-11-10T10:33:44Z\",\n  \"resolution\": null,\n  \"notes\": [\n    {\n      \"note\": \"{\\\"deduplicated\\\": 2, \\\"enrichment\\\": [{\\\"enriched_at\\\": \\\"2026-11-10T10:33:44Z\\\", \\\"feed_result\\\": {\\\"case_reference\\\": \\\"MD-IR-2026-03-CS-001\\\", \\\"category\\\": \\\"c2\\\", \\\"confidence\\\": 95, \\\"first_seen\\\": \\\"2026-03-12\\\", \\\"in_benign_list\\\": false, \\\"in_malicious_feed\\\": true, \\\"last_seen\\\": \\\"2026-04-27\\\", \\\"notes\\\": \\\"Observed during Cobalt Strike beacon triage and credential access investigation.\\\", \\\"source\\\": \\\"meddefense-internal\\\", \\\"tags\\\": [\\\"cobalt_strike\\\", \\\"beacon\\\"]}, \\\"ioc\\\": \\\"198.51.100.42\\\", \\\"ip_class\\\": \\\"documentation\\\", \\\"reverse_dns\\\": \\\"NXDOMAIN\\\", \\\"score\\\": 95, \\\"type\\\": \\\"ipv4\\\", \\\"verdict\\\": \\\"BLOCK\\\"}, {\\\"enriched_at\\\": \\\"2026-11-10T10:33:44Z\\\", \\\"feed_result\\\": {\\\"case_reference\\\": \\\"MD-PHISH-2026-04-MDS\\\", \\\"category\\\": \\\"typosquat\\\", \\\"confidence\\\": 97, \\\"first_seen\\\": \\\"2026-04-10\\\", \\\"in_benign_list\\\": false, \\\"in_malicious_feed\\\": true, \\\"last_seen\\\": \\\"2026-04-27\\\", \\\"notes\\\": \\\"Impersonates MedDefense login and billing workflows.\\\", \\\"source\\\": \\\"meddefense-internal\\\", \\\"tags\\\": [\\\"phishing\\\", \\\"credential_harvest\\\", \\\"impersonation\\\"]}, \\\"ioc\\\": \\\"meddefense-secure.net\\\", \\\"ip_class\\\": \\\"N/A\\\", \\\"reverse_dns\\\": \\\"N/A\\\", \\\"score\\\": 97, \\\"type\\\": \\\"domain\\\", \\\"verdict\\\": \\\"BLOCK\\\"}], \\\"extracted\\\": 4, \\\"playbook_verdict\\\": \\\"ESCALATE\\\", \\\"simulation_only\\\": true, \\\"warnings\\\": []}\",\n      \"created_at\": \"2026-11-10T10:33:44Z\"\n    },\n    {\n      \"note\": \"Escalation triggered by: 198.51.100.42, meddefense-secure.net. On-call notification delivery is not integrated; analyst must review escalated cases.\",\n      \"created_at\": \"2026-11-10T10:33:44Z\"\n    }\n  ],\n  \"iocs\": [\n    {\n      \"ioc_value\": \"198.51.100.42\",\n      \"ioc_type\": \"ipv4\",\n      \"verdict\": \"BLOCK\",\n      \"score\": 95\n    },\n    {\n      \"ioc_value\": \"meddefense-secure.net\",\n      \"ioc_type\": \"domain\",\n      \"verdict\": \"BLOCK\",\n      \"score\": 97\n    }\n  ]\n}\n",
+    "case": {
+      "case_id": "CASE-20261110-001",
+      "alert_id": "ALT-20260428-001",
+      "severity": "Critical",
+      "title": "Phishing: Known indicator escalated",
+      "description": "Simulated triage for rule phishing_email_suspicious_sender; source event time 2026-04-28T09:14:32Z",
+      "status": "escalated",
+      "created_at": "2026-11-10T10:33:44Z",
+      "updated_at": "2026-11-10T10:33:44Z",
+      "resolution": null
+    },
+    "verdict": "ESCALATE",
+    "elapsed_seconds": 0.10852110499945411,
+    "isolation_queued": false,
+    "pass": true
+  },
+  {
+    "expected": {
+      "alert_id": "ALT-20260428-002",
+      "playbook": "phishing_triage",
+      "expected_verdict": "REVIEW",
+      "expected_case_severity": "High",
+      "expected_case_status": "open",
+      "isolation_queue_expected": "no",
+      "expected_reason": "Unknown external sender and domain require review"
+    },
+    "command": "python3 playbook_phishing_triage.py alerts/ALT-20260428-002.json",
+    "stdout": "[2026-11-10T10:33:44Z] PHISHING TRIAGE PLAYBOOK\nAlert      : ALT-20260428-002\nRule       : phishing_email_suspicious_sender\nIOCs       : 3 extracted, 2 enriched, 1 dedup skipped\n  203.0.113.5              ipv4    INVESTIGATE score=30 (unknown)\n  external-health-news.com domain  INVESTIGATE score=30 (unknown)\nVerdict    : REVIEW\nCase       : CASE-20261110-002  Severity: High  Status: open\nAction     : Case recorded for analyst review; no mail action taken\n",
+    "stderr": "",
+    "exit_code": 0,
+    "case_json": "{\n  \"case_id\": \"CASE-20261110-002\",\n  \"alert_id\": \"ALT-20260428-002\",\n  \"severity\": \"High\",\n  \"title\": \"Phishing: Sender review\",\n  \"description\": \"Simulated triage for rule phishing_email_suspicious_sender; source event time 2026-04-28T09:31:05Z\",\n  \"status\": \"open\",\n  \"created_at\": \"2026-11-10T10:33:44Z\",\n  \"updated_at\": \"2026-11-10T10:33:44Z\",\n  \"resolution\": null,\n  \"notes\": [\n    {\n      \"note\": \"{\\\"deduplicated\\\": 2, \\\"enrichment\\\": [{\\\"enriched_at\\\": \\\"2026-11-10T10:33:44Z\\\", \\\"feed_result\\\": {\\\"in_benign_list\\\": false, \\\"in_malicious_feed\\\": false}, \\\"ioc\\\": \\\"203.0.113.5\\\", \\\"ip_class\\\": \\\"documentation\\\", \\\"reverse_dns\\\": \\\"NXDOMAIN\\\", \\\"score\\\": 30, \\\"type\\\": \\\"ipv4\\\", \\\"verdict\\\": \\\"INVESTIGATE\\\"}, {\\\"enriched_at\\\": \\\"2026-11-10T10:33:44Z\\\", \\\"feed_result\\\": {\\\"in_benign_list\\\": false, \\\"in_malicious_feed\\\": false}, \\\"ioc\\\": \\\"external-health-news.com\\\", \\\"ip_class\\\": \\\"N/A\\\", \\\"reverse_dns\\\": \\\"N/A\\\", \\\"score\\\": 30, \\\"type\\\": \\\"domain\\\", \\\"verdict\\\": \\\"INVESTIGATE\\\"}], \\\"extracted\\\": 3, \\\"playbook_verdict\\\": \\\"REVIEW\\\", \\\"simulation_only\\\": true, \\\"warnings\\\": []}\",\n      \"created_at\": \"2026-11-10T10:33:44Z\"\n    }\n  ],\n  \"iocs\": [\n    {\n      \"ioc_value\": \"203.0.113.5\",\n      \"ioc_type\": \"ipv4\",\n      \"verdict\": \"INVESTIGATE\",\n      \"score\": 30\n    },\n    {\n      \"ioc_value\": \"external-health-news.com\",\n      \"ioc_type\": \"domain\",\n      \"verdict\": \"INVESTIGATE\",\n      \"score\": 30\n    }\n  ]\n}\n",
+    "case": {
+      "case_id": "CASE-20261110-002",
+      "alert_id": "ALT-20260428-002",
+      "severity": "High",
+      "title": "Phishing: Sender review",
+      "description": "Simulated triage for rule phishing_email_suspicious_sender; source event time 2026-04-28T09:31:05Z",
+      "status": "open",
+      "created_at": "2026-11-10T10:33:44Z",
+      "updated_at": "2026-11-10T10:33:44Z",
+      "resolution": null
+    },
+    "verdict": "REVIEW",
+    "elapsed_seconds": 0.09862582299956557,
+    "isolation_queued": false,
+    "pass": true
+  },
+  {
+    "expected": {
+      "alert_id": "ALT-20260428-003",
+      "playbook": "phishing_triage",
+      "expected_verdict": "CLOSE",
+      "expected_case_severity": "Low",
+      "expected_case_status": "closed",
+      "isolation_queue_expected": "no",
+      "expected_reason": "Internal sender and private IP with no suspicious external IOC"
+    },
+    "command": "python3 playbook_phishing_triage.py alerts/ALT-20260428-003.json",
+    "stdout": "[2026-11-10T10:33:44Z] PHISHING TRIAGE PLAYBOOK\nAlert      : ALT-20260428-003\nRule       : phishing_email_suspicious_sender\nIOCs       : 2 extracted, 2 enriched, 0 dedup skipped\n  10.0.1.25                ipv4    ALLOW       score=0 (unknown)\n  meddefense.internal      domain  ALLOW       score=0 (unknown)\nVerdict    : CLOSE\nCase       : CASE-20261110-003  Severity: Low  Status: closed\nAction     : Simulated benign case closed; production auto-close is not approved\n",
+    "stderr": "",
+    "exit_code": 0,
+    "case_json": "{\n  \"case_id\": \"CASE-20261110-003\",\n  \"alert_id\": \"ALT-20260428-003\",\n  \"severity\": \"Low\",\n  \"title\": \"Phishing: Benign simulation\",\n  \"description\": \"Simulated triage for rule phishing_email_suspicious_sender; source event time 2026-04-28T10:02:19Z\",\n  \"status\": \"closed\",\n  \"created_at\": \"2026-11-10T10:33:44Z\",\n  \"updated_at\": \"2026-11-10T10:33:44Z\",\n  \"resolution\": \"no_indicators_of_compromise\",\n  \"notes\": [\n    {\n      \"note\": \"{\\\"deduplicated\\\": 2, \\\"enrichment\\\": [{\\\"enriched_at\\\": \\\"2026-11-10T10:33:44Z\\\", \\\"feed_result\\\": {\\\"in_benign_list\\\": false, \\\"in_malicious_feed\\\": false}, \\\"ioc\\\": \\\"10.0.1.25\\\", \\\"ip_class\\\": \\\"private\\\", \\\"note\\\": \\\"Private address range; internal network traffic\\\", \\\"reverse_dns\\\": \\\"NXDOMAIN\\\", \\\"score\\\": 0, \\\"type\\\": \\\"ipv4\\\", \\\"verdict\\\": \\\"ALLOW\\\"}, {\\\"enriched_at\\\": \\\"2026-11-10T10:33:44Z\\\", \\\"feed_result\\\": {\\\"in_benign_list\\\": true, \\\"in_malicious_feed\\\": false}, \\\"ioc\\\": \\\"meddefense.internal\\\", \\\"ip_class\\\": \\\"N/A\\\", \\\"reverse_dns\\\": \\\"N/A\\\", \\\"score\\\": 0, \\\"type\\\": \\\"domain\\\", \\\"verdict\\\": \\\"ALLOW\\\"}], \\\"extracted\\\": 2, \\\"playbook_verdict\\\": \\\"CLOSE\\\", \\\"simulation_only\\\": true, \\\"warnings\\\": []}\",\n      \"created_at\": \"2026-11-10T10:33:44Z\"\n    }\n  ],\n  \"iocs\": [\n    {\n      \"ioc_value\": \"10.0.1.25\",\n      \"ioc_type\": \"ipv4\",\n      \"verdict\": \"ALLOW\",\n      \"score\": 0\n    },\n    {\n      \"ioc_value\": \"meddefense.internal\",\n      \"ioc_type\": \"domain\",\n      \"verdict\": \"ALLOW\",\n      \"score\": 0\n    }\n  ]\n}\n",
+    "case": {
+      "case_id": "CASE-20261110-003",
+      "alert_id": "ALT-20260428-003",
+      "severity": "Low",
+      "title": "Phishing: Benign simulation",
+      "description": "Simulated triage for rule phishing_email_suspicious_sender; source event time 2026-04-28T10:02:19Z",
+      "status": "closed",
+      "created_at": "2026-11-10T10:33:44Z",
+      "updated_at": "2026-11-10T10:33:44Z",
+      "resolution": "no_indicators_of_compromise"
+    },
+    "verdict": "CLOSE",
+    "elapsed_seconds": 0.09359918300015124,
+    "isolation_queued": false,
+    "pass": true
+  },
+  {
+    "expected": {
+      "alert_id": "ALT-20260428-007",
+      "playbook": "credential_exposure",
+      "expected_verdict": "ESCALATE",
+      "expected_case_severity": "Critical",
+      "expected_case_status": "escalated",
+      "isolation_queue_expected": "yes",
+      "expected_reason": "Known C2 source IP and Domain Admin service account"
+    },
+    "command": "python3 playbook_credential_exposure.py alerts/ALT-20260428-007.json",
+    "stdout": "[2026-11-10T10:33:44Z] CREDENTIAL EXPOSURE PLAYBOOK\nAlert      : ALT-20260428-007\nHost       : WST-WS-031\nUser       : svc_helpdesk  Privilege: Domain Admin\nSource IP  : 198.51.100.42  Verdict: BLOCK  Score: 95\nMITRE      : T1003.001 OS Credential Dumping: LSASS Memory\nVerdict    : ESCALATE\nCase       : CASE-20261110-004  Severity: Critical  Status: escalated\nAction     : Host written to isolation_queue.json for analyst authorization\n",
+    "stderr": "",
+    "exit_code": 0,
+    "case_json": "{\n  \"case_id\": \"CASE-20261110-004\",\n  \"alert_id\": \"ALT-20260428-007\",\n  \"severity\": \"Critical\",\n  \"title\": \"Credential exposure: WST-WS-031\",\n  \"description\": \"OS Credential Dumping: LSASS Memory on WST-WS-031 from 198.51.100.42 (BLOCK) by Domain Admin svc_helpdesk\",\n  \"status\": \"escalated\",\n  \"created_at\": \"2026-11-10T10:33:44Z\",\n  \"updated_at\": \"2026-11-10T10:33:44Z\",\n  \"resolution\": null,\n  \"notes\": [\n    {\n      \"note\": \"{\\\"enrichment\\\": {\\\"enriched_at\\\": \\\"2026-11-10T10:33:44Z\\\", \\\"feed_result\\\": {\\\"case_reference\\\": \\\"MD-IR-2026-03-CS-001\\\", \\\"category\\\": \\\"c2\\\", \\\"confidence\\\": 95, \\\"first_seen\\\": \\\"2026-03-12\\\", \\\"in_benign_list\\\": false, \\\"in_malicious_feed\\\": true, \\\"last_seen\\\": \\\"2026-04-27\\\", \\\"notes\\\": \\\"Observed during Cobalt Strike beacon triage and credential access investigation.\\\", \\\"source\\\": \\\"meddefense-internal\\\", \\\"tags\\\": [\\\"cobalt_strike\\\", \\\"beacon\\\"]}, \\\"ioc\\\": \\\"198.51.100.42\\\", \\\"ip_class\\\": \\\"documentation\\\", \\\"reverse_dns\\\": \\\"NXDOMAIN\\\", \\\"score\\\": 95, \\\"type\\\": \\\"ipv4\\\", \\\"verdict\\\": \\\"BLOCK\\\"}, \\\"human_authorization_required\\\": true, \\\"inventory_exported_at\\\": \\\"2026-04-28T08:00:00Z\\\", \\\"mitre_technique\\\": \\\"T1003.001\\\", \\\"playbook_verdict\\\": \\\"ESCALATE\\\", \\\"privilege\\\": \\\"Domain Admin\\\", \\\"reason\\\": \\\"OS Credential Dumping: LSASS Memory on WST-WS-031 from 198.51.100.42 (BLOCK) by Domain Admin svc_helpdesk\\\", \\\"source_event_time\\\": \\\"2026-04-28T14:33:18Z\\\", \\\"technique_name\\\": \\\"OS Credential Dumping: LSASS Memory\\\"}\",\n      \"created_at\": \"2026-11-10T10:33:44Z\"\n    }\n  ],\n  \"iocs\": [\n    {\n      \"ioc_value\": \"198.51.100.42\",\n      \"ioc_type\": \"ipv4\",\n      \"verdict\": \"BLOCK\",\n      \"score\": 95\n    }\n  ]\n}\n",
+    "case": {
+      "case_id": "CASE-20261110-004",
+      "alert_id": "ALT-20260428-007",
+      "severity": "Critical",
+      "title": "Credential exposure: WST-WS-031",
+      "description": "OS Credential Dumping: LSASS Memory on WST-WS-031 from 198.51.100.42 (BLOCK) by Domain Admin svc_helpdesk",
+      "status": "escalated",
+      "created_at": "2026-11-10T10:33:44Z",
+      "updated_at": "2026-11-10T10:33:44Z",
+      "resolution": null
+    },
+    "verdict": "ESCALATE",
+    "elapsed_seconds": 0.08866474600017682,
+    "isolation_queued": true,
+    "pass": true
+  },
+  {
+    "expected": {
+      "alert_id": "ALT-20260428-009",
+      "playbook": "credential_exposure",
+      "expected_verdict": "MANUAL_REVIEW",
+      "expected_case_severity": "Medium",
+      "expected_case_status": "open",
+      "isolation_queue_expected": "no",
+      "expected_reason": "Internal IP and non-privileged user require manual review without isolation"
+    },
+    "command": "python3 playbook_credential_exposure.py alerts/ALT-20260428-009.json",
+    "stdout": "[2026-11-10T10:33:44Z] CREDENTIAL EXPOSURE PLAYBOOK\nAlert      : ALT-20260428-009\nHost       : WST-WS-041\nUser       : k.nguyen  Privilege: Standard user\nSource IP  : 192.168.10.55  Verdict: ALLOW  Score: 0\nMITRE      : T1550.002 Use Alternate Authentication Material: Pass the Hash\nVerdict    : MANUAL_REVIEW\nCase       : CASE-20261110-005  Severity: Medium  Status: open\nAction     : Case recorded for analyst review; no isolation queued\n",
+    "stderr": "",
+    "exit_code": 0,
+    "case_json": "{\n  \"case_id\": \"CASE-20261110-005\",\n  \"alert_id\": \"ALT-20260428-009\",\n  \"severity\": \"Medium\",\n  \"title\": \"Credential exposure: WST-WS-041\",\n  \"description\": \"Use Alternate Authentication Material: Pass the Hash on WST-WS-041 from 192.168.10.55 (ALLOW) by Standard user k.nguyen\",\n  \"status\": \"open\",\n  \"created_at\": \"2026-11-10T10:33:44Z\",\n  \"updated_at\": \"2026-11-10T10:33:44Z\",\n  \"resolution\": null,\n  \"notes\": [\n    {\n      \"note\": \"{\\\"enrichment\\\": {\\\"enriched_at\\\": \\\"2026-11-10T10:33:44Z\\\", \\\"feed_result\\\": {\\\"in_benign_list\\\": false, \\\"in_malicious_feed\\\": false}, \\\"ioc\\\": \\\"192.168.10.55\\\", \\\"ip_class\\\": \\\"private\\\", \\\"note\\\": \\\"Private address range; internal network traffic\\\", \\\"reverse_dns\\\": \\\"NXDOMAIN\\\", \\\"score\\\": 0, \\\"type\\\": \\\"ipv4\\\", \\\"verdict\\\": \\\"ALLOW\\\"}, \\\"human_authorization_required\\\": false, \\\"inventory_exported_at\\\": \\\"2026-04-28T08:00:00Z\\\", \\\"mitre_technique\\\": \\\"T1550.002\\\", \\\"playbook_verdict\\\": \\\"MANUAL_REVIEW\\\", \\\"privilege\\\": \\\"Standard user\\\", \\\"reason\\\": \\\"Use Alternate Authentication Material: Pass the Hash on WST-WS-041 from 192.168.10.55 (ALLOW) by Standard user k.nguyen\\\", \\\"source_event_time\\\": \\\"2026-04-28T15:07:44Z\\\", \\\"technique_name\\\": \\\"Use Alternate Authentication Material: Pass the Hash\\\"}\",\n      \"created_at\": \"2026-11-10T10:33:44Z\"\n    }\n  ],\n  \"iocs\": [\n    {\n      \"ioc_value\": \"192.168.10.55\",\n      \"ioc_type\": \"ipv4\",\n      \"verdict\": \"ALLOW\",\n      \"score\": 0\n    }\n  ]\n}\n",
+    "case": {
+      "case_id": "CASE-20261110-005",
+      "alert_id": "ALT-20260428-009",
+      "severity": "Medium",
+      "title": "Credential exposure: WST-WS-041",
+      "description": "Use Alternate Authentication Material: Pass the Hash on WST-WS-041 from 192.168.10.55 (ALLOW) by Standard user k.nguyen",
+      "status": "open",
+      "created_at": "2026-11-10T10:33:44Z",
+      "updated_at": "2026-11-10T10:33:44Z",
+      "resolution": null
+    },
+    "verdict": "MANUAL_REVIEW",
+    "elapsed_seconds": 0.09213455000008253,
+    "isolation_queued": false,
+    "pass": true
+  }
+]

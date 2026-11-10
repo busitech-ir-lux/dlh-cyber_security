@@ -1,0 +1,9 @@
+[2026-11-10T10:33:44Z] PHISHING TRIAGE PLAYBOOK
+Alert      : ALT-20260428-003
+Rule       : phishing_email_suspicious_sender
+IOCs       : 2 extracted, 2 enriched, 0 dedup skipped
+  10.0.1.25                ipv4    ALLOW       score=0 (unknown)
+  meddefense.internal      domain  ALLOW       score=0 (unknown)
+Verdict    : CLOSE
+Case       : CASE-20261110-003  Severity: Low  Status: closed
+Action     : Simulated benign case closed; production auto-close is not approved

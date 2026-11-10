@@ -1,0 +1,9 @@
+[2026-11-10T10:33:44Z] PHISHING TRIAGE PLAYBOOK
+Alert      : ALT-20260428-001
+Rule       : phishing_email_suspicious_sender
+IOCs       : 4 extracted, 2 enriched, 2 dedup skipped
+  198.51.100.42            ipv4    BLOCK       score=95 (c2, cobalt_strike, beacon)
+  meddefense-secure.net    domain  BLOCK       score=97 (typosquat, phishing, credential_harvest, impersonation)
+Verdict    : ESCALATE
+Case       : CASE-20261110-001  Severity: Critical  Status: escalated
+Action     : Escalation recorded; on-call notification delivery is not integrated

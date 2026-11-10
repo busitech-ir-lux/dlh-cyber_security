@@ -1,0 +1,11 @@
+[
+  {
+    "queued_at": "2026-11-10T10:33:44Z",
+    "host": "WST-WS-031",
+    "alert_id": "ALT-20260428-007",
+    "case_id": "CASE-20261110-004",
+    "reason": "OS Credential Dumping: LSASS Memory on WST-WS-031 from 198.51.100.42 (BLOCK) by Domain Admin svc_helpdesk",
+    "action_required": "Analyst must authorize isolation via EDR console before execution",
+    "status": "pending_authorization"
+  }
+]

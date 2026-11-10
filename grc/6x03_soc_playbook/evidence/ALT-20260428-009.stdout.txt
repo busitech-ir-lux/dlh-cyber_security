@@ -1,0 +1,9 @@
+[2026-11-10T10:33:44Z] CREDENTIAL EXPOSURE PLAYBOOK
+Alert      : ALT-20260428-009
+Host       : WST-WS-041
+User       : k.nguyen  Privilege: Standard user
+Source IP  : 192.168.10.55  Verdict: ALLOW  Score: 0
+MITRE      : T1550.002 Use Alternate Authentication Material: Pass the Hash
+Verdict    : MANUAL_REVIEW
+Case       : CASE-20261110-005  Severity: Medium  Status: open
+Action     : Case recorded for analyst review; no isolation queued

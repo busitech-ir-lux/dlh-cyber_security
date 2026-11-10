@@ -1,0 +1,9 @@
++-------------------+------------------+----------+-------------------------------------+-----------+
+| Case ID           | Alert ID         | Severity | Title                               | Status    |
++-------------------+------------------+----------+-------------------------------------+-----------+
+| CASE-20261110-001 | ALT-20260428-001 | Critical | Phishing: Known indicator escalated | escalated |
+| CASE-20261110-002 | ALT-20260428-002 | High     | Phishing: Sender review             | open      |
+| CASE-20261110-004 | ALT-20260428-007 | Critical | Credential exposure: WST-WS-031     | escalated |
+| CASE-20261110-005 | ALT-20260428-009 | Medium   | Credential exposure: WST-WS-041     | open      |
++-------------------+------------------+----------+-------------------------------------+-----------+
+4 cases (filter: open + escalated + investigating)

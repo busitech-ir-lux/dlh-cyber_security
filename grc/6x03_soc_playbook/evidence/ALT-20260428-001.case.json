@@ -1,0 +1,35 @@
+{
+  "case_id": "CASE-20261110-001",
+  "alert_id": "ALT-20260428-001",
+  "severity": "Critical",
+  "title": "Phishing: Known indicator escalated",
+  "description": "Simulated triage for rule phishing_email_suspicious_sender; source event time 2026-04-28T09:14:32Z",
+  "status": "escalated",
+  "created_at": "2026-11-10T10:33:44Z",
+  "updated_at": "2026-11-10T10:33:44Z",
+  "resolution": null,
+  "notes": [
+    {
+      "note": "{\"deduplicated\": 2, \"enrichment\": [{\"enriched_at\": \"2026-11-10T10:33:44Z\", \"feed_result\": {\"case_reference\": \"MD-IR-2026-03-CS-001\", \"category\": \"c2\", \"confidence\": 95, \"first_seen\": \"2026-03-12\", \"in_benign_list\": false, \"in_malicious_feed\": true, \"last_seen\": \"2026-04-27\", \"notes\": \"Observed during Cobalt Strike beacon triage and credential access investigation.\", \"source\": \"meddefense-internal\", \"tags\": [\"cobalt_strike\", \"beacon\"]}, \"ioc\": \"198.51.100.42\", \"ip_class\": \"documentation\", \"reverse_dns\": \"NXDOMAIN\", \"score\": 95, \"type\": \"ipv4\", \"verdict\": \"BLOCK\"}, {\"enriched_at\": \"2026-11-10T10:33:44Z\", \"feed_result\": {\"case_reference\": \"MD-PHISH-2026-04-MDS\", \"category\": \"typosquat\", \"confidence\": 97, \"first_seen\": \"2026-04-10\", \"in_benign_list\": false, \"in_malicious_feed\": true, \"last_seen\": \"2026-04-27\", \"notes\": \"Impersonates MedDefense login and billing workflows.\", \"source\": \"meddefense-internal\", \"tags\": [\"phishing\", \"credential_harvest\", \"impersonation\"]}, \"ioc\": \"meddefense-secure.net\", \"ip_class\": \"N/A\", \"reverse_dns\": \"N/A\", \"score\": 97, \"type\": \"domain\", \"verdict\": \"BLOCK\"}], \"extracted\": 4, \"playbook_verdict\": \"ESCALATE\", \"simulation_only\": true, \"warnings\": []}",
+      "created_at": "2026-11-10T10:33:44Z"
+    },
+    {
+      "note": "Escalation triggered by: 198.51.100.42, meddefense-secure.net. On-call notification delivery is not integrated; analyst must review escalated cases.",
+      "created_at": "2026-11-10T10:33:44Z"
+    }
+  ],
+  "iocs": [
+    {
+      "ioc_value": "198.51.100.42",
+      "ioc_type": "ipv4",
+      "verdict": "BLOCK",
+      "score": 95
+    },
+    {
+      "ioc_value": "meddefense-secure.net",
+      "ioc_type": "domain",
+      "verdict": "BLOCK",
+      "score": 97
+    }
+  ]
+}

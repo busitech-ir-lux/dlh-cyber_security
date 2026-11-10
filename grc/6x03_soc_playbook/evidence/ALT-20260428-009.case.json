@@ -1,0 +1,25 @@
+{
+  "case_id": "CASE-20261110-005",
+  "alert_id": "ALT-20260428-009",
+  "severity": "Medium",
+  "title": "Credential exposure: WST-WS-041",
+  "description": "Use Alternate Authentication Material: Pass the Hash on WST-WS-041 from 192.168.10.55 (ALLOW) by Standard user k.nguyen",
+  "status": "open",
+  "created_at": "2026-11-10T10:33:44Z",
+  "updated_at": "2026-11-10T10:33:44Z",
+  "resolution": null,
+  "notes": [
+    {
+      "note": "{\"enrichment\": {\"enriched_at\": \"2026-11-10T10:33:44Z\", \"feed_result\": {\"in_benign_list\": false, \"in_malicious_feed\": false}, \"ioc\": \"192.168.10.55\", \"ip_class\": \"private\", \"note\": \"Private address range; internal network traffic\", \"reverse_dns\": \"NXDOMAIN\", \"score\": 0, \"type\": \"ipv4\", \"verdict\": \"ALLOW\"}, \"human_authorization_required\": false, \"inventory_exported_at\": \"2026-04-28T08:00:00Z\", \"mitre_technique\": \"T1550.002\", \"playbook_verdict\": \"MANUAL_REVIEW\", \"privilege\": \"Standard user\", \"reason\": \"Use Alternate Authentication Material: Pass the Hash on WST-WS-041 from 192.168.10.55 (ALLOW) by Standard user k.nguyen\", \"source_event_time\": \"2026-04-28T15:07:44Z\", \"technique_name\": \"Use Alternate Authentication Material: Pass the Hash\"}",
+      "created_at": "2026-11-10T10:33:44Z"
+    }
+  ],
+  "iocs": [
+    {
+      "ioc_value": "192.168.10.55",
+      "ioc_type": "ipv4",
+      "verdict": "ALLOW",
+      "score": 0
+    }
+  ]
+}

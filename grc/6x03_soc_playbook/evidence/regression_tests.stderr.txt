@@ -1,0 +1,24 @@
+test_case_create_rolls_back_bad_ioc (__main__.AutomationTests.test_case_create_rolls_back_bad_ioc) ... ok
+test_case_lifecycle_notes_and_sql_parameters (__main__.AutomationTests.test_case_lifecycle_notes_and_sql_parameters) ... ok
+test_case_schema_matches_reference (__main__.AutomationTests.test_case_schema_matches_reference) ... ok
+test_cli_malformed_json_exit_and_audit (__main__.AutomationTests.test_cli_malformed_json_exit_and_audit) ... ok
+test_cli_missing_credential_field_exit (__main__.AutomationTests.test_cli_missing_credential_field_exit) ... ok
+test_credential_all_branches (__main__.AutomationTests.test_credential_all_branches) ... ok
+test_credential_queue_and_preservation (__main__.AutomationTests.test_credential_queue_and_preservation) ... ok
+test_ip_categories_and_normalization (__main__.AutomationTests.test_ip_categories_and_normalization) ... ok
+test_malformed_and_feed_failure_require_review (__main__.AutomationTests.test_malformed_and_feed_failure_require_review) ... ok
+test_missing_privilege_evidence_stops (__main__.AutomationTests.test_missing_privilege_evidence_stops) ... ok
+test_no_expected_fixture_dependency (__main__.AutomationTests.test_no_expected_fixture_dependency) ... ok
+test_phishing_dedup_and_replay_limitation (__main__.AutomationTests.test_phishing_dedup_and_replay_limitation) ... ok
+test_phishing_empty_and_exception_review (__main__.AutomationTests.test_phishing_empty_and_exception_review) ... ok
+test_phishing_missing_ip_and_malformed_url_never_close (__main__.AutomationTests.test_phishing_missing_ip_and_malformed_url_never_close) ... ok
+test_privileged_internal_alert_008 (__main__.AutomationTests.test_privileged_internal_alert_008) ... ok
+test_python38_syntax_and_core_imports (__main__.AutomationTests.test_python38_syntax_and_core_imports) ... ok
+test_reverse_dns_success_error_timeout (__main__.AutomationTests.test_reverse_dns_success_error_timeout) ... ok
+test_scoring_boundary_and_private_precedence (__main__.AutomationTests.test_scoring_boundary_and_private_precedence) ... ok
+test_validation_csv_all_ten_rows (__main__.AutomationTests.test_validation_csv_all_ten_rows) ... ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 0.243s
+
+OK

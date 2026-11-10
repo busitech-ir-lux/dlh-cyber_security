@@ -1,0 +1,31 @@
+{
+  "case_id": "CASE-20261110-002",
+  "alert_id": "ALT-20260428-002",
+  "severity": "High",
+  "title": "Phishing: Sender review",
+  "description": "Simulated triage for rule phishing_email_suspicious_sender; source event time 2026-04-28T09:31:05Z",
+  "status": "open",
+  "created_at": "2026-11-10T10:33:44Z",
+  "updated_at": "2026-11-10T10:33:44Z",
+  "resolution": null,
+  "notes": [
+    {
+      "note": "{\"deduplicated\": 2, \"enrichment\": [{\"enriched_at\": \"2026-11-10T10:33:44Z\", \"feed_result\": {\"in_benign_list\": false, \"in_malicious_feed\": false}, \"ioc\": \"203.0.113.5\", \"ip_class\": \"documentation\", \"reverse_dns\": \"NXDOMAIN\", \"score\": 30, \"type\": \"ipv4\", \"verdict\": \"INVESTIGATE\"}, {\"enriched_at\": \"2026-11-10T10:33:44Z\", \"feed_result\": {\"in_benign_list\": false, \"in_malicious_feed\": false}, \"ioc\": \"external-health-news.com\", \"ip_class\": \"N/A\", \"reverse_dns\": \"N/A\", \"score\": 30, \"type\": \"domain\", \"verdict\": \"INVESTIGATE\"}], \"extracted\": 3, \"playbook_verdict\": \"REVIEW\", \"simulation_only\": true, \"warnings\": []}",
+      "created_at": "2026-11-10T10:33:44Z"
+    }
+  ],
+  "iocs": [
+    {
+      "ioc_value": "203.0.113.5",
+      "ioc_type": "ipv4",
+      "verdict": "INVESTIGATE",
+      "score": 30
+    },
+    {
+      "ioc_value": "external-health-news.com",
+      "ioc_type": "domain",
+      "verdict": "INVESTIGATE",
+      "score": 30
+    }
+  ]
+}

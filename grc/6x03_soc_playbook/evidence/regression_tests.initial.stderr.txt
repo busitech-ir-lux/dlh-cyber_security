@@ -1,0 +1,55 @@
+test_case_create_rolls_back_bad_ioc (__main__.AutomationTests.test_case_create_rolls_back_bad_ioc) ... ok
+test_case_lifecycle_notes_and_sql_parameters (__main__.AutomationTests.test_case_lifecycle_notes_and_sql_parameters) ... ok
+test_case_schema_matches_reference (__main__.AutomationTests.test_case_schema_matches_reference) ... ERROR
+test_credential_all_branches (__main__.AutomationTests.test_credential_all_branches) ... ok
+test_credential_queue_and_preservation (__main__.AutomationTests.test_credential_queue_and_preservation) ... ok
+test_ip_categories_and_normalization (__main__.AutomationTests.test_ip_categories_and_normalization) ... ok
+test_malformed_and_feed_failure_require_review (__main__.AutomationTests.test_malformed_and_feed_failure_require_review) ... /usr/lib64/python3.14/unittest/mock.py:2259: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fbdf52609a0>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib64/python3.14/unittest/mock.py:2259: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fbdf5260a90>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_missing_privilege_evidence_stops (__main__.AutomationTests.test_missing_privilege_evidence_stops) ... ok
+test_no_expected_fixture_dependency (__main__.AutomationTests.test_no_expected_fixture_dependency) ... ok
+test_phishing_dedup_and_replay_limitation (__main__.AutomationTests.test_phishing_dedup_and_replay_limitation) ... ok
+test_phishing_empty_and_exception_review (__main__.AutomationTests.test_phishing_empty_and_exception_review) ... ok
+test_phishing_missing_ip_and_malformed_url_never_close (__main__.AutomationTests.test_phishing_missing_ip_and_malformed_url_never_close) ... ok
+test_privileged_internal_alert_008 (__main__.AutomationTests.test_privileged_internal_alert_008) ... ok
+test_python38_syntax_and_core_imports (__main__.AutomationTests.test_python38_syntax_and_core_imports) ... ok
+test_reverse_dns_success_error_timeout (__main__.AutomationTests.test_reverse_dns_success_error_timeout) ... ok
+test_scoring_boundary_and_private_precedence (__main__.AutomationTests.test_scoring_boundary_and_private_precedence) ... ok
+test_validation_csv_all_ten_rows (__main__.AutomationTests.test_validation_csv_all_ten_rows) ... ERROR
+
+======================================================================
+ERROR: test_case_schema_matches_reference (__main__.AutomationTests.test_case_schema_matches_reference)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/6x03_answers/tasks/test_soc_automation.py", line 102, in test_case_schema_matches_reference
+    expected.executescript((MATERIALS / "case_management/case_schema_reference.sql").read_text())
+                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.14/pathlib/__init__.py", line 787, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.14/pathlib/__init__.py", line 771, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/6x03_answers/opt/meddefense/materials/case_management/case_schema_reference.sql'
+
+======================================================================
+ERROR: test_validation_csv_all_ten_rows (__main__.AutomationTests.test_validation_csv_all_ten_rows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/6x03_answers/tasks/test_soc_automation.py", line 60, in test_validation_csv_all_ten_rows
+    for row in csv.DictReader((MATERIALS / "threat_intel/enrichment_validation_set.csv").open()):
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.14/pathlib/__init__.py", line 771, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/6x03_answers/opt/meddefense/materials/threat_intel/enrichment_validation_set.csv'
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.069s
+
+FAILED (errors=2)

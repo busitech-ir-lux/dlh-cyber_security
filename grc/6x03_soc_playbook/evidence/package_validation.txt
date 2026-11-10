@@ -1,0 +1,105 @@
+PASS: One title: soc_automation_brief.md
+PASS: Heading hierarchy: soc_automation_brief.md # SOC Automation Brief for James Chen
+PASS: Heading hierarchy: soc_automation_brief.md ## What was built
+PASS: Heading hierarchy: soc_automation_brief.md ## Integration test results
+PASS: Heading hierarchy: soc_automation_brief.md ## Efficiency estimate
+PASS: Heading hierarchy: soc_automation_brief.md ## What the playbooks cannot do yet
+PASS: Heading hierarchy: soc_automation_brief.md ## What James Chen needs to authorize
+PASS: Heading hierarchy: soc_automation_brief.md ## Recommendation
+PASS: One title: automation_strategy.md
+PASS: Heading hierarchy: automation_strategy.md # MedDefense SOC Automation Strategy
+PASS: Heading hierarchy: automation_strategy.md ## Current state analysis
+PASS: Heading hierarchy: automation_strategy.md ## Automation candidates
+PASS: Heading hierarchy: automation_strategy.md ## Expected efficiency gains
+PASS: Heading hierarchy: automation_strategy.md ## Risks of over-automation
+PASS: Heading hierarchy: automation_strategy.md ## Implementation roadmap
+PASS: One title: credential_exposure_playbook.md
+PASS: Heading hierarchy: credential_exposure_playbook.md # Task 4: Credential exposure playbook
+PASS: Heading hierarchy: credential_exposure_playbook.md ## Processing and decision rules
+PASS: Heading hierarchy: credential_exposure_playbook.md ## Human-authorization queue
+PASS: Heading hierarchy: credential_exposure_playbook.md ## Actual execution
+PASS: One title: phishing_triage_playbook.md
+PASS: Heading hierarchy: phishing_triage_playbook.md # Task 3: Phishing triage playbook
+PASS: Heading hierarchy: phishing_triage_playbook.md ## Processing
+PASS: Heading hierarchy: phishing_triage_playbook.md ## Execution and validation
+PASS: Heading hierarchy: phishing_triage_playbook.md ## Operational boundary
+PASS: One title: case_manager.md
+PASS: Heading hierarchy: case_manager.md # Task 2: SQLite case manager
+PASS: Heading hierarchy: case_manager.md ## Storage and functions
+PASS: Heading hierarchy: case_manager.md ## Commands and actual results
+PASS: Heading hierarchy: case_manager.md ## Verification and limits
+PASS: One title: ioc_enrichment_engine.md
+PASS: Heading hierarchy: ioc_enrichment_engine.md # Task 1: IOC enrichment engine
+PASS: Heading hierarchy: ioc_enrichment_engine.md ## Behavior and interface
+PASS: Heading hierarchy: ioc_enrichment_engine.md ## Running and validation
+PASS: Heading hierarchy: ioc_enrichment_engine.md ## DNS and performance limits
+PASS: One title: quiz_study_notes.md
+PASS: Heading hierarchy: quiz_study_notes.md # SOC automation quiz study notes
+PASS: Heading hierarchy: quiz_study_notes.md ## Enrichment, triage, and response
+PASS: Heading hierarchy: quiz_study_notes.md ## Confidence is not certainty
+PASS: Heading hierarchy: quiz_study_notes.md ## False positives and false negatives
+PASS: Heading hierarchy: quiz_study_notes.md ## Two kinds of deduplication
+PASS: Heading hierarchy: quiz_study_notes.md ## Caching and failure handling
+PASS: Heading hierarchy: quiz_study_notes.md ## Cases, logs, and operational limits
+PASS: One title: README.md
+PASS: Heading hierarchy: README.md # SOC Playbook task package
+PASS: Heading hierarchy: README.md ## Running the tools
+PASS: Heading hierarchy: README.md ## What actually ran
+PASS: Heading hierarchy: README.md ## Boundaries and source inconsistencies
+PASS: Heading hierarchy: README.md ## Public references and validation
+PASS: One title: integration_test_results.md
+PASS: Heading hierarchy: integration_test_results.md # SOC playbook integration test results
+PASS: Heading hierarchy: integration_test_results.md ## Scope and method
+PASS: Heading hierarchy: integration_test_results.md ## Results overview
+PASS: Heading hierarchy: integration_test_results.md ## Scenario 1: ALT-20260428-001
+PASS: Heading hierarchy: integration_test_results.md ## Scenario 2: ALT-20260428-002
+PASS: Heading hierarchy: integration_test_results.md ## Scenario 3: ALT-20260428-003
+PASS: Heading hierarchy: integration_test_results.md ## Scenario 4: ALT-20260428-007
+PASS: Heading hierarchy: integration_test_results.md ## Scenario 5: ALT-20260428-009
+PASS: Heading hierarchy: integration_test_results.md ## Final case listing
+PASS: Heading hierarchy: integration_test_results.md ## Final isolation queue
+PASS: Heading hierarchy: integration_test_results.md ## Interpretation and remaining limits
+PASS: One title: LEARNING_OBJECTIVES.md
+PASS: Heading hierarchy: LEARNING_OBJECTIVES.md # Learning objectives: The SOC Playbook
+PASS: Heading hierarchy: LEARNING_OBJECTIVES.md ## Technical objectives
+PASS: Heading hierarchy: LEARNING_OBJECTIVES.md ### Build an IOC enrichment module with classification and scoring
+PASS: Heading hierarchy: LEARNING_OBJECTIVES.md ### Implement a normalized SQLite case manager
+PASS: Heading hierarchy: LEARNING_OBJECTIVES.md ### Build two executable playbooks with a full decision trail
+PASS: Heading hierarchy: LEARNING_OBJECTIVES.md ### Run and verify the five end-to-end scenarios
+PASS: Heading hierarchy: LEARNING_OBJECTIVES.md ## Conceptual objectives
+PASS: Heading hierarchy: LEARNING_OBJECTIVES.md ### Separate enrichment from actions that require approval
+PASS: Heading hierarchy: LEARNING_OBJECTIVES.md ### Explain why deduplication must precede ticket integration
+PASS: Heading hierarchy: LEARNING_OBJECTIVES.md ### Explain TTL caching and rate limits
+PASS: Heading hierarchy: LEARNING_OBJECTIVES.md ## Transversal objectives
+PASS: Heading hierarchy: LEARNING_OBJECTIVES.md ### Quantify effort, savings, and healthcare risks
+PASS: Heading hierarchy: LEARNING_OBJECTIVES.md ### Write a concise, decision-focused strategy and brief
+PASS: All Markdown fences, table structures, spacing, and local links.
+PASS: Unchanged input copy: ioc_feed.json
+PASS: Unchanged input copy: privileged_accounts.json
+PASS: Unchanged input copy: ALT-20260428-003.json
+PASS: Unchanged input copy: ALT-20260428-002.json
+PASS: Unchanged input copy: ALT-20260428-001.json
+PASS: Unchanged input copy: ALT-20260428-009.json
+PASS: Unchanged input copy: ALT-20260428-008.json
+PASS: Unchanged input copy: ALT-20260428-007.json
+PASS: All Python scripts parse with Python 3.8 grammar and are executable.
+PASS: SQLite integrity check.
+PASS: No orphaned notes or IOCs.
+PASS: Five canonical cases preserved.
+PASS: Expected case status counts.
+PASS: Exactly one pending authorization, for the expected host.
+PASS: Isolation recommendation references the correct persisted case.
+PASS: Five canonical audit lines preserved.
+PASS: All five recorded integration outcomes passed.
+PASS: All ten supplied enrichment rows passed.
+PASS: All 19 regression checks passed.
+PASS: Saved actual queue output matches the submitted queue.
+PASS: Unchanged raw stdout and case query in report: ALT-20260428-001
+PASS: Unchanged raw stdout and case query in report: ALT-20260428-002
+PASS: Unchanged raw stdout and case query in report: ALT-20260428-003
+PASS: Unchanged raw stdout and case query in report: ALT-20260428-007
+PASS: Unchanged raw stdout and case query in report: ALT-20260428-009
+PASS: 90-alert monthly ceiling arithmetic.
+PASS: 150-alert illustrative ceiling arithmetic.
+PASS: Conservative monthly scenario arithmetic.
+LIMIT: markdownlint is unavailable; no third-party packages installed; rendered page counts not measured.

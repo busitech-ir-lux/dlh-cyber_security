@@ -1,0 +1,10 @@
+198.51.100.42
+cobalt-beacon.shop
+203.0.113.99
+192.168.1.100
+8.8.8.8
+meddefense-secure.net
+external-health-news.com
+meddefense.internal
+http://198.51.100.42/payload
+http://meddefense-secure.net/reset

@@ -1,0 +1,9 @@
+[2026-11-10T10:33:44Z] CREDENTIAL EXPOSURE PLAYBOOK
+Alert      : ALT-20260428-007
+Host       : WST-WS-031
+User       : svc_helpdesk  Privilege: Domain Admin
+Source IP  : 198.51.100.42  Verdict: BLOCK  Score: 95
+MITRE      : T1003.001 OS Credential Dumping: LSASS Memory
+Verdict    : ESCALATE
+Case       : CASE-20261110-004  Severity: Critical  Status: escalated
+Action     : Host written to isolation_queue.json for analyst authorization
