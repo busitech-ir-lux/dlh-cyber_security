@@ -1,188 +1,116 @@
-# DLH Cyber Security Academy Repository
+# DLH Cyber Security Academy
 
-![Security+ Badge](https://img.shields.io/badge/CompTIA-Security%2B-yellow)
-![Academy Badge](https://img.shields.io/badge/Luxembourg-CS_Academy-blue)
-![Modules](https://img.shields.io/badge/Modules-11_blue_team-green)
+Cybersecurity coursework, hands-on labs, and investigation notes from the DLH Cyber Security Academy. This repository follows a learning path from security fundamentals and system hardening to threat detection, incident response, and security governance.
 
-Coursework and lab notes from the DLH Cyber Security Academy, organised into two tracks:
-foundational study in `common_core/` and applied defensive operations in `blue_team/`.
-Content follows the CompTIA Security+ (SY0-701) domains and references NIST and CIS
-security frameworks.
+The work includes scripts, configurations, detection rules, analysis reports, and supporting lab evidence. Many of the applied modules use **MedDefense Health Systems**, a simulated healthcare organisation, as a shared scenario.
 
-<!-- TODO: rewrite the paragraph above in your own voice. Two sentences is the right
-     length — what the repo is, and what it maps to. Delete the Modules badge if you
-     don't want a count that needs updating. -->
+## Repository overview
 
-## Repository Structure
-
-| Directory | Description |
+| Track | Focus |
 | --- | --- |
-| [`blue_team/`](blue_team) | Applied defensive operations — eleven progressive modules from SOC fundamentals to perimeter hardening |
-| [`common_core/`](common_core) | Foundational coursework across the five Security+ domains |
+| [Common Core](common_core/) | Security fundamentals, networking, Linux, web application security, and scripting |
+| [Blue Team](blue_team/) | Defensive analysis, system hardening, telemetry, detection engineering, and SOC operations |
+| [Threat Detection](threat_detection/) | Phishing analysis, network investigation, threat intelligence, malware analysis, and threat hunting |
+| [Incident Response & Digital Forensics](ir_dfir_playbook/) | Response planning, containment, evidence handling, incident review, and breach response |
+| [Governance, Risk & Compliance](grc/) | Compliance, business continuity, identity management, SOC automation, and security awareness |
 
----
+## Common Core
 
-## `blue_team/`
+Foundational topics supporting the applied tracks. Open a topic directory for its exercises and learning materials.
 
-Eleven modules building SOC analyst skills in sequence. Part 1 establishes the
-analytical foundations; Part 2 applies them to hardening real systems.
+| Topic | Focus |
+| --- | --- |
+| [Cybersecurity Basics](common_core/cybersecurity_basics/) | Cybersecurity concepts, forensic methodologies, cryptography, and shell fundamentals |
+| [Network Security](common_core/network_security/) | Reconnaissance, host discovery, and network traffic analysis |
+| [Linux Security](common_core/linux_security/) | Permissions, mandatory access control, and network services |
+| [Web Application Security](common_core/web_application_security/) | OWASP concepts, Burp Suite, content discovery, and upload vulnerabilities |
+| [CVE, CWE & NVD](common_core/CVE_CWE_and_NVD/) | Vulnerability identifiers, weakness classification, and vulnerability research |
+| [Understanding Vulnerabilities](common_core/Understanding_Vulnerabilities_Reading/) | Reading and exercises on vulnerability concepts |
+| [Security Scripting](common_core/scripting_cyber/) | Python scripting for security tasks |
+| [Threat Modelling](common_core/threat-modeling-fundamentals/) | Threat modelling concepts and exercises |
+| [Security Policy Analysis](common_core/security-policy-analysis/) | Policy analysis and security governance fundamentals |
 
-### Part 1 — Foundations
+## Blue Team
+
+Three stages move from defensive foundations through system hardening to operational detection and triage.
+
+### Defensive foundations · `1x`
 
 | Module | Focus |
 | --- | --- |
-| [`1x00_first_watch/`](blue_team/1x00_first_watch) | SOC fundamentals, incident classification, asset discovery, initial posture assessment |
-| [`1x01_know_your_enemy/`](blue_team/1x01_know_your_enemy) | Threat intelligence, threat actor profiling, MITRE ATT&CK mapping |
-| [`1x02_the_weak_links/`](blue_team/1x02_the_weak_links) | Vulnerability management, exploit research, remediation prioritisation |
-| [`1x03_defense_blueprint/`](blue_team/1x03_defense_blueprint) | Control frameworks (NIST CSF, CIS Controls), risk quantification, governance |
-| [`1x04_crypto_foundation/`](blue_team/1x04_crypto_foundation) | Cryptographic principles, PKI, protocol analysis |
-| [`1x05_board_briefing/`](blue_team/1x05_board_briefing) | Executive communication, risk reporting, stakeholder management |
+| [1x00 · The First Watch](blue_team/1x00_first_watch/) | SOC fundamentals, asset discovery, and initial security assessment |
+| [1x01 · Know Your Enemy](blue_team/1x01_know_your_enemy/) | Threat intelligence, adversary profiling, and ATT&CK mapping |
+| [1x02 · The Weak Links](blue_team/1x02_the_weak_links/) | Vulnerability assessment and remediation prioritisation |
+| [1x03 · Defence Blueprint](blue_team/1x03_defense_blueprint/) | Security controls, risk assessment, and defensive planning |
+| [1x04 · Crypto Foundation](blue_team/1x04_crypto_foundation/) | Cryptography, certificates, and key management |
+| [1x05 · Board Briefing](blue_team/1x05_board_briefing/) | Executive reporting and security risk communication |
 
-### Part 2 — Applied Hardening
+### System and network hardening · `2x`
 
 | Module | Focus |
 | --- | --- |
-| [`2x00_locking_the_gates/`](blue_team/2x00_locking_the_gates) | Firewall rule management, access control lists, network segmentation |
-| [`2x01_windows_fortress/`](blue_team/2x01_windows_fortress) | Windows hardening, Group Policy, Active Directory security |
-| [`2x02_eyes_on_endpoint/`](blue_team/2x02_eyes_on_endpoint) | Endpoint detection and response, Sysmon, host-based monitoring |
-| [`2x03_patch_equation/`](blue_team/2x03_patch_equation) | Patch management lifecycle, deployment strategy, compliance scanning |
-| [`2x04_perimeter_defense/`](blue_team/2x04_perimeter_defense) | <!-- TODO: describe --> |
+| [2x00 · Locking the Gates](blue_team/2x00_locking_the_gates/) | Linux hardening, access controls, auditing, and validation |
+| [2x01 · Windows Fortress](blue_team/2x01_windows_fortress/) | Windows hardening and security configuration |
+| [2x02 · Eyes on Endpoint](blue_team/2x02_eyes_on_endpoint/) | Endpoint telemetry and monitoring validation |
+| [2x03 · Patch Equation](blue_team/2x03_patch_equation/) | Patch planning, deployment, validation, and configuration drift |
+| [2x04 · Perimeter Defence](blue_team/2x04_perimeter_defense/) | Network segmentation, firewall controls, and network monitoring |
+| [2x05 · Defensible Endpoint](blue_team/2x05_defensible_endpoint/) | Integrated hardening, verification, and operational handoff |
 
-<!-- TODO: the Focus column above is inferred from folder names. Open each module and
-     correct anything that misrepresents the actual content — an overstated README is
-     worse than a sparse one. 2x04 has no obvious sibling to infer from. -->
+### Detection engineering and SOC operations · `3x`
 
-<!-- TODO: consider adding an "Exercises" column with a count per module. It signals
-     volume of work without prose. Count with:
-       for d in blue_team/*/; do echo "$d $(ls -1 "$d" | wc -l)"; done -->
+| Module | Focus |
+| --- | --- |
+| [3x00 · Evidence Pipeline](blue_team/3x00_evidence_pipeline/) | Event collection, parsing, normalisation, and enrichment |
+| [3x01 · Reading the Noise](blue_team/3x01_reading_the_noise/) | Baseline analysis and anomaly identification |
+| [3x02 · The Alert Factory](blue_team/3x02_the_alert_factory/) | Sigma detection rules, tuning, and detection validation |
+| [3x03 · Triage Shift](blue_team/3x03_triage_shift/) | Alert prioritisation, investigation, and escalation |
+| [3x04 · Cross-Platform Detection](blue_team/3x04_cross_platform_detection/) | Detection analysis across platforms |
+| [3x05 · The 24-Hour Watch](blue_team/3x05_the_24_hour_watch/) | SOC monitoring and operational response |
 
----
+## Threat Detection · `4x`
 
-## `common_core/`
+Investigations connect individual indicators to network activity, adversary behaviour, and a reconstructed attack narrative.
 
-Foundational coursework. Sub-modules use hex-numbered prefixes indicating sequence
-within each topic.
+| Module | Focus |
+| --- | --- |
+| [4x00 · Phishing Dissection](threat_detection/4x00_phishing_dissection/) | Phishing investigation and indicator extraction |
+| [4x01 · Wire Shark Territory](threat_detection/4x01_wire_shark_territory/) | Packet analysis and suspicious network activity |
+| [4x02 · Intelligence-Driven Defence](threat_detection/4x02_intelligence_driven_defense/) | Threat intelligence, adversary mapping, and detection development |
+| [4x03 · Malware Awareness](threat_detection/4x03_malware_awareness/) | Malware triage and behaviour analysis |
+| [4x04 · Threat Hunting](threat_detection/4x04_threat_hunting/) | Hypothesis-driven investigation and detection gaps |
+| [4x05 · Attack Reconstruction](threat_detection/4x05_attack_reconstruction/) | Evidence correlation and attack timeline reconstruction |
 
-| Sub-module | Contents | Security+ Domain |
-| --- | --- | --- |
-| [`cybersecurity_basics/`](common_core/cybersecurity_basics) | Introduction to cybersecurity, forensic methodologies, cryptography basics, shell basics, processes and signals | 1.0 |
-| [`network_security/`](common_core/network_security) | Passive and active reconnaissance, Nmap host discovery, traffic monitoring and analysis | 2.0, 4.0 |
-| [`linux_security/`](common_core/linux_security) | Linux security basics, permissions and SUID/SGID, mandatory access control, network protocols | 3.0, 4.0 |
-| [`web_application_security/`](common_core/web_application_security) | OWASP Top 10, Burp Suite fundamentals, content discovery, upload vulnerabilities, WEBSEC | 2.0 |
-| [`CVE_CWE_and_NVD/`](common_core/CVE_CWE_and_NVD) | Vulnerability identifier ecosystem — CVE records, CWE weakness taxonomy, NVD scoring | 2.0 |
-| [`Understanding_Vulnerabilities_Reading/`](common_core/Understanding_Vulnerabilities_Reading) | Reading track on vulnerability concepts, with accompanying tasks | 2.0 |
-| [`scripting_cyber/`](common_core/scripting_cyber) | Python scripting for security automation | 4.0 |
-| [`threat-modeling-fundamentals/`](common_core/threat-modeling-fundamentals) | Threat modelling methodologies <!-- TODO: which? STRIDE, PASTA, attack trees? --> | 1.0, 2.0 |
-| [`security-policy-analysis/`](common_core/security-policy-analysis) | Policy frameworks, compliance requirements, governance | 5.0 |
+## Incident Response & Digital Forensics · `5x`
 
-<!-- TODO: the Security+ Domain column is a proposed mapping, not a verified one.
-     Check it against the SY0-701 objectives PDF before publishing. Domains are:
-       1.0 General Security Concepts
-       2.0 Threats, Vulnerabilities & Mitigations
-       3.0 Security Architecture
-       4.0 Security Operations
-       5.0 Security Program Management & Oversight
-     Drop the column entirely if you'd rather not defend the mapping. -->
+Response playbooks and exercises cover preparation, containment, forensic investigation, and organisational recovery.
 
-<!-- TODO: `0x0B_WEBSEC` — expand this to say what it actually covers. -->
+| Module | Focus |
+| --- | --- |
+| [5x00 · Incident Response](ir_dfir_playbook/5x00_incident_response/) | Response planning, roles, and escalation procedures |
+| [5x01 · Contain and Control](ir_dfir_playbook/5x01_Contain_Control/) | Containment, recovery, and operational validation |
+| [5x02 · The Evidence Trail](ir_dfir_playbook/5x02_evidence_trail/) | Evidence preservation, verification, and forensic analysis |
+| [5x03 · Post-Incident Review](ir_dfir_playbook/5x03_post_incident_review/) | Lessons learned and detection improvements |
+| [5x04 · Tabletop Exercise](ir_dfir_playbook/5x04_tabletop/) | Scenario-based organisational response exercises |
+| [5x05 · Breach Response](ir_dfir_playbook/5x05_breach_response/) | Integrated incident investigation and stakeholder reporting |
 
-### Module Index
+[Shared response materials](ir_dfir_playbook/5x00_shared/) support the incident response exercises.
 
-<details>
-<summary>Full sub-module listing</summary>
+## Governance, Risk & Compliance · `6x`
 
-**cybersecurity_basics/**
-- `0x00_introduction_cybersecurity/`
-- `0x02_forensic_methodologies/`
-- `0x03_cryptography_basics/`
-- `processes_and_signals/`
-- `shell_basics/`
+These modules connect technical controls to policy, audit evidence, continuity planning, and human factors.
 
-**network_security/**
-- `0x01_passive_reconnaissance/`
-- `0x02_active_reconnaissance/`
-- `0x04_nmap_live_hosts_discovery/`
-- `0x05_network_traffic_monitoring_analysis/`
+| Module | Focus |
+| --- | --- |
+| [6x00 · Compliance Engine](grc/6x00_compliance_engine/) | Control assessment, policy development, and audit evidence |
+| [6x01 · Business Continuity & Disaster Recovery](grc/6x01_bc_dr/) | Business impact analysis, recovery planning, and recovery testing |
+| [6x02 · Identity at Scale](grc/6x02_iam_scale/) | Identity governance, privileged access, federation, and IAM auditing |
+| [6x03 · The SOC Playbook](grc/6x03_soc_playbook/) | Indicator enrichment, case management, and response automation |
+| [6x04 · Security Awareness](grc/6x04_security_awareness/) | Awareness programme design, social engineering, and effectiveness measurement |
 
-**linux_security/**
-- `0x00_linux_security_basics/`
-- `0x01_permissions_sguid_sgid/`
-- `0x02_mandatory_access_control/`
-- `network_protocols/`
+## Navigating the repository
 
-**web_application_security/**
-- `0x01_owasp_top_10/`
-- `0x02_burpsuite_fundamentals/`
-- `0x04_content_discovery/`
-- `0x05_upload_vulnerabilities/`
-- `0x0B_WEBSEC/`
+Start with **Common Core** for the foundations, then follow the numbered modules from `1x` through `6x` for the applied learning sequence. For a specific topic, use the track and module links above.
 
-**scripting_cyber/**
-- `0x01-python_scripting/`
+Within each module, the README introduces the scenario and tasks. Supporting files contain the implementation, analysis, or evidence for those exercises; some modules also include learning objectives and task notes. Common Core exercises use `0x` prefixes, while the applied tracks use `1x` through `6x`. Numbering is retained from the coursework and may contain gaps.
 
-</details>
-
----
-
-## Certification Alignment
-
-| Certification / Framework | Coverage | Where |
-| --- | --- | --- |
-| [CompTIA Security+ (SY0-701)](https://www.comptia.org/certifications/security) | All five domains | `common_core/` + `blue_team/` |
-| [NIST Cybersecurity Framework 2.0](https://www.nist.gov/cyberframework) | Identify, Protect, Detect, Respond, Recover | `blue_team/1x03_defense_blueprint/` |
-| [CIS Controls v8](https://www.cisecurity.org/controls) | Prioritised security best practices | `blue_team/1x03_defense_blueprint/` |
-| [MITRE ATT&CK](https://attack.mitre.org/) | Adversary tactics and techniques | `blue_team/1x01_know_your_enemy/` |
-| [OWASP Top 10](https://owasp.org/www-project-top-ten/) | Web application risk categories | `common_core/web_application_security/` |
-
-<!-- TODO: delete any row you can't actually back up with content in the repo. -->
-
----
-
-## Usage
-
-### Learning Paths
-
-| Path | Start Here | Best For |
-| --- | --- | --- |
-| Foundation First | [`common_core/cybersecurity_basics/`](common_core/cybersecurity_basics) | New learners, Security+ preparation |
-| Applied Defense | [`blue_team/1x00_first_watch/`](blue_team/1x00_first_watch) | SOC analyst skills, hands-on practice |
-| Web Security | [`common_core/web_application_security/`](common_core/web_application_security) | AppSec focus, OWASP work |
-
-### Recommended Workflow
-
-1. **New learners** — start with `common_core/cybersecurity_basics/`, then work through
-   `linux_security/` and `network_security/` before attempting the blue team track.
-2. **Security+ candidates** — cover `common_core/` against the SY0-701 objectives, using
-   `blue_team/` modules for applied context on weaker domains.
-3. **Blue team track** — follow `blue_team/` modules in numerical order; each builds on
-   findings documented in the previous one.
-
----
-
-## Notes on Structure
-
-Modules are prefixed with hex numbers indicating order (`0x00`, `0x01`, …). Blue team
-modules use a two-part scheme: `1xNN` for foundations, `2xNN` for applied hardening.
-
-<!-- TODO: two housekeeping items before you publish.
-
-  1. Naming is inconsistent. Most folders use underscores, but
-     `security-policy-analysis/` and `threat-modeling-fundamentals/` use hyphens, and
-     `0x01-python_scripting/` mixes both. Renaming them to match makes the repo look
-     deliberate. If you rename, update the links in this file.
-
-  2. Numbering has gaps: cybersecurity_basics skips 0x01, network_security and
-     web_application_security both skip 0x03, and web jumps from 0x05 to 0x0B. If those
-     modules exist but aren't committed, say so. If they were never assigned, a one-line
-     note here saves readers wondering what they're missing.
--->
-
----
-
-## License
-
-<!-- TODO: no LICENSE file was visible in the directory listing. If you add one, link it
-     here and GitHub will auto-detect it in the sidebar. CC0-1.0 or MIT are common for
-     study repos. If the coursework contains material you don't own — provided exercise
-     text, vendor PDFs, academy handouts — check you're allowed to redistribute it
-     before choosing a permissive licence. -->
+The coursework draws on CompTIA Security+ topics and frameworks such as NIST CSF, CIS Controls, MITRE ATT&CK, and OWASP. This repository documents learning and lab work; module contents reflect the scope of the individual exercises.
