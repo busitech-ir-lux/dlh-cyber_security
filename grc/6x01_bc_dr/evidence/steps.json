@@ -1,0 +1,72 @@
+[
+  {
+    "step": 1,
+    "name": "Identify recovery target",
+    "started": "2026-11-10T11:11:09.131016+01:00",
+    "duration_ns": 9155115,
+    "exit_code": 0
+  },
+  {
+    "step": 2,
+    "name": "Verify backup integrity",
+    "started": "2026-11-10T11:11:09.160966+01:00",
+    "duration_ns": 11521976,
+    "exit_code": 0
+  },
+  {
+    "step": 3,
+    "name": "Create recovery workspace",
+    "started": "2026-11-10T11:11:09.191849+01:00",
+    "duration_ns": 3404222,
+    "exit_code": 0
+  },
+  {
+    "step": 4,
+    "name": "Stage SQL at corrected path",
+    "started": "2026-11-10T11:11:09.213629+01:00",
+    "duration_ns": 5370528,
+    "exit_code": 0
+  },
+  {
+    "step": 5,
+    "name": "Restore SQLite database",
+    "started": "2026-11-10T11:11:09.237072+01:00",
+    "duration_ns": 12575156,
+    "exit_code": 0
+  },
+  {
+    "step": 6,
+    "name": "Validate row count",
+    "started": "2026-11-10T11:11:09.267786+01:00",
+    "duration_ns": 4923578,
+    "exit_code": 0
+  },
+  {
+    "step": 7,
+    "name": "Validate critical records",
+    "started": "2026-11-10T11:11:09.291041+01:00",
+    "duration_ns": 6723142,
+    "exit_code": 0
+  },
+  {
+    "step": 8,
+    "name": "Inspect configuration artifact",
+    "started": "2026-11-10T11:11:09.315735+01:00",
+    "duration_ns": 4210718,
+    "exit_code": 0
+  },
+  {
+    "step": 9,
+    "name": "Apply local validation override",
+    "started": "2026-11-10T11:11:09.338183+01:00",
+    "duration_ns": 8047091,
+    "exit_code": 0
+  },
+  {
+    "step": 10,
+    "name": "Record clinical notification",
+    "started": "2026-11-10T11:11:09.364364+01:00",
+    "duration_ns": 4061588,
+    "exit_code": 0
+  }
+]

@@ -1,0 +1,7 @@
+total 8
+-rwxrwxrwx. 1 busitech busitech 132 Jun  9 16:33 backup_manifest.sha256
+-rwxrwxrwx. 1 busitech busitech 362 Jun  9 16:33 lis_backup.sql.gz
+total 4
+-rwxrwxrwx. 1 busitech busitech 213 Jun  9 16:33 app_config.env
+Configured recovery target: 2026-04-21
+2026-04-21

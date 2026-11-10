@@ -1,0 +1,4 @@
+Local override: RECOVERY_DB_PATH=/tmp/meddefense-dr-test/recovery/lis_recovered.db
+ok
+5
+-rw-r--r--. 1 busitech busitech 12288 Nov 10 11:11 /tmp/meddefense-dr-test/recovery/lis_recovered.db

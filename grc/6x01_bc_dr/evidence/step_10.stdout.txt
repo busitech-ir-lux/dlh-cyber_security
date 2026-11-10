@@ -1,0 +1,6 @@
+EXERCISE ONLY - not sent to clinical staff.
+To: Clinical Applications Lead (7300), Nursing Supervisor (7100), lab accessioning (7500).
+Local LIS recovery database restored; five orders and both required critical records verified.
+Production LIS, interfaces, analyzer feeds, authentication, and clinical operation are not tested.
+Continue downtime workflows; authorized clinical and incident leads must approve any return to service.
+Reconcile paper orders, specimens, and critical-value calls before ending downtime.

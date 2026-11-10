@@ -1,0 +1,75 @@
+PASS: Summary rejects an empty run.
+PASS: Timer starts a new step.
+PASS: Timer rejects overlapping starts.
+PASS: Timer rejects a mismatched completion name.
+PASS: Timer logs a completed failed step immediately.
+PASS: Failed step is present before SUMMARY.
+PASS: A fast failed step cannot produce overall PASS.
+PASS: Repeated SUMMARY preserves the same result.
+PASS: Finished-run evidence cannot be silently overwritten.
+PASS: A result one nanosecond beyond 30 minutes fails the RTO.
+PASS: Epoch timing spans a midnight boundary correctly.
+PASS: Revised checksum guard handles valid as expected.
+PASS: Revised checksum guard handles bom as expected.
+PASS: Revised checksum guard handles mismatch as expected.
+PASS: Revised checksum guard handles malformed as expected.
+PASS: Bash syntax: recovery_timer.sh.
+PASS: Bash shebang: recovery_timer.sh.
+PASS: Executable: recovery_timer.sh.
+PASS: Bash syntax: evidence/step_10.command.sh.
+PASS: Bash shebang: evidence/step_10.command.sh.
+PASS: Executable: evidence/step_10.command.sh.
+PASS: Bash syntax: evidence/step_09.command.sh.
+PASS: Bash shebang: evidence/step_09.command.sh.
+PASS: Executable: evidence/step_09.command.sh.
+PASS: Bash syntax: evidence/step_08.command.sh.
+PASS: Bash shebang: evidence/step_08.command.sh.
+PASS: Executable: evidence/step_08.command.sh.
+PASS: Bash syntax: evidence/step_07.command.sh.
+PASS: Bash shebang: evidence/step_07.command.sh.
+PASS: Executable: evidence/step_07.command.sh.
+PASS: Bash syntax: evidence/step_06.command.sh.
+PASS: Bash shebang: evidence/step_06.command.sh.
+PASS: Executable: evidence/step_06.command.sh.
+PASS: Bash syntax: evidence/step_05.command.sh.
+PASS: Bash shebang: evidence/step_05.command.sh.
+PASS: Executable: evidence/step_05.command.sh.
+PASS: Bash syntax: evidence/step_04.command.sh.
+PASS: Bash shebang: evidence/step_04.command.sh.
+PASS: Executable: evidence/step_04.command.sh.
+PASS: Bash syntax: evidence/step_03.command.sh.
+PASS: Bash shebang: evidence/step_03.command.sh.
+PASS: Executable: evidence/step_03.command.sh.
+PASS: Bash syntax: evidence/step_02.command.sh.
+PASS: Bash shebang: evidence/step_02.command.sh.
+PASS: Executable: evidence/step_02.command.sh.
+PASS: Bash syntax: evidence/step_01.command.sh.
+PASS: Bash shebang: evidence/step_01.command.sh.
+PASS: Executable: evidence/step_01.command.sh.
+PASS: One document title: ciso_dr_brief.md.
+PASS: One document title: dr_plan_master.md.
+PASS: One document title: gap_analysis.md.
+PASS: One document title: recovery_test_record.md.
+PASS: One document title: clinical_downtime_procedures.md.
+PASS: One document title: recovery_runbooks.md.
+PASS: One document title: backup_architecture.md.
+PASS: One document title: business_impact_analysis.md.
+PASS: One document title: quiz_study_notes.md.
+PASS: One document title: README.md.
+PASS: One document title: LEARNING_OBJECTIVES.md.
+PASS: Markdown heading hierarchy, spacing, code fences, table columns and local links.
+PASS: Clinical reference word count: 409.
+PASS: Clinical reference word count: 433.
+PASS: BIA RTO below MTD: Active Directory.
+PASS: BIA RTO below MTD: Epic EHR.
+PASS: BIA RTO below MTD: Laboratory Information System.
+PASS: BIA RTO below MTD: PACS/RIS.
+PASS: BIA RTO below MTD: Pharmacy Dispensing System.
+PASS: BIA RTO below MTD: Medical Device Integration Gateway.
+PASS: BIA RTO below MTD: Network Core.
+PASS: BIA RTO below MTD: Email and Secure Messaging.
+PASS: BIA RTO below MTD: Backup and DR Infrastructure.
+PASS: BIA RTO below MTD: Security Operations Platform.
+PASS: All ten recovery steps captured.
+PASS: Exact recovered row count is 5.
+LIMIT: markdownlint unavailable; no packages installed. Rendered page counts not measured.

@@ -1,0 +1,2 @@
+Old runbook path /recovery/lis_dump.sql is absent
+-rw-r--r--. 1 busitech busitech 668 Nov 10 11:11 /tmp/meddefense-dr-test/recovery/lis_dump.sql
