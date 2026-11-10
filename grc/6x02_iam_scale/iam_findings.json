@@ -1,0 +1,250 @@
+{
+  "audit_metadata": {
+    "script_version": "1.0",
+    "accounts_processed": 20,
+    "audit_timestamp": "2026-11-10T15:26:47.578117Z",
+    "source": "/run/media/busitech/T7/Docs/Obsidian/Cybersecurity_Academy/Defensive Path/grc/6x02_iam_scale/tasks/accounts.csv",
+    "row_convention": "header is row 1",
+    "findings_count": {
+      "Critical": 6,
+      "High": 9,
+      "Medium": 3,
+      "Low": 4
+    }
+  },
+  "findings": [
+    {
+      "finding_id": "IAM-001",
+      "account": "admin.legacy",
+      "check": "check_dormant_privileged",
+      "severity": "High",
+      "title": "Dormant privileged user",
+      "remediation": "Confirm owner and business need; disable unused access and remove obsolete privileged memberships.",
+      "source_row": 7,
+      "evidence": "username=admin.legacy; display_name=Legacy Admin Account; department=IT; account_type=user; enabled=TRUE; last_login_days_ago=187; mfa_enrolled=FALSE; privileged_groups=Domain Admins; description=Created for EHR migration 2021; migration complete"
+    },
+    {
+      "finding_id": "IAM-002",
+      "account": "admin.legacy",
+      "check": "check_mfa_coverage",
+      "severity": "High",
+      "title": "Enabled privileged user without MFA",
+      "remediation": "Suspend unnecessary privileged access; require verified MFA enrollment before approved privileged use.",
+      "source_row": 7,
+      "evidence": "username=admin.legacy; display_name=Legacy Admin Account; department=IT; account_type=user; enabled=TRUE; last_login_days_ago=187; mfa_enrolled=FALSE; privileged_groups=Domain Admins; description=Created for EHR migration 2021; migration complete"
+    },
+    {
+      "finding_id": "IAM-003",
+      "account": "admin.legacy",
+      "check": "check_departed_or_transferred",
+      "severity": "High",
+      "title": "Lifecycle review: migration complete",
+      "remediation": "Verify HR/project status; disable departed accounts, remove prior-role permissions on transfer, and retire completed migration access; record approval and service checks.",
+      "matched_keywords": [
+        "migration complete"
+      ],
+      "source_row": 7,
+      "evidence": "username=admin.legacy; display_name=Legacy Admin Account; department=IT; account_type=user; enabled=TRUE; last_login_days_ago=187; mfa_enrolled=FALSE; privileged_groups=Domain Admins; description=Created for EHR migration 2021; migration complete"
+    },
+    {
+      "finding_id": "IAM-004",
+      "account": "admin.legacy",
+      "check": "check_no_mfa_high_risk",
+      "severity": "Low",
+      "title": "Enabled user without MFA",
+      "remediation": "Enroll user in MFA through verified process; provide private support and review access need; do not use simulation history for discipline.",
+      "source_row": 7,
+      "evidence": "username=admin.legacy; display_name=Legacy Admin Account; department=IT; account_type=user; enabled=TRUE; last_login_days_ago=187; mfa_enrolled=FALSE; privileged_groups=Domain Admins; description=Created for EHR migration 2021; migration complete"
+    },
+    {
+      "finding_id": "IAM-005",
+      "account": "t.morrison",
+      "check": "check_dormant_privileged",
+      "severity": "High",
+      "title": "Dormant privileged user",
+      "remediation": "Confirm owner and business need; disable unused access and remove obsolete privileged memberships.",
+      "source_row": 8,
+      "evidence": "username=t.morrison; display_name=Tom Morrison; department=IT Contractors; account_type=user; enabled=TRUE; last_login_days_ago=248; mfa_enrolled=FALSE; privileged_groups=Domain Admins;Server Admins; description=Contract ended 2025-09-01"
+    },
+    {
+      "finding_id": "IAM-006",
+      "account": "t.morrison",
+      "check": "check_mfa_coverage",
+      "severity": "High",
+      "title": "Enabled privileged user without MFA",
+      "remediation": "Suspend unnecessary privileged access; require verified MFA enrollment before approved privileged use.",
+      "source_row": 8,
+      "evidence": "username=t.morrison; display_name=Tom Morrison; department=IT Contractors; account_type=user; enabled=TRUE; last_login_days_ago=248; mfa_enrolled=FALSE; privileged_groups=Domain Admins;Server Admins; description=Contract ended 2025-09-01"
+    },
+    {
+      "finding_id": "IAM-007",
+      "account": "t.morrison",
+      "check": "check_departed_or_transferred",
+      "severity": "Critical",
+      "title": "Lifecycle review: contract ended",
+      "remediation": "Verify HR/project status; disable departed accounts, remove prior-role permissions on transfer, and retire completed migration access; record approval and service checks.",
+      "matched_keywords": [
+        "contract ended"
+      ],
+      "source_row": 8,
+      "evidence": "username=t.morrison; display_name=Tom Morrison; department=IT Contractors; account_type=user; enabled=TRUE; last_login_days_ago=248; mfa_enrolled=FALSE; privileged_groups=Domain Admins;Server Admins; description=Contract ended 2025-09-01"
+    },
+    {
+      "finding_id": "IAM-008",
+      "account": "t.morrison",
+      "check": "check_no_mfa_high_risk",
+      "severity": "Low",
+      "title": "Enabled user without MFA",
+      "remediation": "Enroll user in MFA through verified process; provide private support and review access need; do not use simulation history for discipline.",
+      "source_row": 8,
+      "evidence": "username=t.morrison; display_name=Tom Morrison; department=IT Contractors; account_type=user; enabled=TRUE; last_login_days_ago=248; mfa_enrolled=FALSE; privileged_groups=Domain Admins;Server Admins; description=Contract ended 2025-09-01"
+    },
+    {
+      "finding_id": "IAM-009",
+      "account": "k.nguyen",
+      "check": "check_no_mfa_high_risk",
+      "severity": "Medium",
+      "title": "Enabled user without MFA and repeated security failures",
+      "remediation": "Enroll user in MFA through verified process; provide private support and review access need; do not use simulation history for discipline.",
+      "source_row": 10,
+      "evidence": "username=k.nguyen; display_name=Kevin Nguyen; department=Radiology; account_type=user; enabled=TRUE; last_login_days_ago=1; mfa_enrolled=FALSE; privileged_groups=Epic Users;PACS Users; description=Three phishing simulation failures in 90 days"
+    },
+    {
+      "finding_id": "IAM-010",
+      "account": "l.okafor",
+      "check": "check_departed_or_transferred",
+      "severity": "High",
+      "title": "Lifecycle review: left organization",
+      "remediation": "Verify HR/project status; disable departed accounts, remove prior-role permissions on transfer, and retire completed migration access; record approval and service checks.",
+      "matched_keywords": [
+        "left organization"
+      ],
+      "source_row": 11,
+      "evidence": "username=l.okafor; display_name=Lena Okafor; department=Finance; account_type=user; enabled=TRUE; last_login_days_ago=142; mfa_enrolled=FALSE; privileged_groups=Finance Users; description=Left organization per HR 2025-11-28"
+    },
+    {
+      "finding_id": "IAM-011",
+      "account": "l.okafor",
+      "check": "check_no_mfa_high_risk",
+      "severity": "Low",
+      "title": "Enabled user without MFA",
+      "remediation": "Enroll user in MFA through verified process; provide private support and review access need; do not use simulation history for discipline.",
+      "source_row": 11,
+      "evidence": "username=l.okafor; display_name=Lena Okafor; department=Finance; account_type=user; enabled=TRUE; last_login_days_ago=142; mfa_enrolled=FALSE; privileged_groups=Finance Users; description=Left organization per HR 2025-11-28"
+    },
+    {
+      "finding_id": "IAM-012",
+      "account": "b.carter",
+      "check": "check_dormant_privileged",
+      "severity": "High",
+      "title": "Dormant privileged user",
+      "remediation": "Confirm owner and business need; disable unused access and remove obsolete privileged memberships.",
+      "source_row": 12,
+      "evidence": "username=b.carter; display_name=Brian Carter; department=IT; account_type=user; enabled=FALSE; last_login_days_ago=224; mfa_enrolled=TRUE; privileged_groups=Server Admins;Helpdesk; description=Account disabled; group memberships not removed at offboarding"
+    },
+    {
+      "finding_id": "IAM-013",
+      "account": "b.carter",
+      "check": "check_disabled_with_groups",
+      "severity": "Medium",
+      "title": "Disabled account retains group memberships",
+      "remediation": "Remove obsolete memberships from b.carter; verify no privileged access returns on reactivation.",
+      "source_row": 12,
+      "evidence": "username=b.carter; display_name=Brian Carter; department=IT; account_type=user; enabled=FALSE; last_login_days_ago=224; mfa_enrolled=TRUE; privileged_groups=Server Admins;Helpdesk; description=Account disabled; group memberships not removed at offboarding"
+    },
+    {
+      "finding_id": "IAM-014",
+      "account": "svc_backup",
+      "check": "check_service_account_overpriv",
+      "severity": "Critical",
+      "title": "Service account with Domain Admin membership",
+      "remediation": "Remove svc_backup from Domain Admins after dependency validation; replace with documented task-scoped permissions and test its function.",
+      "source_row": 13,
+      "evidence": "username=svc_backup; display_name=Backup Service Account; department=IT; account_type=service; enabled=TRUE; last_login_days_ago=1; mfa_enrolled=N/A; privileged_groups=Domain Admins; description=Nightly backup automation; DA granted per legacy config"
+    },
+    {
+      "finding_id": "IAM-015",
+      "account": "svc_epic_int",
+      "check": "check_service_account_overpriv",
+      "severity": "Critical",
+      "title": "Service account with Domain Admin membership",
+      "remediation": "Remove svc_epic_int from Domain Admins after dependency validation; replace with documented task-scoped permissions and test its function.",
+      "source_row": 14,
+      "evidence": "username=svc_epic_int; display_name=Epic Integration Service; department=Clinical Systems; account_type=service; enabled=TRUE; last_login_days_ago=1156; mfa_enrolled=N/A; privileged_groups=Domain Admins; description=Post-EHR-migration service account; no current function identified"
+    },
+    {
+      "finding_id": "IAM-016",
+      "account": "svc_epic_int",
+      "check": "check_dormant_privileged",
+      "severity": "Critical",
+      "title": "Dormant privileged service account",
+      "remediation": "Contain unused account after dependency check; remove privileged membership and investigate historical use.",
+      "category": "dormant_service_privileged",
+      "source_row": 14,
+      "evidence": "username=svc_epic_int; display_name=Epic Integration Service; department=Clinical Systems; account_type=service; enabled=TRUE; last_login_days_ago=1156; mfa_enrolled=N/A; privileged_groups=Domain Admins; description=Post-EHR-migration service account; no current function identified"
+    },
+    {
+      "finding_id": "IAM-017",
+      "account": "svc_helpdesk",
+      "check": "check_service_account_overpriv",
+      "severity": "Critical",
+      "title": "Service account with Domain Admin membership",
+      "remediation": "Remove svc_helpdesk from Domain Admins after dependency validation; replace with documented task-scoped permissions and test its function.",
+      "source_row": 15,
+      "evidence": "username=svc_helpdesk; display_name=Helpdesk Automation; department=IT; account_type=service; enabled=TRUE; last_login_days_ago=0; mfa_enrolled=N/A; privileged_groups=Domain Admins; description=Ticket routing automation; DA granted by vendor during install; review later"
+    },
+    {
+      "finding_id": "IAM-018",
+      "account": "svc_monitoring",
+      "check": "check_service_account_overpriv",
+      "severity": "Medium",
+      "title": "Service account with Server Admin membership",
+      "remediation": "Replace svc_monitoring Server Admins access with documented scoped permissions; verify service operation.",
+      "source_row": 16,
+      "evidence": "username=svc_monitoring; display_name=Monitoring Agent; department=IT; account_type=service; enabled=TRUE; last_login_days_ago=0; mfa_enrolled=N/A; privileged_groups=Server Admins; description=Prometheus metrics collection"
+    },
+    {
+      "finding_id": "IAM-019",
+      "account": "j.yamamoto",
+      "check": "check_dormant_privileged",
+      "severity": "High",
+      "title": "Dormant privileged user",
+      "remediation": "Confirm owner and business need; disable unused access and remove obsolete privileged memberships.",
+      "source_row": 18,
+      "evidence": "username=j.yamamoto; display_name=Jun Yamamoto; department=Finance; account_type=user; enabled=TRUE; last_login_days_ago=312; mfa_enrolled=FALSE; privileged_groups=Domain Admins;Server Admins; description=Transferred from IT to Finance 2024-02; elevated rights not removed"
+    },
+    {
+      "finding_id": "IAM-020",
+      "account": "j.yamamoto",
+      "check": "check_mfa_coverage",
+      "severity": "High",
+      "title": "Enabled privileged user without MFA",
+      "remediation": "Suspend unnecessary privileged access; require verified MFA enrollment before approved privileged use.",
+      "source_row": 18,
+      "evidence": "username=j.yamamoto; display_name=Jun Yamamoto; department=Finance; account_type=user; enabled=TRUE; last_login_days_ago=312; mfa_enrolled=FALSE; privileged_groups=Domain Admins;Server Admins; description=Transferred from IT to Finance 2024-02; elevated rights not removed"
+    },
+    {
+      "finding_id": "IAM-021",
+      "account": "j.yamamoto",
+      "check": "check_departed_or_transferred",
+      "severity": "Critical",
+      "title": "Lifecycle review: transferred from",
+      "remediation": "Verify HR/project status; disable departed accounts, remove prior-role permissions on transfer, and retire completed migration access; record approval and service checks.",
+      "matched_keywords": [
+        "transferred from"
+      ],
+      "source_row": 18,
+      "evidence": "username=j.yamamoto; display_name=Jun Yamamoto; department=Finance; account_type=user; enabled=TRUE; last_login_days_ago=312; mfa_enrolled=FALSE; privileged_groups=Domain Admins;Server Admins; description=Transferred from IT to Finance 2024-02; elevated rights not removed"
+    },
+    {
+      "finding_id": "IAM-022",
+      "account": "j.yamamoto",
+      "check": "check_no_mfa_high_risk",
+      "severity": "Low",
+      "title": "Enabled user without MFA",
+      "remediation": "Enroll user in MFA through verified process; provide private support and review access need; do not use simulation history for discipline.",
+      "source_row": 18,
+      "evidence": "username=j.yamamoto; display_name=Jun Yamamoto; department=Finance; account_type=user; enabled=TRUE; last_login_days_ago=312; mfa_enrolled=FALSE; privileged_groups=Domain Admins;Server Admins; description=Transferred from IT to Finance 2024-02; elevated rights not removed"
+    }
+  ]
+}
